@@ -46,6 +46,12 @@ def build_radio_france_query(station: str, start: datetime, end: datetime, templ
     query = template.format(start=int(start.timestamp()), end=int(end.timestamp()), station=station)
     return query
 
+def format_radio_france_metadata(rep):
+    data = json.loads(rep.content.decode())
+    current_show = data["data"]["grid"][0]
+    title = current_show["diffusion"]["show"]["title"]
+    return title
+
 def fetch_radio_france_meta(station, token):
     start = datetime.now()
     end = datetime.now() + timedelta(minutes=120)
@@ -56,7 +62,8 @@ def fetch_radio_france_meta(station, token):
         "France Musique": "FRANCEMUSIQUE"
     }[station]
     rep = requests.post("https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(token), json={"query": build_radio_france_query(station, start, end)})
-    return rep.content.decode()
+    data = format_radio_france_metadata(rep)
+    return {"type": "Emission", "title": data}
 
 def fetch_rtl2_meta():
     """Returns mapping containing info about current song.
@@ -94,9 +101,9 @@ def fetch(station, token=TOKEN):
         metadata = fetch_radio_france_meta(station, token)
     elif station == "RTL 2":
         metadata = fetch_rtl2_meta()
-        metadata.update({"station": station})
+    metadata.update({"station": station})
     return metadata
 
 if __name__ == "__main__":
-    print(fetch("inter"))
-    print(fetch("rtl2"))
+    print(fetch("France Inter"))
+    print(fetch("RTL 2"))
