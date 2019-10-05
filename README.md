@@ -43,4 +43,4 @@ permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
 $ poetry run flask run
 ```
 
-Aller à `localhost:8000` pour voir les métadonnées de RTL 2.
+Aller à `localhost:8000` pour voir les métadonnées de la radio en cours.
