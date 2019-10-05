@@ -6,5 +6,5 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    metadata = radio.fetch("RTL 2")
+    metadata = radio.fetch(radio.get_current_station())
     return jsonify(metadata)
