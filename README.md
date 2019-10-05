@@ -3,7 +3,7 @@
 ## Installation
 
 ```
-$ poetry add
+$ poetry install 
 ```
 
 Il faut [poetry](https://github.com/sdispater/poetry).
