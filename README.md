@@ -27,7 +27,7 @@ permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
 21:00-00:00 RTL 2
 ```
 
-**Remarque :** Il faut respecter le format `HH:MM:[SS] Station` (secondes facultatives).
+**Remarque :** Il faut respecter le format `<Debut>-<Fin> Station` avec le format `HH:MM:SS` (secondes facultatives) pour `<Debut>` et `<Fin>`.
 
 **Radio supportées :**
 
