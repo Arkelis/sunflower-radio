@@ -12,7 +12,7 @@ Il faut [poetry](https://github.com/sdispater/poetry).
 
 ## Configuration
 
-Vous devez créer un fichier d'horaires pour les radios `timetable.conf` (au même niveau que `radio.py`. Ce fichier
+Vous devez créer un fichier d'horaires pour les radios `timetable.conf` (au même niveau que `radio.py`). Ce fichier
 permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
 
 ```
