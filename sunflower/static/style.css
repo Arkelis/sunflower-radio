@@ -1,87 +1,77 @@
 body {
-    background-color: #333;
-}
+  background-color: #333; }
 
 nav {
-    width: 100%;
-    color: white;
-    position: relative;
-    z-index: 10;
-    font-family: "Francois One", sans-serif;
-}
-
-nav .brand {
+  width: 100%;
+  color: white;
+  position: relative;
+  z-index: 10;
+  font-family: "Francois One", sans-serif; }
+  nav .brand {
     float: left;
-    margin: 1em;
-}
-
-nav ul {
+    margin: 1em; }
+  nav ul {
     padding: 0;
     margin: 1em;
-    float: right;
-}
-
-nav ul li {
-    list-style: none;
-}
-
-nav ul li a {
-    color: inherit;
-    cursor: pointer;
-    text-decoration-line: none;
-}
-
+    float: right; }
+    nav ul li {
+      list-style-type: none; }
+      nav ul li a {
+        color: inherit;
+        cursor: pointer;
+        text-decoration-line: none; }
 
 .wrapper {
-    z-index: 0;
-    display: flex;
-    align-content: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-}
+  z-index: 0;
+  display: flex;
+  align-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%; }
 
 .timeline {
-    margin: auto;
-}
+  margin: auto; }
 
-.current-program-card {
-    display: flex;
-    width: 40em;
-    box-shadow: 0px 0px 15px 5px rgba(0, 0, 0, 0.7);
-    padding: 1em;
-    border-radius: 0.5em;
-    background-color: #EEE;
-}
+.current-broadcast-card {
+  width: 40em;
+  padding: 1em;
+  border-radius: 0.5em;
+  background-color: white; }
+  .current-broadcast-card .card-body {
+    display: flex; }
+  .current-broadcast-card .card-footer {
+    margin-top: 1em; }
+    .current-broadcast-card .card-footer audio {
+      width: 100%; }
 
-.program-info {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-    padding-left: 1em
-}
+.broadcast-info {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  padding-left: 1em; }
 
 .thumbnail img {
-    height: 10em;
-}
+  height: 10em; }
 
 .station {
-    font-family: "Francois One", sans-serif;
-    font-size: 1.25em;
-    text-transform: uppercase;
-}
+  font-family: "Francois One", sans-serif;
+  font-size: 1.25em;
+  text-transform: uppercase; }
 
-.program-title {
-    font-family: Lato;
-    font-size: 1.5em;
-    font-weight: normal;
-    margin: 0 0 0.5em 0;
-}
+.broadcast-title {
+  font-family: Lato;
+  font-size: 1.5em;
+  font-weight: normal;
+  margin: 0 0 0.5em 0; }
+
+.broadcast-summary {
+  font-family: "Francois One", sans-serif;
+  font-weight: 300;
+  margin: 0; }
 
 .show-title {
-    font-family: "Francois One", sans-serif;
-    color: #AAA;
-    justify-self: flex-end;
-}
+  font-family: "Francois One", sans-serif;
+  color: #888;
+  justify-self: flex-end; }

@@ -1,0 +1,104 @@
+body {
+    background-color: #333;
+}
+
+nav {
+    width: 100%;
+    color: white;
+    position: relative;
+    z-index: 10;
+    font-family: "Francois One", sans-serif;
+
+    .brand {
+        float: left;
+        margin: 1em;
+    }
+
+    ul {
+        padding: 0;
+        margin: 1em;
+        float: right;
+
+        li {
+            list-style-type: none;
+        
+            a {
+                color: inherit;
+                cursor: pointer;
+                text-decoration-line: none;
+            }
+        }
+    }
+}
+
+
+.wrapper {
+    z-index: 0;
+    display: flex;
+    align-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.timeline {
+    margin: auto;
+}
+
+.current-broadcast-card {
+    width: 40em;
+    // box-shadow: 0px 0px 15px 5px #333;
+    padding: 1em;
+    border-radius: 0.5em;
+    background-color: white;
+
+    .card-body {
+        display: flex;
+    }
+
+    .card-footer {
+        margin-top: 1em;
+
+        audio {
+        width: 100%
+        }
+    }
+}
+
+.broadcast-info {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    padding-left: 1em
+}
+
+.thumbnail img {
+    height: 10em;
+}
+
+.station {
+    font-family: "Francois One", sans-serif;
+    font-size: 1.25em;
+    text-transform: uppercase;
+}
+
+.broadcast-title {
+    font-family: Lato;
+    font-size: 1.5em;
+    font-weight: normal;
+    margin: 0 0 0.5em 0;
+}
+
+.broadcast-summary {
+    font-family: "Francois One", sans-serif;
+    font-weight: 300;
+    margin: 0;
+}
+
+.show-title {
+    font-family: "Francois One", sans-serif;
+    color: #888;
+    justify-self: flex-end;
+}
