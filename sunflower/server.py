@@ -14,7 +14,7 @@ def index():
             title = metadata["type"]
     elif "France " in metadata["station"]:
         title = metadata["diffusion_title"]
-        metadata["thumbnail_src"] = url_for("static", filename="inter.png")
+        metadata["thumbnail_src"] = "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/France_inter_2005_logo.svg/1024px-France_inter_2005_logo.svg.png"
     return render_template("radio.html", card_title=title, metadata=metadata)
 
 @app.route("/on-air")
