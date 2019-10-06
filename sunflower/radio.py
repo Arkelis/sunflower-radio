@@ -13,6 +13,14 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
+FLUX_URL = {
+    "France Inter": "http://icecast.radiofrance.fr/franceinter-midfi.mp3",
+    "France Culture": "http://icecast.radiofrance.fr/franceculture-midfi.mp3",
+    "France Musique": "http://icecast.radiofrance.fr/francemusique-midfi.mp3",
+    "France Info": "http://icecast.radiofrance.fr/franceinfo-midfi.mp3",
+    "RTL 2": "http://streaming.radio.rtl2.fr/rtl2-1-48-192",
+}
+
 GRID_TEMPLATE = """
 {{
 grid(start: {start}, end: {end}, station: {station}) {{
@@ -53,8 +61,11 @@ def get_current_station():
             for line in timetable:
                 station = line[line.index(" ")+1:]
                 start, end = map(time.fromisoformat, line[:line.index(" ")].split("-"))
+                end = time(23, 59, 59) if end == time(0, 0, 0) else end
                 if start < current_time < end:
                     return station
+            else:
+                raise RuntimeError("Aucune station programmée à cet horaire.")
     except FileNotFoundError:
         raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
 
@@ -65,11 +76,12 @@ def build_radio_france_query(station: str, start: datetime, end: datetime, templ
 def format_radio_france_metadata(rep):
     data = json.loads(rep.content.decode())
     current_show = data["data"]["grid"][0]
+    summary = current_show["diffusion"]["standFirst"]
     return {
         "type": "Emission",
         "show_title": current_show["diffusion"]["show"]["title"],
         "diffusion_title": current_show["diffusion"]["title"],
-        "summary": current_show["diffusion"]["standFirst"],
+        "summary": summary if summary != "." else None,
     }
     
 
@@ -109,7 +121,7 @@ def fetch_rtl2_meta():
     try:
         diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
     except IndexError:
-        previous_url = soup.find_all("a")[6].attrs["href"]
+        previous_url = "https://timeline.rtl.fr" + soup.find_all("a")[6].attrs["href"]
         rep = requests.get(previous_url)
         soup = BeautifulSoup(rep.content.decode(), "html.parser")
         try:
@@ -142,6 +154,8 @@ def fetch(station, token=TOKEN):
         metadata = fetch_radio_france_meta(station, token)
     elif station == "RTL 2":
         metadata = fetch_rtl2_meta()
+    else:
+        raise RuntimeError("Station '{}' non gérée.".format(station))
     metadata.update({"station": station})
     return metadata
 

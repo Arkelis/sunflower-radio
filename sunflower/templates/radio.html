@@ -7,6 +7,7 @@
     <title>Radio Tournesol</title>
     <link href="https://fonts.googleapis.com/css?family=Francois+One|Lato:300&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" href='{{ url_for("static", filename="style.css") }}'>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </head>
 <body>
 <nav>
@@ -19,26 +20,35 @@
 </nav>
 <div class="wrapper">
     <div class="timeline">
-        <div class="current-program-card">
-            {% if metadata.thumbnail_src %}
-                <div class="thumbnail">
-                    <img src="{{ metadata.thumbnail_src }}" alt="Current program thumbail.">
-                </div>
-            {% endif %}
-            <div class="program-info">
-                <div class="head-info">
-                    <div class="station">{{ metadata.station }}</div>
-                    <h2 class="program-title">{{ card_title|safe }}</h2>
-                </div>
-                {% if metadata.summary %}
-                    <p class="program-info">{{ metadata.summary }}</p>
+        <div class="current-broadcast-card">
+            <div class="card-body">
+                {% if metadata.thumbnail_src %}
+                    <div class="thumbnail">
+                        <img src="{{ metadata.thumbnail_src }}" alt="Current broadcast thumbail.">
+                    </div>
                 {% endif %}
-                {% if metadata.show_title %}
-                    <div class="show-title">{{ metadata.show_title }}</div>
-                {% endif %}
+                <div class="broadcast-info">
+                    <div class="head-info">
+                        <div class="station">{{ metadata.station }}</div>
+                        <h2 class="broadcast-title">{{ card_title|safe }}</h2>
+                    </div>
+                    <div class="details">
+                        {% if metadata.show_title %}
+                            <div class="show-title">{{ metadata.show_title }}</div>
+                        {% endif %}
+                        {% if metadata.summary %}
+                            <p class="broadcast-summary">{{ metadata.summary }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <audio autoplay controls src="{{ flux_url }}">
+                    Your browser does not support the <code>audio</code> element.
+                </audio>
             </div>
         </div>
-        {# <div class="following-programs">A suivre...</div> #}
+        {# <div class="following-broadcasts">A suivre...</div> #}
     </div>
 </div>
 </body>
