@@ -125,7 +125,8 @@ def fetch_rtl2_meta():
     artist = data[0]["singer"]
     song = data[0]["title"]
     end = datetime.fromtimestamp(int(data[0]["end"]) // 1000).isoformat()
-    return {"type": "Musique", "artist": artist, "title": song, "end": end}
+    thumbnail = data[0]["thumbnail"]
+    return {"type": "Musique", "artist": artist, "title": song, "end": end, "thumbnail_src": thumbnail}
 
 def fetch(station, token=TOKEN):
     """Return metadata of current broadcasted programm for asked station.
