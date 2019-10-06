@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Radio Tournesol</title>
+    <link href="https://fonts.googleapis.com/css?family=Francois+One|Lato:300&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href='{{ url_for("static", filename="style.css") }}'>
+</head>
+<body>
+<nav>
+    <div class="brand">
+        Radio Tournesol
+    </div>
+    <ul>
+        <li><a href="{{ url_for('current_show_data') }}">Programme en cours au format JSON</a></li>
+    </ul>
+</nav>
+<div class="wrapper">
+    <div class="timeline">
+        <div class="current-program-card">
+            {% if metadata.thumbnail_src %}
+                <div class="thumbnail">
+                    <img src="{{ metadata.thumbnail_src }}" alt="Current program thumbail.">
+                </div>
+            {% endif %}
+            <div class="program-info">
+                <div class="head-info">
+                    <div class="station">{{ metadata.station }}</div>
+                    <h2 class="program-title">{{ card_title|safe }}</h2>
+                </div>
+                {% if metadata.summary %}
+                    <p class="program-info">{{ metadata.summary }}</p>
+                {% endif %}
+                {% if metadata.show_title %}
+                    <div class="show-title">{{ metadata.show_title }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {# <div class="following-programs">A suivre...</div> #}
+    </div>
+</div>
+</body>
+</html>
