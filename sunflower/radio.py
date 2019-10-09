@@ -76,27 +76,34 @@ def build_radio_france_query(station: str, start: datetime, end: datetime, templ
 def format_radio_france_metadata(rep):
     data = json.loads(rep.content.decode())
     current_show = data["data"]["grid"][0]
+    diffusion = current_show.get("diffusion")
+    if diffusion is None:
+        return {
+            "type": "Emission",
+            "show_title": current_show["title"],
+        }
     summary = current_show["diffusion"]["standFirst"]
     return {
         "type": "Emission",
         "show_title": current_show["diffusion"]["show"]["title"],
         "diffusion_title": current_show["diffusion"]["title"],
         "summary": summary if summary != "." else None,
+        "end": current_show["end"],
     }
     
 
 def fetch_radio_france_meta(station, token):
     start = datetime.now()
     end = datetime.now() + timedelta(minutes=120)
-    station = {
-        "France Inter": "FRANCEINTER",
-        "France Info": "FRANCEINFO",
-        "France Culture": "CULTURE",
-        "France Musique": "FRANCEMUSIQUE"
+    station, thumbnail_src = {
+        "France Inter": ("FRANCEINTER", "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/France_inter_2005_logo.svg/1024px-France_inter_2005_logo.svg.png"),
+        "France Info": ("FRANCEINFO", "https://lh3.googleusercontent.com/VKfyGmPTaHyxOAf1065M_CftsEiGIOkZOiGpXUlP1MTSBUA4j5O5n9GRLJ3HvQsXQdY"),
+        "France Culture": ("CULTURE", "https://upload.wikimedia.org/wikipedia/fr/thumb/c/c9/France_Culture_-_2008.svg/1024px-France_Culture_-_2008.svg.png"),
+        "France Musique": ("FRANCEMUSIQUE" "https://upload.wikimedia.org/wikipedia/fr/thumb/2/22/France_Musique_-_2008.svg/1024px-France_Musique_-_2008.svg.png"),
     }[station]
     rep = requests.post("https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(token), json={"query": build_radio_france_query(station, start, end)})
     data = format_radio_france_metadata(rep)
-    data.update({"type":"Emission"})
+    data.update({"type":"Emission", "thumbnail_src": thumbnail_src})
     return data
 
 def fetch_rtl2_meta():
@@ -136,7 +143,7 @@ def fetch_rtl2_meta():
     data = json.loads(rep.content.decode())
     artist = data[0]["singer"]
     song = data[0]["title"]
-    end = datetime.fromtimestamp(int(data[0]["end"]) // 1000).isoformat()
+    end = int(data[0]["end"]) // 1000
     thumbnail = data[0]["thumbnail"]
     return {"type": "Musique", "artist": artist, "title": song, "end": end, "thumbnail_src": thumbnail}
 
