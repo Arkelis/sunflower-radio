@@ -12,12 +12,12 @@ def _prepare_broadcast_info():
     metadata = radio.fetch(current_station)
     if metadata["station"] == "RTL 2":
         if metadata["type"] == "Musique":
-            title = metadata["artist"] + " &bull; " + metadata["title"]
+            title = metadata["artist"] + " • " + metadata["title"]
         else:
             title = metadata["type"]
     elif "France " in metadata["station"]:
         title = metadata.get("diffusion_title", metadata["show_title"])
-    flux_url = radio.FLUX_URL.get(current_station)
+    flux_url = "http://pycolorefr:8000/tournesol"
     return title, metadata, flux_url, 5000
 
 @app.route("/")

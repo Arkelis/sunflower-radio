@@ -20,7 +20,7 @@
     <div class="wrapper">
         <div class="timeline">
             <div class="current-broadcast-card">
-                {% include "card_body.html" %}
+                <div class="card-body" id="card-body">{% include "card_body.html" %}</div>
                 <div class="card-footer">
                     <audio autoplay controls src="{{ flux_url }}">
                         Your browser does not support the <code>audio</code> element.

@@ -10,9 +10,11 @@ function updateCardBody() {
     fetch("http://localhost:8080/update")
         .then((response) => response.text())
         .then((text) => {
-            if (cardBody.innerHTML != text) cardBody.innerHTML = text
+            if (cardBody.innerHTML.valueOf() != text.valueOf()) {
+                cardBody.innerHTML = text
+            }
         })
     prepareUpdate()
 }
 
-prepareUpdate() // first prepare
+prepareUpdate()
