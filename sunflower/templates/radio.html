@@ -7,49 +7,29 @@
     <title>Radio Tournesol</title>
     <link href="https://fonts.googleapis.com/css?family=Francois+One|Lato:300&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" href='{{ url_for("static", filename="style.css") }}'>
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </head>
 <body>
-<nav>
-    <div class="brand">
-        Radio Tournesol
-    </div>
-    <ul>
-        <li><a href="{{ url_for('current_show_data') }}">Programme en cours au format JSON</a></li>
-    </ul>
-</nav>
-<div class="wrapper">
-    <div class="timeline">
-        <div class="current-broadcast-card">
-            <div class="card-body">
-                {% if metadata.thumbnail_src %}
-                    <div class="thumbnail">
-                        <img src="{{ metadata.thumbnail_src }}" alt="Current broadcast thumbail.">
-                    </div>
-                {% endif %}
-                <div class="broadcast-info">
-                    <div class="head-info">
-                        <div class="station">{{ metadata.station }}</div>
-                        <h2 class="broadcast-title">{{ card_title|safe }}</h2>
-                    </div>
-                    <div class="details">
-                        {% if metadata.show_title %}
-                            <div class="show-title">{{ metadata.show_title }}</div>
-                        {% endif %}
-                        {% if metadata.summary %}
-                            <p class="broadcast-summary">{{ metadata.summary }}</p>
-                        {% endif %}
-                    </div>
+    <nav>
+        <div class="brand">
+            Radio Tournesol
+        </div>
+        <ul>
+            <li><a href="{{ url_for('current_show_data') }}">Programme en cours au format JSON</a></li>
+        </ul>
+    </nav>
+    <div class="wrapper">
+        <div class="timeline">
+            <div class="current-broadcast-card">
+                {% include "card_body.html" %}
+                <div class="card-footer">
+                    <audio autoplay controls src="{{ flux_url }}">
+                        Your browser does not support the <code>audio</code> element.
+                    </audio>
                 </div>
             </div>
-            <div class="card-footer">
-                <audio autoplay controls src="{{ flux_url }}">
-                    Your browser does not support the <code>audio</code> element.
-                </audio>
-            </div>
+            {# <div class="following-broadcasts">A suivre...</div> #}
         </div>
-        {# <div class="following-broadcasts">A suivre...</div> #}
     </div>
-</div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

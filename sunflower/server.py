@@ -1,13 +1,13 @@
 from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS, cross_origin
+import time
 
 import sunflower.radio as radio
 
 app = Flask(__name__)
 cors = CORS(app)
 
-@app.route("/")
-def index():
+def _prepare_broadcast_info():
     current_station = radio.get_current_station()
     metadata = radio.fetch(current_station)
     if metadata["station"] == "RTL 2":
@@ -18,11 +18,17 @@ def index():
     elif "France " in metadata["station"]:
         title = metadata.get("diffusion_title", metadata["show_title"])
     flux_url = radio.FLUX_URL.get(current_station)
-    return render_template("radio.html", card_title=title, metadata=metadata, flux_url=flux_url)
+    return title, metadata, flux_url, 5000
 
-@app.route("/vue")
-def test_vue():
-    return render_template("radio.vue.html")
+@app.route("/")
+def index():
+    title, metadata, flux_url, refresh_timeout = _prepare_broadcast_info()
+    return render_template("radio.html", card_title=title, metadata=metadata, flux_url=flux_url, refresh_timeout=refresh_timeout)
+
+@app.route("/update")
+def update_broadcast_info():
+    title, metadata, flux_url, refresh_timeout = _prepare_broadcast_info()
+    return render_template("card_body.html", card_title=title, metadata=metadata, flux_url=flux_url, refresh_timeout=refresh_timeout)
 
 @app.route("/on-air")
 def current_show_data():
