@@ -1,8 +1,9 @@
 let cardBody = document.getElementById("card-body")
 
 function prepareUpdate() {
-    let refresh_timeout = document.getElementById("refresh-timeout").innerText
-    setTimeout(updateCardBody, parseInt(refresh_timeout, 10))
+    let end = parseInt(document.getElementById("end").innerText, 10)
+    let timeout = end - Date.now() > 0 ? end - Date.now() : 5000
+    setTimeout(updateCardBody, timeout)
 }
 
 
