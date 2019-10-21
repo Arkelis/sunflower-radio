@@ -6,6 +6,8 @@ import json
 import os
 from abc import ABC
 from datetime import datetime, time, timedelta
+from backports.datetime_fromisoformat import MonkeyPatch
+
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,6 +30,7 @@ class Radio:
         try:
             with open(os.path.dirname(__file__) + "/" + "timetable.conf", "r") as f:
                 timetable = [string.replace("\n", "").replace("\r", "") for string in f.readlines()]
+                MonkeyPatch.patch_fromisoformat()
                 for line in timetable:
                     station = line[line.index(" ")+1:]
                     start, end = map(time.fromisoformat, line[:line.index(" ")].split("-"))
@@ -63,7 +66,6 @@ class Radio:
 
 
 class Station(ABC):
-    station_name: str
 
     def get_metadata(self):
         """Return mapping containing metadata about current broadcast.
