@@ -17,7 +17,7 @@ def _prepare_broadcast_info():
             title = metadata["type"]
     elif "France " in metadata["station"]:
         title = metadata.get("diffusion_title", metadata["show_title"])
-    flux_url = "http://icecast.pycolore.fr:8000/tournesol"
+    flux_url = "http://pycolore.fr:3333/tournesol"
     return title, metadata, flux_url
 
 @app.route("/")

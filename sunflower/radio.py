@@ -146,13 +146,15 @@ class RTL2(Station):
         - artist: str (optionnal)
         - title: str (optionnal)
         """
+        default_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
         data = self._fetch_metadata()
         if data.get("type") in ("Publicités", "Intermède"):
+            data.update({"thumbnail_src": default_thumbnail})
             return data
         artist = data["singer"]
         song = data["title"]
         end = int(data["end"])
-        thumbnail = data["thumbnail"]
+        thumbnail = data["thumbnail"] or default_thumbnail
         return {"type": "Musique", "artist": artist, "title": song, "end": end, "thumbnail_src": thumbnail}
 
 
@@ -216,6 +218,7 @@ class RadioFranceStation(Station):
                 "type": "Emission",
                 "show_title": current_show["title"],
                 "end": end,
+                "thumbnail_src": data["thumbnail_src"],
             }
         summary = current_show["diffusion"]["standFirst"]
         return {
@@ -224,6 +227,7 @@ class RadioFranceStation(Station):
             "diffusion_title": current_show["diffusion"]["title"],
             "summary": summary if summary != "." else None,
             "end": end,
+            "thumbnail_src": data["thumbnail_src"],
         }
     
 
