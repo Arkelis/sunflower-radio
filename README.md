@@ -1,6 +1,6 @@
 # Radio Tournesol
 
-Affiche les métadonnées de radio.
+Affiche les métadonnées de radio : Un serveur (flask) s'occupe d'aller chercher les métadonnées et expose une page de lecteur ainsi que des métadonnées. Ce serveur ne diffuse pas de radio. Il peut être utilisé en combinaison avec [liquidsoap](https://www.liquidsoap.info) pour l'encodage de la radio et [icecast2](http://icecast.org/) pour sa diffusion par exemple.
 
 ## Installation
 
@@ -43,4 +43,13 @@ permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
 $ poetry run flask run
 ```
 
-Aller à `localhost:8000` pour voir les métadonnées de la radio en cours.
+- Aller à `localhost:8080` pour accéder au client de lecture.
+- Aller à `localhost:8080/on-air` pour accéder métadonnées au format json du programme en cours.
+
+## Feuille de route
+ 
+- [x] Mise à jour des champs en temps réel
+- [ ] Jingles horaires et de transition
+- [ ] Mettre une musique à la place de la pub pour RTL 2
+- [ ] Rendre la page du lecteur resonsive
+- [ ] Faire de la page du lecteur une PWA
