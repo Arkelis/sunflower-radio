@@ -6,7 +6,13 @@ import os
 activate_this = os.path.dirname(__file__) + "/env/bin/activate_this.py"
 with open(activate_this) as file_:
     exec(file_.read(), dict(__file__=activate_this))
+
 # add current directory in python path
 sys.path.insert(0, os.path.dirname(__file__))
 
+# load dotenv
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "sunflower/.env"))
+
+# import flask app
 from sunflower.server import app as application

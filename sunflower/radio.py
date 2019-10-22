@@ -164,9 +164,11 @@ class RadioFranceStation(Station):
 
     @property
     def token(self):
-        load_dotenv()
-        token = self.__dict__["token"] = os.getenv("TOKEN")
-        return token
+        if os.getenv("TOKEN") is None: # in case of development server
+            load_dotenv()
+            if os.getenv("TOKEN") is None:
+                raise RuntimeError("No token for Radio France API found.")
+        return os.getenv("TOKEN")
 
     grid_template = """
     {{
