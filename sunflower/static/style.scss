@@ -1,63 +1,49 @@
 body {
-    background-color: #333;
+    position: relative;
+    font-family: "Francois One", sans-serif;
+    margin: 0;
 }
 
 nav {
-    width: 100%;
-    color: white;
-    position: relative;
-    z-index: 10;
-    font-family: "Francois One", sans-serif;
+
+    display: flex;
+    justify-content: center;
 
     .brand {
-        float: left;
-        margin: 1em;
+        display: inline-block;
+        color: white;
+        margin: 1em 0 0 0;
+        padding: 0.5em;
+        text-align: center;
+        background-color: #333;;
     }
 
     ul {
-        padding: 0;
-        margin: 1em;
-        float: right;
-
-        li {
-            list-style-type: none;
+        position: absolute;
+        bottom: -3em;
+        margin-bottom: 1em;
+        padding: 0 0 1em 0;
+        width: 100%;
         
+        li {
+            margin: auto;
+            text-align: center;
+            list-style: none;
+
             a {
                 color: inherit;
                 cursor: pointer;
                 text-decoration-line: none;
             }
         }
+
     }
-}
-
-
-.wrapper {
-    z-index: 0;
-    display: flex;
-    align-content: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-}
-
-.timeline {
-    margin: auto;
 }
 
 .current-broadcast-card {
-    width: 40em;
-    // box-shadow: 0px 0px 15px 5px #333;
+    width: auto;
+    box-shadow: none;
     padding: 1em;
-    border-radius: 0.5em;
-    background-color: white;
-    box-shadow: 1px 1px 1px black;
-
-    .card-body {
-        display: flex;
-    }
 
     .card-footer {
         margin-top: 1em;
@@ -68,29 +54,35 @@ nav {
     }
 }
 
-.broadcast-info {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-    padding-left: 1em
-}
-
-.thumbnail img {
+.thumbnail {
+    margin: auto;
     width: 10em;
+    height: 10em;
+    margin-bottom: 1em;
+
+    img {
+        max-height: 100%;
+        max-width: 100%;
+    }
 }
 
-.station {
-    font-family: "Francois One", sans-serif;
-    font-size: 1.25em;
-    text-transform: uppercase;
+.head-info {
+    text-align: center;
+    margin-bottom: 1em;
+
+    .station {
+        font-size: 1.25em;
+        text-transform: uppercase;
+    }
+    
+    .broadcast-title {
+        font-family: Lato, "sans-serif";
+        font-size: 1.5em;
+        font-weight: normal;
+        margin: auto;
+    }
 }
 
-.broadcast-title {
-    font-family: Lato;
-    font-size: 1.5em;
-    font-weight: normal;
-    margin: 0 0 0.5em 0;
-}
 
 .broadcast-summary {
     font-family: "Francois One", sans-serif;
@@ -102,4 +94,108 @@ nav {
     font-family: "Francois One", sans-serif;
     color: #888;
     justify-self: flex-end;
+}
+
+
+@media screen and (min-device-width: 30em) {
+    body {
+        background-color: #333;
+    }
+
+    nav {
+        width: 100%;
+        color: white;
+        position: relative;
+        z-index: 10;
+        font-family: "Francois One", sans-serif;
+
+        .brand {
+            float: left;
+            margin: 1em;
+        }
+
+        ul {
+            padding: 0;
+            margin: 1em;
+            float: right;
+        }
+    }
+
+    .wrapper {
+        z-index: 0;
+        display: flex;
+        align-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+    }
+
+    .timeline {
+        margin: auto;
+    }
+
+    .current-broadcast-card {
+        width: 40em;
+        box-shadow: 0px 0px 10px 10px #222;
+        padding: 1em;
+        border-radius: 0.5em;
+        background-color: white;
+
+        .card-body {
+            display: flex;
+        }
+
+        .card-footer {
+            margin-top: 1em;
+
+            audio {
+            width: 100%
+            }
+        }
+    }
+
+    .broadcast-info {
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        padding-left: 1em
+    }
+
+    .thumbnail {
+        width: 10em;
+        height: 10em;
+        flex-shrink: 0;
+
+        img {
+            max-height: 100%;
+            max-width: 100%;
+        }
+    }
+
+    .station {
+        font-family: "Francois One", sans-serif;
+        font-size: 1.25em;
+        text-transform: uppercase;
+    }
+
+    .broadcast-title {
+        font-family: Lato;
+        font-size: 1.5em;
+        font-weight: normal;
+        margin: 0 0 0.5em 0;
+    }
+
+    .broadcast-summary {
+        font-family: "Francois One", sans-serif;
+        font-weight: 300;
+        margin: 0;
+    }
+
+    .show-title {
+        font-family: "Francois One", sans-serif;
+        color: #888;
+        justify-self: flex-end;
+    }
 }
