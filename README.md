@@ -54,5 +54,5 @@ $ poetry run flask run
 - [x] Mise à jour des champs en temps réel
 - [ ] Jingles horaires et de transition
 - [ ] Mettre une musique à la place de la pub pour RTL 2
-- [ ] Rendre la page du lecteur resonsive
+- [x] Rendre la page du lecteur responsive
 - [ ] Faire de la page du lecteur une PWA
