@@ -42,7 +42,6 @@ nav {
 
 .current-broadcast-card {
     width: auto;
-    box-shadow: none;
     padding: 1em;
 
     .card-footer {
@@ -97,27 +96,28 @@ nav {
 }
 
 
-@media screen and (min-device-width: 30em) {
+@media screen and (min-width: 30em) {
     body {
         background-color: #333;
+        position: initial;
     }
 
     nav {
-        width: 100%;
+        justify-content: space-between;
         color: white;
-        position: relative;
-        z-index: 10;
-        font-family: "Francois One", sans-serif;
+        z-index: 1;
 
         .brand {
-            float: left;
-            margin: 1em;
+            display: block;
+            padding: 0;
+            margin: 1.5em;
         }
 
         ul {
+            position: initial;
             padding: 0;
-            margin: 1em;
-            float: right;
+            width: auto;
+            margin: 1.5em;
         }
     }
 
@@ -137,65 +137,59 @@ nav {
     }
 
     .current-broadcast-card {
-        width: 40em;
+        width: 25em;
         box-shadow: 0px 0px 10px 10px #222;
-        padding: 1em;
         border-radius: 0.5em;
         background-color: white;
 
+        
         .card-body {
-            display: flex;
-        }
 
-        .card-footer {
-            margin-top: 1em;
+            position: relative;
+            
+            .thumbnail {
+                position: absolute;
+                left: 0;
+                margin: 0;
+            }
 
-            audio {
-            width: 100%
+            .broadcast-info .head-info {
+                text-align: initial;
+                height: 10em;
+                padding-left: 11em;
             }
         }
     }
 
-    .broadcast-info {
-        display: flex;
-        justify-content: space-between;
-        flex-direction: column;
-        padding-left: 1em
-    }
+}
 
-    .thumbnail {
-        width: 10em;
-        height: 10em;
-        flex-shrink: 0;
 
-        img {
-            max-height: 100%;
-            max-width: 100%;
+@media screen and (min-width: 45em) {
+
+    .current-broadcast-card {
+        width: 40em;
+
+        .card-body {
+            position: initial;
+            display: flex;
+            
+            .thumbnail {
+                position: initial;
+                flex-shrink: 0;
+                margin: 0;
+            }
+
+            .broadcast-info {
+                display: flex;
+                justify-content: space-between;
+                flex-direction: column;
+                padding-left: 1em;
+
+                .head-info {
+                    height: auto;
+                    padding-left: 0;
+                }
+            }
         }
-    }
-
-    .station {
-        font-family: "Francois One", sans-serif;
-        font-size: 1.25em;
-        text-transform: uppercase;
-    }
-
-    .broadcast-title {
-        font-family: Lato;
-        font-size: 1.5em;
-        font-weight: normal;
-        margin: 0 0 0.5em 0;
-    }
-
-    .broadcast-summary {
-        font-family: "Francois One", sans-serif;
-        font-weight: 300;
-        margin: 0;
-    }
-
-    .show-title {
-        font-family: "Francois One", sans-serif;
-        color: #888;
-        justify-self: flex-end;
     }
 }
