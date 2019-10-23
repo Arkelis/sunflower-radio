@@ -13,37 +13,29 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-FLUX_URL = {
-    "France Inter": "http://icecast.radiofrance.fr/franceinter-midfi.mp3",
-    "France Culture": "http://icecast.radiofrance.fr/franceculture-midfi.mp3",
-    "France Musique": "http://icecast.radiofrance.fr/francemusique-midfi.mp3",
-    "France Info": "http://icecast.radiofrance.fr/franceinfo-midfi.mp3",
-    "RTL 2": "http://streaming.radio.rtl2.fr/rtl2-1-48-192",
-}
-
+from sunflower import settings
 
 class Radio:
     @staticmethod
     def get_current_station_name():
         """Returning string matching current time according to timetable.conf."""
         current_time = datetime.now().time()
+        timetable = settings.TIMETABLE
         try:
-            with open(os.path.dirname(__file__) + "/" + "timetable.conf", "r") as f:
-                timetable = [string.replace("\n", "").replace("\r", "") for string in f.readlines()]
-                MonkeyPatch.patch_fromisoformat()
-                for line in timetable:
-                    station = line[line.index(" ")+1:]
-                    start, end = map(time.fromisoformat, line[:line.index(" ")].split("-"))
-                    end = time(23, 59, 59) if end == time(0, 0, 0) else end
-                    if start < current_time < end:
-                        return station
-                else:
-                    raise RuntimeError("Aucune station programmée à cet horaire.")
+            MonkeyPatch.patch_fromisoformat()
+            for t in timetable:
+                station = t[2]
+                start, end = map(time.fromisoformat, t[:2])
+                end = time(23, 59, 59) if end == time(0, 0, 0) else end
+                if start < current_time < end:
+                    return station
+            else:
+                raise RuntimeError("Aucune station programmée à cet horaire.")
         except FileNotFoundError:
             raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
 
     
-    def fetch(self):
+    def get_current_broadcast_metadata(self):
         """Return metadata of current broadcasted programm for asked station.
 
         Parameters:
@@ -63,6 +55,17 @@ class Radio:
             raise RuntimeError("Station '{}' non gérée.".format(station))
         metadata.update({"station": station})
         return metadata
+    
+    def get_current_broadcast_info(self):
+        station = self.get_current_station_name()
+        if station in ("France Inter", "France Info", "France Culture", "France Musique"):
+            title, metadata = RadioFranceStation(station).format_info()
+        elif station == "RTL 2":
+            title, metadata = RTL2().format_info()
+        else:
+            raise RuntimeError("Station '{}' non gérée.".format(station))
+        metadata.update({"station": station})
+        return title, metadata
 
 
 class Station(ABC):

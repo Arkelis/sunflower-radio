@@ -1,4 +1,5 @@
 let cardBody = document.getElementById("card-body")
+let updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
 
 function prepareUpdate() {
     let end = parseInt(document.getElementById("end").innerText, 10)
@@ -8,7 +9,7 @@ function prepareUpdate() {
 
 
 function updateCardBody() {
-    fetch("http://localhost:8080/update")
+    fetch(updateUrl)
         .then((response) => response.text())
         .then((text) => {
             if (cardBody.innerHTML.valueOf() != text.valueOf()) {

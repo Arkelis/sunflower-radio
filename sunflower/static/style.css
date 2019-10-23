@@ -1,71 +1,61 @@
 body {
-  background-color: #333; }
+  position: relative;
+  font-family: "Francois One", sans-serif;
+  margin: 0; }
 
 nav {
-  width: 100%;
-  color: white;
-  position: relative;
-  z-index: 10;
-  font-family: "Francois One", sans-serif; }
+  display: flex;
+  justify-content: center; }
   nav .brand {
-    float: left;
-    margin: 1em; }
+    display: inline-block;
+    color: white;
+    margin: 1em 0 0 0;
+    padding: 0.5em;
+    text-align: center;
+    background-color: #333; }
   nav ul {
-    padding: 0;
-    margin: 1em;
-    float: right; }
+    position: absolute;
+    bottom: -3em;
+    margin-bottom: 1em;
+    padding: 0 0 1em 0;
+    width: 100%; }
     nav ul li {
-      list-style-type: none; }
+      margin: auto;
+      text-align: center;
+      list-style: none; }
       nav ul li a {
         color: inherit;
         cursor: pointer;
         text-decoration-line: none; }
 
-.wrapper {
-  z-index: 0;
-  display: flex;
-  align-content: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%; }
-
-.timeline {
-  margin: auto; }
-
 .current-broadcast-card {
-  width: 40em;
-  padding: 1em;
-  border-radius: 0.5em;
-  box-shadow: 1px 1px 1px black;
-  background-color: white; }
-  .current-broadcast-card .card-body {
-    display: flex; }
+  width: auto;
+  padding: 1em; }
   .current-broadcast-card .card-footer {
     margin-top: 1em; }
     .current-broadcast-card .card-footer audio {
       width: 100%; }
 
-.broadcast-info {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
-  padding-left: 1em; }
+.thumbnail {
+  margin: auto;
+  width: 10em;
+  height: 10em;
+  margin-bottom: 1em; }
+  .thumbnail img {
+    max-height: 100%;
+    max-width: 100%; }
 
-.thumbnail img {
-  width: 10em; }
-
-.station {
-  font-family: "Francois One", sans-serif;
-  font-size: 1.25em;
-  text-transform: uppercase; }
-
-.broadcast-title {
-  font-family: Lato;
-  font-size: 1.5em;
-  font-weight: normal;
-  margin: 0 0 0.5em 0; }
+.head-info {
+  text-align: center;
+  margin-bottom: 1em; }
+  .head-info .station {
+    font-size: 1.25em;
+    text-transform: uppercase; }
+  .head-info .broadcast-title {
+    font-family: Lato, "sans-serif";
+    font-size: 1.5em;
+    font-weight: normal;
+    margin: auto; }
 
 .broadcast-summary {
   font-family: "Francois One", sans-serif;
@@ -76,3 +66,66 @@ nav {
   font-family: "Francois One", sans-serif;
   color: #888;
   justify-self: flex-end; }
+
+@media screen and (min-width: 30em) {
+  body {
+    background-color: #333;
+    position: initial; }
+  nav {
+    justify-content: space-between;
+    color: white;
+    z-index: 1; }
+    nav .brand {
+      display: block;
+      padding: 0;
+      margin: 1.5em; }
+    nav ul {
+      position: initial;
+      padding: 0;
+      width: auto;
+      margin: 1.5em; }
+  .wrapper {
+    z-index: 0;
+    display: flex;
+    align-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%; }
+  .timeline {
+    margin: auto; }
+  .current-broadcast-card {
+    width: 25em;
+    box-shadow: 0px 0px 10px 10px #222;
+    border-radius: 0.5em;
+    background-color: white; }
+    .current-broadcast-card .card-body {
+      position: relative; }
+      .current-broadcast-card .card-body .thumbnail {
+        position: absolute;
+        left: 0;
+        margin: 0; }
+      .current-broadcast-card .card-body .broadcast-info .head-info {
+        text-align: initial;
+        height: 10em;
+        padding-left: 11em; } }
+
+@media screen and (min-width: 45em) {
+  .current-broadcast-card {
+    width: 40em; }
+    .current-broadcast-card .card-body {
+      position: initial;
+      display: flex; }
+      .current-broadcast-card .card-body .thumbnail {
+        position: initial;
+        flex-shrink: 0;
+        margin: 0; }
+      .current-broadcast-card .card-body .broadcast-info {
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        padding-left: 1em; }
+        .current-broadcast-card .card-body .broadcast-info .head-info {
+          height: auto;
+          padding-left: 0; } }

@@ -12,19 +12,22 @@ Il faut [poetry](https://github.com/sdispater/poetry).
 
 ## Configuration
 
-Vous devez créer un fichier d'horaires pour les radios `timetable.conf` (au même niveau que `radio.py`). Ce fichier
+Vous devez créer une liste de plages horaires dans `settings.py` (au même niveau que `radio.py`). Ce fichier
 permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
 
-```
-00:00-06:00 France Inter
-06:00-07:00 France Info
-07:00-09:00 France Inter
-09:00-13:00 RTL 2
-13:00-14:00 France Inter
-13:00-19:00 RTL 2
-19:00-20:00 France Inter
-20:00-21:00 France Info
-21:00-00:00 RTL 2
+```python
+TIMETABLE = [
+    # (start, end, station_name),
+    ("00:00", "06:00", "France Inter"),
+    ("06:00", "07:00", "France Info"),
+    ("07:00", "09:00", "France Inter"),
+    ("09:00", "13:00", "RTL 2"),
+    ("13:00", "14:00", "France Inter"),
+    ("14:00", "19:00", "RTL 2"),
+    ("19:00", "20:00", "France Inter"),
+    ("20:00", "21:00", "France Info"),
+    ("21:00", "00:00", "RTL 2"),
+]
 ```
 
 **Remarque :** Il faut respecter le format `<Debut>-<Fin> Station` avec le format `HH:MM:SS` (secondes facultatives) pour `<Debut>` et `<Fin>`.
@@ -51,5 +54,5 @@ $ poetry run flask run
 - [x] Mise à jour des champs en temps réel
 - [ ] Jingles horaires et de transition
 - [ ] Mettre une musique à la place de la pub pour RTL 2
-- [ ] Rendre la page du lecteur resonsive
+- [x] Rendre la page du lecteur responsive
 - [ ] Faire de la page du lecteur une PWA
