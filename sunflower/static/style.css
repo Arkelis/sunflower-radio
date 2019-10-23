@@ -67,7 +67,7 @@ nav {
   color: #888;
   justify-self: flex-end; }
 
-@media screen and (min-width: 30em) {
+@media screen and (min-height: 35em) and (min-width: 30em) {
   body {
     background-color: #333;
     position: initial; }
@@ -111,7 +111,7 @@ nav {
         height: 10em;
         padding-left: 11em; } }
 
-@media screen and (min-width: 45em) {
+@media screen and (min-height: 35em) and (min-width: 45em) {
   .current-broadcast-card {
     width: 40em; }
     .current-broadcast-card .card-body {
