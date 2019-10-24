@@ -95,6 +95,61 @@ nav {
     justify-self: flex-end;
 }
 
+@media screen and (min-width: 30em) {
+
+    .current-broadcast-card {
+        width: 25em;
+        margin: auto;
+    }
+
+    .card-body {
+    
+        position: relative;
+        
+        .thumbnail {
+            position: absolute;
+            left: 0;
+            margin: 0;
+        }
+
+        .broadcast-info .head-info {
+            text-align: initial;
+            height: 10em;
+            padding-left: 11em;
+        }
+    }
+
+}
+
+@media screen and (min-width: 45em) {
+    .current-broadcast-card {
+        width: 40em;
+    }
+
+    .card-body {
+        position: initial;
+        display: flex;
+        
+        .thumbnail {
+            position: initial;
+            flex-shrink: 0;
+            margin: 0;
+        }
+
+        .broadcast-info {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            padding-left: 1em;
+
+            .head-info {
+                height: auto;
+                padding-left: 0;
+            }
+        }
+    }
+}
+
 @media screen and (min-height: 35em) {
     
     @media screen and (min-width: 30em) {
@@ -104,9 +159,10 @@ nav {
         }
     
         nav {
+            position: relative;
             justify-content: space-between;
             color: white;
-            z-index: 1;
+            z-index: 10;
     
             .brand {
                 display: block;
@@ -123,7 +179,7 @@ nav {
         }
     
         .wrapper {
-            z-index: 0;
+            z-index: 1;
             display: flex;
             align-content: center;
             position: absolute;
@@ -138,60 +194,9 @@ nav {
         }
     
         .current-broadcast-card {
-            width: 25em;
             box-shadow: 0px 0px 10px 10px #222;
             border-radius: 0.5em;
             background-color: white;
-    
-            
-            .card-body {
-    
-                position: relative;
-                
-                .thumbnail {
-                    position: absolute;
-                    left: 0;
-                    margin: 0;
-                }
-    
-                .broadcast-info .head-info {
-                    text-align: initial;
-                    height: 10em;
-                    padding-left: 11em;
-                }
-            }
-        }
-    
-    }
-    
-    
-    @media screen and (min-width: 45em) {
-    
-        .current-broadcast-card {
-            width: 40em;
-    
-            .card-body {
-                position: initial;
-                display: flex;
-                
-                .thumbnail {
-                    position: initial;
-                    flex-shrink: 0;
-                    margin: 0;
-                }
-    
-                .broadcast-info {
-                    display: flex;
-                    justify-content: space-between;
-                    flex-direction: column;
-                    padding-left: 1em;
-    
-                    .head-info {
-                        height: auto;
-                        padding-left: 0;
-                    }
-                }
-            }
         }
     }
 }
