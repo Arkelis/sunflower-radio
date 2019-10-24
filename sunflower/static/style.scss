@@ -159,9 +159,10 @@ nav {
         }
     
         nav {
+            position: relative;
             justify-content: space-between;
             color: white;
-            z-index: 1;
+            z-index: 10;
     
             .brand {
                 display: block;
@@ -178,7 +179,7 @@ nav {
         }
     
         .wrapper {
-            z-index: 0;
+            z-index: 1;
             display: flex;
             align-content: center;
             position: absolute;
