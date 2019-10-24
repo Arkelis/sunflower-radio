@@ -1,28 +1,25 @@
-.details {
+.card-body * {
     animation-name: fade-in-up;
-    animation-duration: 0.5s;
-    animation-delay: 0.6s;
     animation-fill-mode: both;
+}
+
+.details {
+    animation-duration: 0.2s;
+    animation-delay: 0.4s;
 }
 
 .thumbnail {
-    animation-name: fade-in-up;
     animation-duration: 0.7s;
-    animation-fill-mode: both;
 }
 
 .station {
-    animation-name: fade-in-up;
     animation-delay: 0.2s;
     animation-duration: 0.7s;
-    animation-fill-mode: both;
 }
 
 .broadcast-title {
-    animation-name: fade-in-up;
     animation-delay: 0.4s;
     animation-duration: 0.7s;
-    animation-fill-mode: both;
 }
 
 @media screen and (min-width: 30em) {

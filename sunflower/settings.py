@@ -1,6 +1,6 @@
 TIMETABLE = [
     # (start, end, station_name),
-    ("00:00", "06:00", "France Inter"),
+    ("00:00", "06:00", "RTL 2"),
     ("06:00", "07:00", "France Info"),
     ("07:00", "09:00", "France Inter"),
     ("09:00", "13:00", "RTL 2"),
