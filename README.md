@@ -1,5 +1,7 @@
 # Radio Tournesol
 
+**This branch is meant to be used with Python 3.5. It exists only for backward compatibility.**
+
 Affiche les métadonnées de radio : Un serveur (flask) s'occupe d'aller chercher les métadonnées et expose une page de lecteur ainsi que des métadonnées. Ce serveur ne diffuse pas de radio. Il peut être utilisé en combinaison avec [liquidsoap](https://www.liquidsoap.info) pour l'encodage de la radio et [icecast2](http://icecast.org/) pour sa diffusion par exemple.
 
 ## Installation
