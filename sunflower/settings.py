@@ -7,8 +7,8 @@ TIMETABLE = [
     ("13:00", "14:00", "France Inter"),
     ("14:00", "19:00", "RTL 2"),
     ("19:00", "20:00", "France Inter"),
-    ("20:00", "21:00", "France Inter"),
-    ("21:00", "00:00", "France Inter"),
+    ("20:00", "21:00", "France Info"),
+    ("21:00", "00:00", "RTL 2"),
 ]
 
 FLUX_URL = "https://icecast.pycolore.fr/tournesol"
