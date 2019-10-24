@@ -1,0 +1,83 @@
+.details {
+    animation-name: fade-in-up;
+    animation-duration: 0.5s;
+    animation-delay: 0.6s;
+    animation-fill-mode: both;
+}
+
+.thumbnail {
+    animation-name: fade-in-up;
+    animation-duration: 0.7s;
+    animation-fill-mode: both;
+}
+
+.station {
+    animation-name: fade-in-up;
+    animation-delay: 0.2s;
+    animation-duration: 0.7s;
+    animation-fill-mode: both;
+}
+
+.broadcast-title {
+    animation-name: fade-in-up;
+    animation-delay: 0.4s;
+    animation-duration: 0.7s;
+    animation-fill-mode: both;
+}
+
+@media screen and (min-width: 30em) {
+    .thumbnail {
+        animation-name: fade-in-right;
+    }
+    .station {
+        animation-name: fade-in-right;
+    }
+    .broadcast-title {
+        animation-name: fade-in-right;
+    }
+}
+
+@media screen and (min-width: 45em) {
+    .details {
+        animation-name: fade-in-right;
+    }
+}
+
+.fade-out {
+    animation-name: fade-out;
+    animation-delay: 0!important;
+    animation-duration: 0.2s!important;
+    animation-fill-mode: both!important;
+}
+
+@keyframes fade-in {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
+
+@keyframes fade-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
+
+@keyframes fade-out {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}

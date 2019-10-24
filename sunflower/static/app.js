@@ -13,7 +13,11 @@ function updateCardBody() {
         .then((response) => response.text())
         .then((text) => {
             if (cardBody.innerHTML.valueOf() != text.valueOf()) {
-                cardBody.innerHTML = text
+                document.querySelector(".card-body").classList.add("fade-out")
+                setTimeout(() => {
+                    cardBody.innerHTML = text
+                    document.querySelector(".card-body").classList.remove("fade-out")
+                }, 200)
             }
         })
     prepareUpdate()
