@@ -42,4 +42,5 @@ function updateCardBody() {
     prepareUpdate()
 }
 
+document.getElementsByTagName("audio").play()
 prepareUpdate()
