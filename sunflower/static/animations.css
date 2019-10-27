@@ -42,7 +42,7 @@
 
 .fade-out {
     animation-name: fade-out;
-    animation-delay: 0!important;
+    animation-delay: 0s!important;
     animation-duration: 0.2s!important;
     animation-fill-mode: both!important;
 }

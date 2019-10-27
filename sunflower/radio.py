@@ -218,8 +218,9 @@ class RadioFranceStation(Station):
     def get_metadata(self):
         data = self._fetch_metadata()
         current_show = data["data"]["grid"][0]
+        next_show = data["data"]["grid"][1]
         diffusion = current_show.get("diffusion")
-        end = int(current_show["end"]) * 1000
+        end = int(next_show["start"]) * 1000 # client needs timestamp in ms
         if diffusion is None:
             return {
                 "type": "Emission",

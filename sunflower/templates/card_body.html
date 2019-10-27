@@ -1,20 +1,14 @@
-{% if metadata.thumbnail_src %}
-    <div class="thumbnail">
-        <img src="{{ metadata.thumbnail_src }}" alt="Current broadcast thumbail.">
-    </div>
-{% endif %}
+<div class="thumbnail">
+    <img src="{{ metadata.thumbnail_src }}" alt="Current broadcast thumbail.">
+</div>
 <div class="broadcast-info">
     <div class="head-info">
         <div class="station">{{ metadata.station }}</div>
         <h2 class="broadcast-title">{{ card_title|safe }}</h2>
     </div>
     <div class="details">
-        {% if metadata.show_title %}
             <div class="show-title">{{ metadata.show_title }}</div>
-        {% endif %}
-        {% if metadata.summary %}
             <p class="broadcast-summary">{{ metadata.summary }}</p>
-        {% endif %}
     </div>
 </div>
 <div hidden id="end">{{ metadata.end }}</div>

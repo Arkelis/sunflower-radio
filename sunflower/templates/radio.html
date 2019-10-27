@@ -23,7 +23,7 @@
             <div class="current-broadcast-card">
                 <div class="card-body" id="card-body">{% include "card_body.html" %}</div>
                 <div class="card-footer">
-                    <audio autoplay controls src="{{ flux_url }}">
+                    <audio controls autoplay preload="none" src="{{ flux_url }}">
                         Your browser does not support the <code>audio</code> element.
                     </audio>
                 </div>
