@@ -55,4 +55,6 @@ $ poetry run flask run
 - [ ] Jingles horaires et de transition
 - [ ] Mettre une musique à la place de la pub pour RTL 2
 - [x] Rendre la page du lecteur responsive
+- [ ] Thème sombre
 - [ ] Faire de la page du lecteur une PWA
+- [ ] Faire du projet une lib
