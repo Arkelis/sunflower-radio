@@ -16,14 +16,16 @@ def _prepare_broadcast_info():
 
 @app.route("/")
 def index():
-    title, metadata, flux_url = _prepare_broadcast_info()
-    update_url = request.url_root + "update"
-    return render_template("radio.html", card_title=title, metadata=metadata, flux_url=flux_url, update_url=update_url)
+    context = {
+        "card_info": radio.get_current_broadcast_info(),
+        "flux_url": settings.FLUX_URL,
+        "update_url": request.url_root + "update",
+    }
+    return render_template("radio.html", **context)
 
 @app.route("/update")
 def update_broadcast_info():
-    title, metadata, flux_url = _prepare_broadcast_info()
-    return render_template("card_body.html", card_title=title, metadata=metadata, flux_url=flux_url)
+    return jsonify(radio.get_current_broadcast_info())
 
 @app.route("/on-air")
 def current_show_data():

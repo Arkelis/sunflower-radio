@@ -11,19 +11,34 @@
 </head>
 <body>
     <nav>
-        <div class="brand">
+        <div id="brand">
             Radio Tournesol
         </div>
         <ul>
             <li><a href="{{ url_for('current_show_data') }}">Programme en cours au format JSON</a></li>
         </ul>
     </nav>
-    <div class="wrapper">
-        <div class="timeline">
-            <div class="current-broadcast-card">
-                <div class="card-body" id="card-body">{% include "card_body.html" %}</div>
-                <div class="card-footer">
-                    <audio controls autoplay preload="none" src="{{ flux_url }}">
+    <div id="wrapper">
+        <div id="timeline">
+            <div id="current-broadcast-card">
+                <div id="card-body">
+                    <div id="current-thumbnail-container">
+                        <img id="current-thumbnail" src="{{ card_info.current_thumbnail }}" alt="Current broadcast thumbail.">
+                    </div>
+                    <div id="current-broadcast-info">
+                        <div id="head-info">
+                            <div id="current-station">{{ card_info.current_station }}</div>
+                            <h2 id="current-broadcast-title">{{ card_info.current_broadcast_title|safe }}</h2>
+                        </div>
+                        <div id="details">
+                                <div id="current-show-title">{{ card_info.current_show_title }}</div>
+                                <p id="current-broadcast-summary">{{ card_info.current_broadcast_summary }}</p>
+                        </div>
+                    </div>
+                    <div hidden id="current-broadcast-end">{{ card_info.current_broadcast_end }}</div>
+                </div>
+                <div id="card-footer">
+                    <audio controls preload="none" src="{{ flux_url }}">
                         Your browser does not support the <code>audio</code> element.
                     </audio>
                 </div>

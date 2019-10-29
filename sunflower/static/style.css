@@ -6,7 +6,7 @@ body {
 nav {
   display: flex;
   justify-content: center; }
-  nav .brand {
+  nav #brand {
     display: inline-block;
     color: white;
     margin: 1em 0 0 0;
@@ -28,76 +28,76 @@ nav {
         cursor: pointer;
         text-decoration-line: none; }
 
-.current-broadcast-card {
+#current-broadcast-card {
   width: auto;
   padding: 1em; }
-  .current-broadcast-card .card-footer {
+  #current-broadcast-card #card-footer {
     margin-top: 1em; }
-    .current-broadcast-card .card-footer audio {
+    #current-broadcast-card #card-footer audio {
       width: 100%; }
 
-.thumbnail {
+#current-thumbnail-container {
   margin: auto;
   width: 10em;
   height: 10em;
   margin-bottom: 1em; }
-  .thumbnail img {
+  #current-thumbnail-container img {
     max-height: 100%;
     max-width: 100%; }
 
-.head-info {
+#head-info {
   text-align: center;
   margin-bottom: 1em; }
-  .head-info .station {
+  #head-info #current-station {
     font-size: 1.25em;
     text-transform: uppercase; }
-  .head-info .broadcast-title {
+  #head-info #current-broadcast-title {
     font-family: Lato, "sans-serif";
     font-size: 1.5em;
     font-weight: normal;
     margin: auto; }
 
-.broadcast-summary {
+#current-broadcast-summary {
   font-family: "Francois One", sans-serif;
   font-weight: 300;
   margin: 0; }
 
-.show-title {
+#current-show-title {
   font-family: "Francois One", sans-serif;
   color: #888;
   justify-self: flex-end; }
 
 @media screen and (min-width: 30em) {
-  .current-broadcast-card {
+  #current-broadcast-card {
     width: 25em;
     margin: auto; }
-  .card-body {
+  #card-body {
     position: relative; }
-    .card-body .thumbnail {
+    #card-body #current-thumbnail-container {
       position: absolute;
       left: 0;
       margin: 0; }
-    .card-body .broadcast-info .head-info {
+    #card-body #current-broadcast-info #head-info {
       text-align: initial;
       height: 10em;
       padding-left: 11em; } }
 
 @media screen and (min-width: 45em) {
-  .current-broadcast-card {
+  #current-broadcast-card {
     width: 40em; }
-  .card-body {
+  #card-body {
     position: initial;
     display: flex; }
-    .card-body .thumbnail {
+    #card-body #current-thumbnail-container {
       position: initial;
       flex-shrink: 0;
       margin: 0; }
-    .card-body .broadcast-info {
+    #card-body #current-broadcast-info {
       display: flex;
       justify-content: space-between;
       flex-direction: column;
       padding-left: 1em; }
-      .card-body .broadcast-info .head-info {
+      #card-body #current-broadcast-info #head-info {
         height: auto;
         padding-left: 0; } }
 
@@ -110,7 +110,7 @@ nav {
     justify-content: space-between;
     color: white;
     z-index: 10; }
-    nav .brand {
+    nav #brand {
       display: block;
       padding: 0;
       margin: 1.5em; }
@@ -119,7 +119,7 @@ nav {
       padding: 0;
       width: auto;
       margin: 1.5em; }
-  .wrapper {
+  #wrapper {
     z-index: 1;
     display: flex;
     align-content: center;
@@ -128,9 +128,9 @@ nav {
     left: 0;
     height: 100%;
     width: 100%; }
-  .timeline {
+  #timeline {
     margin: auto; }
-  .current-broadcast-card {
+  #current-broadcast-card {
     box-shadow: 0px 0px 10px 10px #222;
     border-radius: 0.5em;
     background-color: white; } }

@@ -9,7 +9,7 @@ nav {
     display: flex;
     justify-content: center;
 
-    .brand {
+    #brand {
         display: inline-block;
         color: white;
         margin: 1em 0 0 0;
@@ -40,11 +40,11 @@ nav {
     }
 }
 
-.current-broadcast-card {
+#current-broadcast-card {
     width: auto;
     padding: 1em;
 
-    .card-footer {
+    #card-footer {
         margin-top: 1em;
 
         audio {
@@ -53,7 +53,7 @@ nav {
     }
 }
 
-.thumbnail {
+#current-thumbnail-container {
     margin: auto;
     width: 10em;
     height: 10em;
@@ -65,16 +65,16 @@ nav {
     }
 }
 
-.head-info {
+#head-info {
     text-align: center;
     margin-bottom: 1em;
 
-    .station {
+    #current-station {
         font-size: 1.25em;
         text-transform: uppercase;
     }
     
-    .broadcast-title {
+    #current-broadcast-title {
         font-family: Lato, "sans-serif";
         font-size: 1.5em;
         font-weight: normal;
@@ -83,13 +83,13 @@ nav {
 }
 
 
-.broadcast-summary {
+#current-broadcast-summary {
     font-family: "Francois One", sans-serif;
     font-weight: 300;
     margin: 0;
 }
 
-.show-title {
+#current-show-title {
     font-family: "Francois One", sans-serif;
     color: #888;
     justify-self: flex-end;
@@ -97,22 +97,22 @@ nav {
 
 @media screen and (min-width: 30em) {
 
-    .current-broadcast-card {
+    #current-broadcast-card {
         width: 25em;
         margin: auto;
     }
 
-    .card-body {
+    #card-body {
     
         position: relative;
         
-        .thumbnail {
+        #current-thumbnail-container {
             position: absolute;
             left: 0;
             margin: 0;
         }
 
-        .broadcast-info .head-info {
+        #current-broadcast-info #head-info {
             text-align: initial;
             height: 10em;
             padding-left: 11em;
@@ -122,27 +122,27 @@ nav {
 }
 
 @media screen and (min-width: 45em) {
-    .current-broadcast-card {
+    #current-broadcast-card {
         width: 40em;
     }
 
-    .card-body {
+    #card-body {
         position: initial;
         display: flex;
         
-        .thumbnail {
+        #current-thumbnail-container {
             position: initial;
             flex-shrink: 0;
             margin: 0;
         }
 
-        .broadcast-info {
+        #current-broadcast-info {
             display: flex;
             justify-content: space-between;
             flex-direction: column;
             padding-left: 1em;
 
-            .head-info {
+            #head-info {
                 height: auto;
                 padding-left: 0;
             }
@@ -164,7 +164,7 @@ nav {
             color: white;
             z-index: 10;
     
-            .brand {
+            #brand {
                 display: block;
                 padding: 0;
                 margin: 1.5em;
@@ -178,7 +178,7 @@ nav {
             }
         }
     
-        .wrapper {
+        #wrapper {
             z-index: 1;
             display: flex;
             align-content: center;
@@ -189,11 +189,11 @@ nav {
             width: 100%;
         }
     
-        .timeline {
+        #timeline {
             margin: auto;
         }
     
-        .current-broadcast-card {
+        #current-broadcast-card {
             box-shadow: 0px 0px 10px 10px #222;
             border-radius: 0.5em;
             background-color: white;

@@ -1,47 +1,46 @@
-.card-body * {
+#card-body * {
     animation-name: fade-in-up;
     animation-fill-mode: both;
 }
 
-.details {
+#details {
     animation-duration: 0.7s;
-    animation-delay: 0.6s;
+    animation-delay: 0.8s;
 }
 
-.thumbnail {
-    animation-duration: 0.7s;
-}
-
-.station {
+#current-thumbnail-container {
+    animation-name: fade-in;
     animation-delay: 0.2s;
     animation-duration: 0.7s;
 }
 
-.broadcast-title {
+#current-station {
     animation-delay: 0.4s;
     animation-duration: 0.7s;
 }
 
+#current-broadcast-title {
+    animation-delay: 0.6s;
+    animation-duration: 0.7s;
+}
+
 @media screen and (min-width: 30em) {
-    .thumbnail {
+    #current-station {
         animation-name: fade-in-right;
     }
-    .station {
-        animation-name: fade-in-right;
-    }
-    .broadcast-title {
+    #current-broadcast-title {
         animation-name: fade-in-right;
     }
 }
 
 @media screen and (min-width: 45em) {
-    .details {
+    #details {
         animation-name: fade-in-right;
     }
 }
 
 .fade-out {
-    animation-name: fade-out;
+    animation-name: fade-out!important;
     animation-delay: 0s!important;
     animation-duration: 0.2s!important;
     animation-fill-mode: both!important;
