@@ -1,46 +1,67 @@
 let updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
 
 function prepareUpdate() {
-    let end = parseInt(document.getElementById("end").innerText, 10)
+    let end = parseInt(document.getElementById("current-broadcast-end").innerText, 10)
     let timeout = end - Date.now() > 0 ? end - Date.now() : 5000
     setTimeout(updateCardBody, timeout)
 }
 
 
-function updateCardBody() {
+function updateCardBody(schedulePrepare = true) {
     fetch(updateUrl)
-        .then((response) => response.text())
-        .then((text) => {
-            // get current card body
-            let cardBody = document.getElementById("card-body")
+        .then((response) => response.json())
+        .then((data) => {
 
-            // build dom element with fetched data
-            let respNode = document.createElement("div")
-            respNode.id = "card-body"
-            respNode.classList.add("card-body")
-            respNode.innerHTML = text
 
-            let divsToCheck = [".thumbnail", ".station", ".broadcast-title", ".details", "#end"]
+            let textsToCheck = [
+                "current-station",
+                "current-broadcast-title",
+                "current-show-title",
+                "current-broadcast-summary",
+                "current-broadcast-end"
+            ]
+            let thumbnailNode = document.getElementById("current-thumbnail")
+            let thumbnailSrc = thumbnailNode.attributes.src.value
             let divsToUpdate = []
-            
-            divsToCheck.forEach(element => {
-                let currentEl = cardBody.querySelector(element)
-                let respEl = respNode.querySelector(element)
-                if (!currentEl.isEqualNode(respEl)) {
-                    divsToUpdate.push(element)
+
+            // check text info
+            textsToCheck.forEach(element => {
+                let fetchedText = data[element.replace(/-/g, "_")]
+                let nodeToUpdate = document.getElementById(element)
+                let currentText = nodeToUpdate.innerText
+                if (currentText != fetchedText){
+                    divsToUpdate.push([nodeToUpdate, fetchedText])
                 }
             })
 
-            divsToUpdate.forEach(element => {document.querySelector(element).classList.add("fade-out")})
+            // check thumbnail src
+            let thumbnailUpdated
+            let fetchedThumbnailSrc = data.current_thumbnail
+            if (thumbnailSrc != fetchedThumbnailSrc) {
+                thumbnailNode.parentElement.classList.add("fade-out")
+                thumbnailUpdated = true
+            } else {
+                thumbnailUpdated = false
+            }
+
+
+            divsToUpdate.forEach(element => {element[0].classList.add("fade-out")})
             setTimeout(() => {
+                // update info
                 divsToUpdate.forEach(element => {
-                    cardBody.querySelector(element).replaceWith(respNode.querySelector(element))
-                    // cardBody.querySelector(element).classList.remove("fade-out")
+                    element[0].innerText = element[1]
+                    element[0].classList.remove("fade-out")
                 })
+
+                //update thumbnail if needed
+                if (thumbnailUpdated) {
+                    thumbnailNode.attributes.src = fetchedThumbnailSrc
+                    thumbnailNode.parentElement.classList.remove("fade-out")
+                }
             }, 400)
         })
-    prepareUpdate()
+    if (schedulePrepare) prepareUpdate()
 }
 
-document.querySelector("audio").play()
+// document.querySelector("audio").play()
 prepareUpdate()
