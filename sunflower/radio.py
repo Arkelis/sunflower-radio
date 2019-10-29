@@ -55,6 +55,7 @@ class Radio:
         
         This is for data display in player client.
         """
+        print(self.stations)
         try:
             station = self.stations.get(self.current_station_name)()
         except TypeError as exception:
@@ -63,15 +64,24 @@ class Radio:
         return card_info
 
 
-class Station:
-    abstract = False
-    station_name: str
-    station_thumbnail: str
-
-    def __init_subclass__(cls):
+class StationMeta(type):
+    def __new__(mcls, name, bases, attrs):
+        cls = super().__new__(mcls, name, bases, attrs)
         if hasattr(cls, "station_name"):
             Radio.stations[cls.station_name] = cls
-        return super().__init_subclass__()
+        return cls
+
+
+class Station(metaclass=StationMeta):
+    # station_name: str # needs to be commented for python3.5
+    # station_thumbnail: str # needs to be commented for python3.5
+
+    # THE FOLLOWING METHOD IS COMMENTED (BECAUSE UNUSED) IN PYTHON 3.5
+    # ITS BEHAVIOR IS REPLACED WITH StationMeta METACLASS (see above).
+    # def __init_subclass__(cls):
+    #     if hasattr(cls, "station_name"):
+    #         Radio.stations[cls.station_name] = cls
+    #     return super().__init_subclass__()
 
     def get_metadata(self):
         """Return mapping containing metadata about current broadcast.
@@ -175,9 +185,9 @@ class RTL2(Station):
 
 
 class RadioFranceStation(Station):
-    station_name: str
-    station_thumbnail: str
-    _station_api_name: str
+    # station_name: str # commented in python3.5
+    # station_thumbnail: str # commented in python3.5
+    # _station_api_name: str # commented in python3.5
 
     @property
     def token(self):

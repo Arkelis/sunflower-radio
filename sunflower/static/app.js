@@ -55,7 +55,7 @@ function updateCardBody(schedulePrepare = true) {
 
                 //update thumbnail if needed
                 if (thumbnailUpdated) {
-                    thumbnailNode.attributes.src = fetchedThumbnailSrc
+                    thumbnailNode.attributes.src.value = fetchedThumbnailSrc
                     thumbnailNode.parentElement.classList.remove("fade-out")
                 }
             }, 400)
