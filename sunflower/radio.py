@@ -37,17 +37,24 @@ class Radio:
         except FileNotFoundError:
             raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
     
+    @property
+    def current_station(self):
+        try:
+            return self.stations.get(self.current_station_name)()
+        except TypeError as exception:
+            raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
+
+    
     def get_current_broadcast_metadata(self):
         """Return metadata of current broadcasted programm for current station.
         
         This is for pure json data exposure.
         """
         try:
-            station = self.stations.get(self.current_station_name)()
-        except TypeError as exception:
-            raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
-        metadata = station.get_metadata()
-        metadata.update({"station": station.station_name})
+            metadata = self.current_station.get_metadata()
+        except requests.exceptions.Timeout:
+            metadata = {"error": "Metadata can't be fetched."}
+        metadata.update({"station": self.current_station.station_name})
         return metadata
     
     def get_current_broadcast_info(self):
@@ -57,10 +64,16 @@ class Radio:
         """
         print(self.stations)
         try:
-            station = self.stations.get(self.current_station_name)()
-        except TypeError as exception:
-            raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
-        card_info = station.format_info()
+            card_info = self.current_station.format_info()
+        except requests.exceptions.Timeout:
+            card_info = {
+                "current_thumbnail": self.current_station.station_thumbnail,
+                "current_station": self.current_station.station_name,
+                "current_broadcast_title": "Métadonnées indisponibles",
+                "current_show_title": "Métadonnées indisponibles",
+                "current_broadcast_summary": "Les métadonnées n'ont pas pu être récupérées : le serveur de la station demandée a mis trop de temps à répondre.",
+                "current_broadcast_end": False,
+            }
         return card_info
 
 
@@ -133,15 +146,15 @@ class RTL2(Station):
 
     def _fetch_metadata(self, song=False):
         if song:
-            rep = requests.get(self._songs_data_url)
+            rep = requests.get(self._songs_data_url, timeout=1)
             return json.loads(rep.content.decode())[0]
-        rep = requests.get(self._main_data_url)
+        rep = requests.get(self._main_data_url, timeout=1)
         soup = BeautifulSoup(rep.content.decode(), "html.parser")
         try:
             diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
         except IndexError:
             previous_url = "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[6].attrs["href"]
-            rep = requests.get(previous_url)
+            rep = requests.get(previous_url, timeout=1)
             soup = BeautifulSoup(rep.content.decode(), "html.parser")
             try:
                 diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
@@ -277,7 +290,8 @@ class RadioFranceStation(Station):
         )
         rep = requests.post(
             url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
-            json={"query": query}
+            json={"query": query},
+            timeout=1,
         )
         data = json.loads(rep.content.decode())
         return data
