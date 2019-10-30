@@ -1,3 +1,4 @@
+/* ------------- D E F A U L T   L A Y O U T   ( M O B I L E ) ------------- */
 body {
   position: relative;
   font-family: "Francois One", sans-serif;
@@ -20,7 +21,6 @@ nav {
     padding: 0 0 1em 0;
     width: 100%; }
     nav ul li {
-      margin: auto;
       text-align: center;
       list-style: none; }
       nav ul li a {
@@ -29,7 +29,6 @@ nav {
         text-decoration-line: none; }
 
 #current-broadcast-card {
-  width: auto;
   padding: 1em; }
   #current-broadcast-card #card-footer {
     margin-top: 1em; }
@@ -59,7 +58,6 @@ nav {
 
 #current-broadcast-summary {
   font-family: "Francois One", sans-serif;
-  font-weight: 300;
   margin: 0; }
 
 #current-show-title {
@@ -67,6 +65,7 @@ nav {
   color: #888;
   justify-self: flex-end; }
 
+/* -------------  M E D I U M   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 @media screen and (min-width: 30em) {
   #current-broadcast-card {
     width: 25em;
@@ -82,6 +81,7 @@ nav {
       height: 10em;
       padding-left: 11em; } }
 
+/* -------------  B I G   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 @media screen and (min-width: 45em) {
   #current-broadcast-card {
     width: 40em; }
@@ -101,6 +101,7 @@ nav {
         height: auto;
         padding-left: 0; } }
 
+/* -------------  B I G   H E I G H T ------------- */
 @media screen and (min-height: 35em) and (min-width: 30em) {
   body {
     background-color: #333;

@@ -1,3 +1,5 @@
+/* ------------- D E F A U L T   L A Y O U T   ( M O B I L E ) ------------- */
+
 body {
     position: relative;
     font-family: "Francois One", sans-serif;
@@ -26,7 +28,6 @@ nav {
         width: 100%;
         
         li {
-            margin: auto;
             text-align: center;
             list-style: none;
 
@@ -41,7 +42,6 @@ nav {
 }
 
 #current-broadcast-card {
-    width: auto;
     padding: 1em;
 
     #card-footer {
@@ -85,7 +85,6 @@ nav {
 
 #current-broadcast-summary {
     font-family: "Francois One", sans-serif;
-    font-weight: 300;
     margin: 0;
 }
 
@@ -94,6 +93,8 @@ nav {
     color: #888;
     justify-self: flex-end;
 }
+
+/* -------------  M E D I U M   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 
 @media screen and (min-width: 30em) {
 
@@ -120,6 +121,8 @@ nav {
     }
 
 }
+
+/* -------------  B I G   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 
 @media screen and (min-width: 45em) {
     #current-broadcast-card {
@@ -149,6 +152,8 @@ nav {
         }
     }
 }
+
+/* -------------  B I G   H E I G H T ------------- */
 
 @media screen and (min-height: 35em) {
     

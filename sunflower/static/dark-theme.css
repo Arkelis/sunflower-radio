@@ -1,0 +1,18 @@
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #333;
+    }
+
+    #details, #head-info {
+        color: white;
+    }
+
+    nav {
+        color: white;
+    }
+
+    #current-broadcast-card {
+        box-shadow: none;
+        background-color: inherit;
+    }
+}
