@@ -278,7 +278,7 @@ class RadioFranceStation(Station):
         rep = requests.post(
             url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
             json={"query": query},
-            timeout=1,
+            timeout=4,
         )
         data = json.loads(rep.content.decode())
         return data
@@ -287,22 +287,22 @@ class RadioFranceStation(Station):
 class FranceInter(RadioFranceStation):
     station_name = "France Inter"
     _station_api_name = "FRANCEINTER"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/France_inter_2005_logo.svg/1024px-France_inter_2005_logo.svg.png"
+    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-inter-numerique.svg"
 
 
 class FranceInfo(RadioFranceStation):
     station_name = "France Info"
     _station_api_name = "FRANCEINFO"
-    station_thumbnail = "https://lh3.googleusercontent.com/VKfyGmPTaHyxOAf1065M_CftsEiGIOkZOiGpXUlP1MTSBUA4j5O5n9GRLJ3HvQsXQdY"
+    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
 
 
 class FranceMusique(RadioFranceStation):
     station_name = "France Musique"
     _station_api_name = "FRANCEMUSIQUE"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/2/22/France_Musique_-_2008.svg/1024px-France_Musique_-_2008.svg.png"
+    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-musique-numerique.svg"
 
 
 class FranceCulture(RadioFranceStation):
     station_name = "France Culture"
     _station_api_name = "FRANCECULTURE"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/c/c9/France_Culture_-_2008.svg/1024px-France_Culture_-_2008.svg.png"
+    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"

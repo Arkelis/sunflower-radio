@@ -28,7 +28,7 @@ function updateCardBody(schedulePrepare = true) {
             textsToCheck.forEach(element => {
                 let fetchedText = data[element.replace(/-/g, "_")]
                 let nodeToUpdate = document.getElementById(element)
-                let currentText = nodeToUpdate.innerText
+                let currentText = nodeToUpdate.innerHTML
                 if (currentText != fetchedText){
                     divsToUpdate.push([nodeToUpdate, fetchedText])
                 }
