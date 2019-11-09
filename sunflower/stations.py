@@ -8,15 +8,15 @@ import os
 
 _stations = {}
 
-class Station:
-    station_name: str
-    station_thumbnail: str
 
-    def __init_subclass__(cls):
+class StationMeta(type):
+    def __new__(mcls, name, bases, attrs):
+        cls = super().__new__(mcls, name, bases, attrs)
         if hasattr(cls, "station_name"):
-            global _stations
             _stations[cls.station_name] = cls
-        return super().__init_subclass__()
+        return cls
+
+class Station(metaclass=StationMeta):
 
     def get_metadata(self):
         """Return mapping containing metadata about current broadcast.
@@ -128,9 +128,6 @@ class RTL2(Station):
 
 
 class RadioFranceStation(Station):
-    station_name: str
-    station_thumbnail: str
-    _station_api_name: str
 
     @property
     def token(self):
