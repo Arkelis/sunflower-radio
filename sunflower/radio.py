@@ -2,21 +2,28 @@
 
 """Module containing radio metadata fetching related functions."""
 
-import json
 import os
+import random
+import telnetlib
 from abc import ABC
+from time import sleep
 from datetime import datetime, time, timedelta
 from backports.datetime_fromisoformat import MonkeyPatch
 
 
 import requests
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 
 from sunflower import settings
 
+
 class Radio:
-    stations = {}
+
+    def __init__(self):
+        from sunflower.stations import _stations
+        self.backup_songs = random.shuffle(settings.BACKUP_SONGS)
+        self.stations = _stations
+        self.current_broadcast_metadata = self.get_current_broadcast_metadata()
+        self.current_broadcast_info = self.get_current_broadcast_info()
 
     @property
     def current_station_name(self):
@@ -65,6 +72,8 @@ class Radio:
         print(self.stations)
         try:
             card_info = self.current_station.format_info()
+            if not card_info["current_broadcast_end"]:
+                card_info["current_broadcast_end"] = int(datetime.now().timestamp() + 5) * 1000
         except requests.exceptions.Timeout:
             card_info = {
                 "current_thumbnail": self.current_station.station_thumbnail,
@@ -76,246 +85,38 @@ class Radio:
             }
         return card_info
 
-
-class StationMeta(type):
-    def __new__(mcls, name, bases, attrs):
-        cls = super().__new__(mcls, name, bases, attrs)
-        if hasattr(cls, "station_name"):
-            Radio.stations[cls.station_name] = cls
-        return cls
-
-
-class Station(metaclass=StationMeta):
-    # station_name: str # needs to be commented for python3.5
-    # station_thumbnail: str # needs to be commented for python3.5
-
-    # THE FOLLOWING METHOD IS COMMENTED (BECAUSE UNUSED) IN PYTHON 3.5
-    # ITS BEHAVIOR IS REPLACED WITH StationMeta METACLASS (see above).
-    # def __init_subclass__(cls):
-    #     if hasattr(cls, "station_name"):
-    #         Radio.stations[cls.station_name] = cls
-    #     return super().__init_subclass__()
-
-    def get_metadata(self):
-        """Return mapping containing metadata about current broadcast.
-        
-        This is data meant to be exposed as json and used by format_info() method.
-        
-        Required fields:
-        - type: Emission|Musique|Publicité
-        - metadata fields required by format_info() method (see below)
-        """
-
-    def format_info(self):
-        """Format data for displaying in the card.
-        
-        Should return a dict containing:
-        - current_thumbnail
-        - current_station
-        - current_broadcast_title
-        - current_show_title
-        - current_broadcast_summary
-        - current_broadcast_end
-
-        If empty, a given key should have "" (empty string) as value, and not None, except
-        for current_broadcast_end which is False if unknown.
-        """
+    def _time_to_sleep(self):
+        now = datetime.now().timestamp()
+        end = self.current_broadcast_metadata["end"]
+        if not end or now > end:
+            return 5
+        return end - now
     
+    def _handle_advertising(self):
+        if self.current_broadcast_metadata["type"] == "Publicités":
+            if not self.backup_songs:
+                self.backup_songs = random.shuffle(settings.BACKUP_SONGS)
+            backup_song = self.backup_songs.pop(0)
+            session = telnetlib.Telnet("localhost", 1234, 100)
+            session.write(b"request.push {}".fromat(backup_song[0]))
+            session.close()
+            self.current_broadcast_metadata = {
+                "artist": backup_song[1],
+                "title": backup_song[2],
+                "end": int(datetime.now().timestamp() + backup_song[3])
+            }
+            self.current_broadcast_info = {
+                "current_thumbnail": self.current_station.station_thumbnail,
+                "current_station": self.current_station.station_name,
+                "current_broadcast_title": backup_song[1] + " &bull; " + backup_song[2],
+                "current_show_title": "Musique",
+                "current_broadcast_summary": "Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
+                "current_broadcast_end": self.current_broadcast_metadata["end"],
+            }
 
-
-class RTL2(Station):
-    station_name = "RTL 2"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
-    _main_data_url = "https://timeline.rtl.fr/RTL2/items"
-    _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
-
-    def format_info(self):
-        metadata = self.get_metadata()
-        card_info = {
-            "current_thumbnail": metadata["thumbnail"],
-            "current_broadcast_end": metadata["end"],
-            "current_show_title": "",
-            "current_broadcast_summary": "",
-            "current_station": self.station_name,
-        }
-        if metadata["type"] == "Musique":
-            card_info["current_broadcast_title"] = metadata["artist"] + " • " + metadata["title"]
-        else: 
-            card_info["current_broadcast_title"] = metadata["type"]
-        return card_info
-
-    def _fetch_metadata(self, song=False):
-        if song:
-            rep = requests.get(self._songs_data_url, timeout=1)
-            return json.loads(rep.content.decode())[0]
-        rep = requests.get(self._main_data_url, timeout=1)
-        soup = BeautifulSoup(rep.content.decode(), "html.parser")
-        try:
-            diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
-        except IndexError:
-            previous_url = "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[6].attrs["href"]
-            rep = requests.get(previous_url, timeout=1)
-            soup = BeautifulSoup(rep.content.decode(), "html.parser")
-            try:
-                diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
-            except:
-                raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
-        if diffusion_type == "Pubs":
-            return {"type": "Publicités", "end": False}
-        if diffusion_type != "Musique":
-            return {"type": "Intermède", "end": False}
-        else:
-            return self._fetch_metadata(True)
-
-    def get_metadata(self):
-        """Returns mapping containing info about current song.
-
-        If music: {"type": "Musique", "artist": artist, "title": title}
-        If ads: "type": Publicité"
-        Else: "type": "Intermède"
-
-        Moreover, returns other metadata for postprocessing.
-        end datetime object
-
-        To sum up, here are the keys of returned mapping:
-        - type: str
-        - end: str (ISO format) or False if unknown
-        - artist: str (optionnal)
-        - title: str (optionnal)
-        """
-        fetched_data = self._fetch_metadata()
-        if fetched_data.get("type") in ("Publicités", "Intermède"):
-            fetched_data.update({"thumbnail": self.station_thumbnail})
-            return fetched_data
-        metadata = {
-            "artist": fetched_data["singer"],
-            "title": fetched_data["title"],
-            "end": int(fetched_data["end"]),
-            "thumbnail": fetched_data["thumbnail"] or self.station_thumbnail,
-            "type": "Musique",
-        }
-        return metadata
-
-
-class RadioFranceStation(Station):
-    # station_name: str # commented in python3.5
-    # station_thumbnail: str # commented in python3.5
-    # _station_api_name: str # commented in python3.5
-
-    @property
-    def token(self):
-        if os.getenv("TOKEN") is None: # in case of development server
-            load_dotenv()
-            if os.getenv("TOKEN") is None:
-                raise RuntimeError("No token for Radio France API found.")
-        return os.getenv("TOKEN")
-
-    _grid_template = """
-    {{
-    grid(start: {start}, end: {end}, station: {station}) {{
-        ... on DiffusionStep {{
-        start
-        end
-        diffusion {{
-            title
-            standFirst
-            show {{
-            title
-            }}
-        }}
-        }}
-        ... on TrackStep {{
-        start
-        end
-        track {{
-            title
-            albumTitle
-        }}
-        }}
-        ... on BlankStep {{
-        start
-        end
-        title
-        }}
-    }}
-    }}
-    """
-
-    def format_info(self):
-        metadata = self.get_metadata()
-        card_info = {
-            "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
-            "current_thumbnail": metadata["thumbnail_src"],
-            "current_broadcast_end": metadata["end"],
-            "current_show_title": metadata["show_title"],
-            "current_broadcast_summary": metadata["summary"],
-            "current_station": self.station_name,
-        }
-        return card_info
-
-    def get_metadata(self):
-        fetched_data = self._fetch_metadata()
-        current_show = fetched_data["data"]["grid"][0]
-        next_show = fetched_data["data"]["grid"][1]
-        diffusion = current_show.get("diffusion")
-        metadata = {
-            "type": "Emission",
-            "end": int(next_show["start"]) * 1000, # client needs timestamp in ms
-            "thumbnail_src": self.station_thumbnail,
-        }
-        if diffusion is None:
-            metadata.update({
-                "show_title": current_show["title"],
-                "summary": "",
-            })
-        else:
-            summary = current_show["diffusion"]["standFirst"]
-            if not summary or summary == ".":
-                summary = ""
-            metadata.update({
-                "show_title": diffusion["show"]["title"],
-                "diffusion_title": diffusion["title"],
-                "summary": summary,
-            })
-        return metadata
-    
-
-    def _fetch_metadata(self):
-        start = datetime.now()
-        end = datetime.now() + timedelta(minutes=120)
-        query = self._grid_template.format(
-            start=int(start.timestamp()),
-            end=int(end.timestamp()),
-            station=self._station_api_name
-        )
-        rep = requests.post(
-            url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
-            json={"query": query},
-            timeout=1,
-        )
-        data = json.loads(rep.content.decode())
-        return data
-
-
-class FranceInter(RadioFranceStation):
-    station_name = "France Inter"
-    _station_api_name = "FRANCEINTER"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/France_inter_2005_logo.svg/1024px-France_inter_2005_logo.svg.png"
-
-
-class FranceInfo(RadioFranceStation):
-    station_name = "France Info"
-    _station_api_name = "FRANCEINFO"
-    station_thumbnail = "https://lh3.googleusercontent.com/VKfyGmPTaHyxOAf1065M_CftsEiGIOkZOiGpXUlP1MTSBUA4j5O5n9GRLJ3HvQsXQdY"
-
-
-class FranceMusique(RadioFranceStation):
-    station_name = "France Musique"
-    _station_api_name = "FRANCEMUSIQUE"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/2/22/France_Musique_-_2008.svg/1024px-France_Musique_-_2008.svg.png"
-
-
-class FranceCulture(RadioFranceStation):
-    station_name = "France Culture"
-    _station_api_name = "FRANCECULTURE"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/thumb/c/c9/France_Culture_-_2008.svg/1024px-France_Culture_-_2008.svg.png"
+    def watch(self):
+        while True:
+            self.current_broadcast_metadata = self.get_current_broadcast_metadata()
+            self.current_broadcast_info = self.get_current_broadcast_info()
+            self._handle_advertising()
+            sleep(self._time_to_sleep())

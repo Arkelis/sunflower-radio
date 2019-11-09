@@ -18,8 +18,12 @@ function updateCardBody(schedulePrepare = true) {
                 "current-broadcast-title",
                 "current-show-title",
                 "current-broadcast-summary",
-                "current-broadcast-end"
             ]
+            let currentBroadcastEnd = document.getElementById("current-broadcast-end")
+            let fetchedEnd = data.current_broadcast_end
+
+            if (fetchedEnd <= currentBroadcastEnd.innerText) return
+
             let thumbnailNode = document.getElementById("current-thumbnail")
             let thumbnailSrc = thumbnailNode.attributes.src.value
             let divsToUpdate = []
@@ -28,7 +32,7 @@ function updateCardBody(schedulePrepare = true) {
             textsToCheck.forEach(element => {
                 let fetchedText = data[element.replace(/-/g, "_")]
                 let nodeToUpdate = document.getElementById(element)
-                let currentText = nodeToUpdate.innerText
+                let currentText = nodeToUpdate.innerHTML
                 if (currentText != fetchedText){
                     divsToUpdate.push([nodeToUpdate, fetchedText])
                 }
@@ -53,6 +57,8 @@ function updateCardBody(schedulePrepare = true) {
                     element[0].classList.remove("fade-out")
                 })
 
+                currentBroadcastEnd.innerText = fetchedEnd
+
                 //update thumbnail if needed
                 if (thumbnailUpdated) {
                     thumbnailNode.attributes.src.value = fetchedThumbnailSrc
@@ -63,5 +69,4 @@ function updateCardBody(schedulePrepare = true) {
     if (schedulePrepare) prepareUpdate()
 }
 
-// document.querySelector("audio").play()
 prepareUpdate()
