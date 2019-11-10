@@ -9,8 +9,6 @@ from sunflower import settings
 app = Flask(__name__)
 cors = CORS(app)
 radio = Radio()
-watch_thread = threading.Thread(target=radio.watch)
-watch_thread.start()
 
 @app.route("/")
 def index():
@@ -27,5 +25,4 @@ def update_broadcast_info():
 
 @app.route("/on-air")
 def current_show_data():
-    metadata = radio.current_broadcast_metadata
-    return jsonify(metadata)
+    return jsonify(radio.current_broadcast_metadata)
