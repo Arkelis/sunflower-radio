@@ -65,8 +65,6 @@ TIMETABLE = [
 ]
 ```
 
-**Remarque :** Il faut respecter le format `<Debut>-<Fin> Station` avec le format `HH:MM:SS` (secondes facultatives) pour `<Debut>` et `<Fin>`.
-
 **Radio supportées :**
 
 - France Inter
