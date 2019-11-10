@@ -91,9 +91,9 @@ class RTL2(Station):
             except:
                 raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
         if diffusion_type == "Pubs":
-            return {"type": "Publicités", "end": False}
+            return {"type": "Publicités", "end": 0}
         if diffusion_type != "Musique":
-            return {"type": "Intermède", "end": False}
+            return {"type": "Intermède", "end": 0}
         else:
             return self._fetch_metadata(True)
 
