@@ -9,7 +9,8 @@ from abc import ABC
 from time import sleep
 from datetime import datetime, time, timedelta
 from backports.datetime_fromisoformat import MonkeyPatch
-
+import json
+import redis
 
 import requests
 
@@ -17,19 +18,26 @@ from sunflower import settings
 
 
 class Radio:
-
     def __init__(self):
         from sunflower.stations import _stations
-        self.backup_songs = random.shuffle(settings.BACKUP_SONGS)
+        self.backup_songs = settings.BACKUP_SONGS.copy()
+        random.shuffle(self.backup_songs)
         self.stations = _stations
-        self.current_broadcast_metadata = self.get_current_broadcast_metadata()
-        self.current_broadcast_info = self.get_current_broadcast_info()
+        self.redis = redis.Redis()
+        self._process_radio()
 
     @property
     def current_station_name(self):
-        """Returning string matching current time according to TIMETABLE dict in settings."""
+        """Return string matching current time according to TIMETABLE dict in settings."""
+        return self.get_station_info(datetime.now().time())[2]
+
+    @staticmethod
+    def get_station_info(time_):
+        """Get info of station playing at given time.
+        
+        time_ must be time() instance.
+        """
         assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
-        current_time = datetime.now().time()
         timetable = settings.TIMETABLE
         try:
             MonkeyPatch.patch_fromisoformat()
@@ -37,25 +45,46 @@ class Radio:
                 station = t[2]
                 start, end = map(time.fromisoformat, t[:2])
                 end = time(23, 59, 59) if end == time(0, 0, 0) else end
-                if start < current_time < end:
-                    return station
+                if start < time_ < end:
+                    return start, end, station
             else:
                 raise RuntimeError("Aucune station programmée à cet horaire.")
         except FileNotFoundError:
             raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
-    
+
+
     @property
     def current_station(self):
+        """Return Station object currently on air."""
         try:
             return self.stations.get(self.current_station_name)()
         except TypeError as exception:
             raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
-
+    @property
+    def current_broadcast_metadata(self):
+        """Retrieve metadata stored in Redis as a dict."""
+        return json.loads(self.redis.get("sunflower:metadata").decode())
     
+    @current_broadcast_metadata.setter
+    def current_broadcast_metadata(self, metadata):
+        """Store metadata in Redis."""
+        self.redis.set("sunflower:metadata", json.dumps(metadata))
+
+    @property
+    def current_broadcast_info(self):
+        """Retrieve card info stored in Redis as a dict."""
+        return json.loads(self.redis.get("sunflower:info").decode())
+    
+    @current_broadcast_info.setter
+    def current_broadcast_info(self, info):
+        """Store card info in Redis."""
+        self.redis.set("sunflower:info", json.dumps(info))
+
     def get_current_broadcast_metadata(self):
         """Return metadata of current broadcasted programm for current station.
         
-        This is for pure json data exposure.
+        This is for pure json data exposure. This method uses get_metadata() method
+        of currently broadcasted station.
         """
         try:
             metadata = self.current_station.get_metadata()
@@ -67,9 +96,9 @@ class Radio:
     def get_current_broadcast_info(self):
         """Return data for displaying broadcast info in player.
         
-        This is for data display in player client.
+        This is for data display in player client. This method uses format_info()
+        method of currently broadcasted station.
         """
-        print(self.stations)
         try:
             card_info = self.current_station.format_info()
             if not card_info["current_broadcast_end"]:
@@ -84,39 +113,53 @@ class Radio:
                 "current_broadcast_end": False,
             }
         return card_info
-
-    def _time_to_sleep(self):
-        now = datetime.now().timestamp()
-        end = self.current_broadcast_metadata["end"]
-        if not end or now > end:
-            return 5
-        return end - now
     
-    def _handle_advertising(self):
-        if self.current_broadcast_metadata["type"] == "Publicités":
+    def _handle_advertising(self, metadata, info):
+        """Play backup songs if advertising is detected on currently broadcasted station."""
+        if metadata["type"] == "Publicités":
             if not self.backup_songs:
-                self.backup_songs = random.shuffle(settings.BACKUP_SONGS)
+                self.backup_songs = settings.BACKUP_SONGS.copy()
+                random.shuffle(self.backup_songs)
             backup_song = self.backup_songs.pop(0)
+            
+            # tell liquidsoap to play backup song
             session = telnetlib.Telnet("localhost", 1234, 100)
-            session.write(b"request.push {}".fromat(backup_song[0]))
+            session.write("request.push {}\n".format(backup_song[0]).encode())
             session.close()
-            self.current_broadcast_metadata = {
+
+            # and update metadata
+            metadata = {
                 "artist": backup_song[1],
                 "title": backup_song[2],
-                "end": int(datetime.now().timestamp() + backup_song[3])
+                "end": int(datetime.now().timestamp()) + backup_song[3],
+                "type": "Musique",
             }
-            self.current_broadcast_info = {
+            info = {
                 "current_thumbnail": self.current_station.station_thumbnail,
                 "current_station": self.current_station.station_name,
-                "current_broadcast_title": backup_song[1] + " &bull; " + backup_song[2],
+                "current_broadcast_title": backup_song[1] + " • " + backup_song[2],
                 "current_show_title": "Musique",
                 "current_broadcast_summary": "Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
-                "current_broadcast_end": self.current_broadcast_metadata["end"],
+                "current_broadcast_end": self.current_broadcast_metadata["end"] * 1000,
             }
+        return metadata, info
+
+    def _process_radio(self):
+        """Fetch metadata, and if needed do some treatment.
+        
+        Treatments:
+        - play backup song if advertising is detected.
+        """
+        metadata = self.get_current_broadcast_metadata()
+        info = self.get_current_broadcast_info()
+        metadata, info = self._handle_advertising(metadata, info)
+        self.current_broadcast_info = info
+        self.current_broadcast_metadata = metadata
 
     def watch(self):
+        """Update metadata if needed. This is launched on separated thread."""
         while True:
-            self.current_broadcast_metadata = self.get_current_broadcast_metadata()
-            self.current_broadcast_info = self.get_current_broadcast_info()
-            self._handle_advertising()
-            sleep(self._time_to_sleep())
+            if datetime.now().timestamp() > self.current_broadcast_metadata["end"]:
+                print("now:", datetime.now().timestamp(), "\nend:", self.current_broadcast_metadata["end"], "Changed.")
+                self._process_radio()
+            sleep(1)
