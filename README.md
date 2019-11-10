@@ -1,8 +1,41 @@
 # Radio Tournesol
 
-**This branch is meant to be used with Python 3.5. It exists only for backward compatibility.**
+Ce programme a deux vocations :
+- Afficher les métadonnées d'une radio en cours de lecture sur une page avec un lecteur.
+- Exposer en json les métadonnées.
+- Interagir avec un server telnet [liquidsoap](https://www.liquidsoap.info)
 
-Affiche les métadonnées de radio : Un serveur (flask) s'occupe d'aller chercher les métadonnées et expose une page de lecteur ainsi que des métadonnées. Ce serveur ne diffuse pas de radio. Il peut être utilisé en combinaison avec [liquidsoap](https://www.liquidsoap.info) pour l'encodage de la radio et [icecast2](http://icecast.org/) pour sa diffusion par exemple.
+Grâce à liquidsoap, on peut changer la station diffusée au cours de la journée, d'où le nom Radio Tournesol.
+
+## Principe
+
+Une webradio est composé de divers éléments :
+
+- un encodeur de flux audio, par exemple liquidsoap
+- un diffuseur de flux audio, par exemple icecast
+- un client de lecture (cette application !)
+
+Radio tournesol a donc pour principale vocation d'afficher les métadonnées de la radio en cours de lecture. Cependant, grâce au serveur telnet de liquidsoap, Radio tournesol peut aussi interagir avec celui-ci ; cela permet d'étendre les possibilités : par exemple Radio tournesol peut détecter de la publicité et donc demander à liquidsoap de jouer de la musique à la place.
+
+En plus d'être un client de lecture, Radio Tournesol participe donc aussi à l'encodage de flux audio.
+
+## Fonctionnement de Radio Tournesol
+
+### Client de lecture
+
+Le client de lecture se présente sous forme d'un serveur Flask. Celui-ci s'appuie sur deux types d'objets :
+
+#### Radio
+
+Elle est composée de stations. Elle va puiser les métadonnées chez les stations enregistrées. Pour savoir à quelle station elle doit s'adresser, elle s'appuie sur un fichier de configuration (cf. paragraphe **Configuration** plus bas).
+
+#### Station
+
+Une station représente une station jouée sur une plage horaire. Elle doit implémenter deux méthodes (`get_metadata()` et `format_info()`) pour alimenter la radio et le serveur Flask.
+
+### Watcher
+
+Les métadonnées sont stockées sur le serveur dans la mémoire grâce à Redis. Elles sont récupérées par un watcher lancé en démon grâce à Daemonize.
 
 ## Installation
 
