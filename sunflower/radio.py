@@ -2,17 +2,18 @@
 
 """Module containing radio metadata fetching related functions."""
 
-import json
 import os
 import random
 import telnetlib
 from abc import ABC
-from datetime import datetime, time, timedelta
 from time import sleep
+from datetime import datetime, time, timedelta
+from backports.datetime_fromisoformat import MonkeyPatch
+import json
+import redis
 
 import requests
 
-import redis
 from sunflower import settings
 
 
@@ -23,6 +24,7 @@ class Radio:
         random.shuffle(self.backup_songs)
         self.stations = _stations
         self.redis = redis.Redis()
+        self._process_radio()
 
     @property
     def current_station_name(self):
@@ -38,6 +40,7 @@ class Radio:
         assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
         timetable = settings.TIMETABLE
         try:
+            MonkeyPatch.patch_fromisoformat()
             for t in timetable:
                 station = t[2]
                 start, end = map(time.fromisoformat, t[:2])
@@ -157,5 +160,6 @@ class Radio:
         """Update metadata if needed. This is launched on separated thread."""
         while True:
             if datetime.now().timestamp() > self.current_broadcast_metadata["end"]:
+                print("now:", datetime.now().timestamp(), "\nend:", self.current_broadcast_metadata["end"], "Changed.")
                 self._process_radio()
             sleep(1)

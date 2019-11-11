@@ -1,21 +1,22 @@
-import json
-import os
-from datetime import date, datetime, time, timedelta
-
 import requests
+from datetime import datetime, date, time, timedelta
+
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+import json
+import os
 
 _stations = {}
 
 
-class Station:
-    def __init_subclass__(cls):
+class StationMeta(type):
+    def __new__(mcls, name, bases, attrs):
+        cls = super().__new__(mcls, name, bases, attrs)
         if hasattr(cls, "station_name"):
-            global _stations
             _stations[cls.station_name] = cls
-        return super().__init_subclass__()
+        return cls
 
+class Station(metaclass=StationMeta):
 
     def get_metadata(self):
         """Return mapping containing metadata about current broadcast.
@@ -23,7 +24,7 @@ class Station:
         This is data meant to be exposed as json and used by format_info() method.
         
         Required fields:
-        - type: Emission|Musique|Publicités
+        - type: Emission|Musique|Publicité
         - metadata fields required by format_info() method (see below)
         """
 
@@ -74,12 +75,6 @@ class RTL2(Station):
         return card_info
 
     def _fetch_metadata(self, song=False):
-        """Fetch metadata from RTL 2 API.
-
-        Proceed in two steps:
-        1. First, get last item in RTL 2 timeline
-        2. If it is a song, fetch from songs list (this method with song=True)
-        """
         if song:
             rep = requests.get(self._songs_data_url, timeout=1)
             return json.loads(rep.content.decode())[0]
@@ -103,10 +98,10 @@ class RTL2(Station):
             return self._fetch_metadata(True)
 
     def get_metadata(self):
-        """Return mapping containing info about current song.
+        """Returns mapping containing info about current song.
 
         If music: {"type": "Musique", "artist": artist, "title": title}
-        If ads: "type": Publicités"
+        If ads: "type": Publicité"
         Else: "type": "Intermède"
 
         Moreover, returns other metadata for postprocessing.
@@ -114,7 +109,7 @@ class RTL2(Station):
 
         To sum up, here are the keys of returned mapping:
         - type: str
-        - end: timestamp (int) or 0 if unknown
+        - end: str (ISO format) or False if unknown
         - artist: str (optionnal)
         - title: str (optionnal)
         """
