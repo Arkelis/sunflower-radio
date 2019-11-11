@@ -69,4 +69,4 @@ function updateCardBody(schedulePrepare = true) {
     if (schedulePrepare) prepareUpdate()
 }
 
-prepareUpdate()
+updateCardBody()

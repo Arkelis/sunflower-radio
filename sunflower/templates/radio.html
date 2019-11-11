@@ -24,19 +24,19 @@
             <div id="current-broadcast-card">
                 <div id="card-body">
                     <div id="current-thumbnail-container">
-                        <img id="current-thumbnail" src="{{ card_info.current_thumbnail }}" alt="Current broadcast thumbail.">
+                        <img id="current-thumbnail" src="" alt="Current broadcast thumbail.">
                     </div>
                     <div id="current-broadcast-info">
                         <div id="head-info">
-                            <div id="current-station">{{ card_info.current_station }}</div>
-                            <h2 id="current-broadcast-title">{{ card_info.current_broadcast_title|safe }}</h2>
+                            <div id="current-station"></div>
+                            <h2 id="current-broadcast-title"></h2>
                         </div>
                         <div id="details">
-                                <div id="current-show-title">{{ card_info.current_show_title }}</div>
-                                <p id="current-broadcast-summary">{{ card_info.current_broadcast_summary }}</p>
+                                <div id="current-show-title"></div>
+                                <p id="current-broadcast-summary"></p>
                         </div>
                     </div>
-                    <div hidden id="current-broadcast-end">{{ card_info.current_broadcast_end }}</div>
+                    <div hidden id="current-broadcast-end"></div>
                 </div>
                 <div id="card-footer">
                     <audio controls preload="none" src="{{ flux_url }}">
