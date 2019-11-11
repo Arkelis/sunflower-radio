@@ -88,7 +88,7 @@ class Radio:
         try:
             metadata = self.current_station.get_metadata()
         except requests.exceptions.Timeout:
-            metadata = {"error": "Metadata can't be fetched."}
+            metadata = {"error": "Metadata can't be fetched.", "end": 0}
         metadata.update({"station": self.current_station.station_name})
         return metadata
     
@@ -109,7 +109,7 @@ class Radio:
                 "current_broadcast_title": "Métadonnées indisponibles",
                 "current_show_title": "Métadonnées indisponibles",
                 "current_broadcast_summary": "Les métadonnées n'ont pas pu être récupérées : le serveur de la station demandée a mis trop de temps à répondre.",
-                "current_broadcast_end": False,
+                "current_broadcast_end": 0,
             }
         return card_info
     
@@ -178,6 +178,24 @@ class Radio:
             if datetime.now().timestamp() > self.current_broadcast_metadata["end"]:
                 logger.debug("Processing. Current timestamp is {}".format(datetime.now().timestamp()))
                 logger.debug("Before processing, metadata is {}".format(self.current_broadcast_metadata))
-                self._process_radio()
+                try:
+                    self._process_radio()
+                except Exception as err:
+                    import traceback
+                    logger.error("Une erreur est survenue pendant la mise à jour des données.")
+                    logger.error(traceback.format_exc())
+                    metadata = {
+                        "message": "An error occured when fetching data.",
+                        "type": "Erreur",
+                        "end": 0,
+                    }
+                    info = {
+                        "current_thumbnail": self.current_station.station_thumbnail,
+                        "current_station": self.current_station.station_name,
+                        "current_broadcast_title": "Une erreur est survenue",
+                        "current_show_title": "Erreur interne du serveur",
+                        "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
+                        "current_broadcast_end": 0,
+                    }
                 logger.debug("After processing, metadata is {}".format(self.current_broadcast_metadata))
             sleep(1)
