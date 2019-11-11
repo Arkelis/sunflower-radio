@@ -59,11 +59,22 @@ class Radio:
             return self.stations.get(self.current_station_name)()
         except TypeError as exception:
             raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
+    
+    def _get_from_redis(self, key):
+        """Get a key from Redis and return it as loaded json.
+
+        If key is empty, return None.
+        """
+        stored_data = self.redis.get(key)
+        if stored_data is None:
+            return None
+        return json.loads(stored_data.decode())
+    
     @property
     def current_broadcast_metadata(self):
         """Retrieve metadata stored in Redis as a dict."""
-        return json.loads(self.redis.get("sunflower:metadata").decode())
-    
+        return self._get_from_redis("sunflower:metadata")
+
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
@@ -72,7 +83,7 @@ class Radio:
     @property
     def current_broadcast_info(self):
         """Retrieve card info stored in Redis as a dict."""
-        return json.loads(self.redis.get("sunflower:info").decode())
+        return self._get_from_redis("sunflower:info")
     
     @current_broadcast_info.setter
     def current_broadcast_info(self, info):
@@ -172,6 +183,10 @@ class Radio:
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
         logger.debug("Starting watcher.")
+
+        if self.current_broadcast_metadata is None:
+            self.current_broadcast_metadata = self.get_current_broadcast_metadata()
+            self.current_broadcast_info = self.get_current_broadcast_info()
 
         # loop
         while True:
