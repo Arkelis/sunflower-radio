@@ -24,7 +24,6 @@ class Radio:
         random.shuffle(self.backup_songs)
         self.stations = _stations
         self.redis = redis.Redis()
-        self._process_radio()
 
     @property
     def current_station_name(self):
