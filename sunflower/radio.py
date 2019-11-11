@@ -137,7 +137,7 @@ class Radio:
                 "current_broadcast_title": backup_song[1] + " • " + backup_song[2],
                 "current_show_title": "Musique",
                 "current_broadcast_summary": "Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
-                "current_broadcast_end": self.current_broadcast_metadata["end"] * 1000,
+                "current_broadcast_end": metadata["end"] * 1000,
             }
         return metadata, info
 
