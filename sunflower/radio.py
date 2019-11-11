@@ -158,8 +158,27 @@ class Radio:
 
     def watch(self):
         """Update metadata if needed. This is launched on separated thread."""
+        import logging
+
+        # instanciate logger
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+
+        # format msg
+        formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
+
+        # rotate
+        file_handler = logging.handlers.RotatingFileHandler("/tmp/watcher.log", "a", 1000000, 1)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.debug("Starting watcher.")
+
+        # loop
         while True:
             if datetime.now().timestamp() > self.current_broadcast_metadata["end"]:
-                print("now:", datetime.now().timestamp(), "\nend:", self.current_broadcast_metadata["end"], "Changed.")
+                logger.debug("Processing. Current timestamp is {}".format(datetime.now().timestamp()))
+                logger.debug("Before processing, metadata is {}".format(self.current_broadcast_metadata))
                 self._process_radio()
+                logger.debug("After processing, metadata is {}".format(self.current_broadcast_metadata))
             sleep(1)
