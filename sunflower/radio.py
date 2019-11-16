@@ -19,6 +19,7 @@ from sunflower.mixins import RedisMixin
 
 class Radio(RedisMixin):
     def __init__(self):
+        super().__init__()
         from sunflower.stations import _stations
         self.backup_songs = settings.BACKUP_SONGS.copy()
         random.shuffle(self.backup_songs)
