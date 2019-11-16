@@ -20,4 +20,4 @@ class RedisMixin:
     def get_from_redis(self, key):
         if key not in self.REDIS_KEYS:
             raise KeyError("Only {} keys are used by this application.".format(self.REDIS_KEYS))
-        return self.redis.get(key)
+        return self._redis.get(key)
