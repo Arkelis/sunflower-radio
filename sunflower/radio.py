@@ -15,15 +15,14 @@ import redis
 import requests
 
 from sunflower import settings
+from sunflower.mixins import RedisMixin
 
-
-class Radio:
+class Radio(RedisMixin):
     def __init__(self):
         from sunflower.stations import _stations
         self.backup_songs = settings.BACKUP_SONGS.copy()
         random.shuffle(self.backup_songs)
         self.stations = _stations
-        self.redis = redis.Redis()
 
     @property
     def current_station_name(self):
@@ -51,7 +50,6 @@ class Radio:
         except FileNotFoundError:
             raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
 
-
     @property
     def current_station(self):
         """Return Station object currently on air."""
@@ -60,12 +58,12 @@ class Radio:
         except TypeError as exception:
             raise RuntimeError("Station '{}' non gérée.".format(self.current_station_name)) from exception
     
-    def _get_from_redis(self, key):
+    def get_from_redis(self, key):
         """Get a key from Redis and return it as loaded json.
 
         If key is empty, return None.
         """
-        stored_data = self.redis.get(key)
+        stored_data = super().get_from_redis(key)
         if stored_data is None:
             return None
         return json.loads(stored_data.decode())
@@ -78,32 +76,10 @@ class Radio:
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
-        self.redis.set("sunflower:metadata", json.dumps(metadata))
+        self._redis.set("sunflower:metadata", json.dumps(metadata))
 
     @property
     def current_broadcast_info(self):
-        """Retrieve card info stored in Redis as a dict."""
-        return self._get_from_redis("sunflower:info")
-    
-    @current_broadcast_info.setter
-    def current_broadcast_info(self, info):
-        """Store card info in Redis."""
-        self.redis.set("sunflower:info", json.dumps(info))
-
-    def get_current_broadcast_metadata(self):
-        """Return metadata of current broadcasted programm for current station.
-        
-        This is for pure json data exposure. This method uses get_metadata() method
-        of currently broadcasted station.
-        """
-        try:
-            metadata = self.current_station.get_metadata()
-        except requests.exceptions.Timeout:
-            metadata = {"error": "Metadata can't be fetched.", "end": 0}
-        metadata.update({"station": self.current_station.station_name})
-        return metadata
-    
-    def get_current_broadcast_info(self):
         """Return data for displaying broadcast info in player.
         
         This is for data display in player client. This method uses format_info()
@@ -123,6 +99,19 @@ class Radio:
                 "current_broadcast_end": 0,
             }
         return card_info
+    
+    def get_current_broadcast_metadata(self):
+        """Get metadata of current broadcasted programm for current station.
+        
+        This is for pure json data exposure. This method uses get_metadata() method
+        of currently broadcasted station.
+        """
+        try:
+            metadata = self.current_station.get_metadata()
+        except requests.exceptions.Timeout:
+            metadata = {"error": "Metadata can't be fetched.", "end": 0}
+        metadata.update({"station": self.current_station.station_name})
+        return metadata
     
     def _handle_advertising(self, metadata, info):
         """Play backup songs if advertising is detected on currently broadcasted station."""
@@ -169,6 +158,7 @@ class Radio:
     def watch(self):
         """Update metadata if needed. This is launched on separated thread."""
         import logging
+        import logging.handlers
 
         # instanciate logger
         logger = logging.getLogger(__name__)
@@ -186,7 +176,6 @@ class Radio:
 
         if self.current_broadcast_metadata is None:
             self.current_broadcast_metadata = self.get_current_broadcast_metadata()
-            self.current_broadcast_info = self.get_current_broadcast_info()
 
         # loop
         while True:

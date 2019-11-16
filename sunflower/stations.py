@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import json
 import os
 
+from sunflower.mixins import RedisMixin
+
 _stations = {}
 
 
@@ -16,7 +18,24 @@ class StationMeta(type):
             _stations[cls.station_name] = cls
         return cls
 
-class Station(metaclass=StationMeta):
+class Station(RedisMixin, metaclass=StationMeta):
+    """Base station.
+
+    User defined stations should inherit from this class and define following properties:
+    - station_name (str)
+    - station_thumbnail (str): link to station thumbnail
+    """
+    
+    def get_from_redis(self, key):
+        """Get key from redis and perform other checkings."""
+        store_data = super().get_from_redis(key)
+        if store_data is None:
+            return None
+        if key == self.REDIS_METADATA:
+            if store_data["station"] != self.station_name:
+                raise KeyError("Station names not matching.")
+        return json.loads(store_data.decode())
+
 
     def get_metadata(self):
         """Return mapping containing metadata about current broadcast.
@@ -60,7 +79,7 @@ class RTL2(Station):
         return ""
 
     def format_info(self):
-        metadata = self.get_metadata()
+        metadata = self.get_from_redis(self.REDIS_METADATA)
         card_info = {
             "current_thumbnail": metadata["thumbnail"],
             "current_broadcast_end": metadata["end"] * 1000, # client needs timestamp in ms
@@ -169,7 +188,7 @@ class RadioFranceStation(Station):
     """
 
     def format_info(self):
-        metadata = self.get_metadata()
+        metadata = self.get_from_redis(self.REDIS_METADATA)
         card_info = {
             "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
             "current_thumbnail": metadata["thumbnail_src"],
