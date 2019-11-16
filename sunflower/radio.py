@@ -72,15 +72,25 @@ class Radio(RedisMixin):
     @property
     def current_broadcast_metadata(self):
         """Retrieve metadata stored in Redis as a dict."""
-        return self.get_from_redis("sunflower:metadata")
+        return self.get_from_redis(self.REDIS_METADATA)
 
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
-        self._redis.set("sunflower:metadata", json.dumps(metadata))
+        self._redis.set(self.REDIS_METADATA, json.dumps(metadata))
 
     @property
     def current_broadcast_info(self):
+        """Retrieve card info stored in Redis as a dict."""
+        return self.get_from_redis(self.REDIS_INFO)
+
+    @current_broadcast_info.setter
+    def current_broadcast_info(self, info):
+        """Store card info in Redis."""
+        self._redis.set(self.REDIS_INFO, json.dumps(info))
+
+
+    def get_current_broadcast_info(self):
         """Return data for displaying broadcast info in player.
         
         This is for data display in player client. This method uses format_info()
@@ -153,8 +163,8 @@ class Radio(RedisMixin):
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info()
         metadata, info = self._handle_advertising(metadata, info)
-        self.current_broadcast_info = info
         self.current_broadcast_metadata = metadata
+        self.current_broadcast_info = info
 
     def watch(self):
         """Update metadata if needed. This is launched on separated thread."""

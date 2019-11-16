@@ -10,8 +10,10 @@ class RedisMixin:
     """
 
     REDIS_METADATA = "sunflower:metadata"
+    REDIS_INFO = "sunflower:info"
     REDIS_KEYS = [
         REDIS_METADATA,
+        REDIS_INFO,
     ]
 
     def __init__(self, *args, **kwargs):
