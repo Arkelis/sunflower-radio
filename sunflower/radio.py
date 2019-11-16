@@ -71,7 +71,7 @@ class Radio(RedisMixin):
     @property
     def current_broadcast_metadata(self):
         """Retrieve metadata stored in Redis as a dict."""
-        return self._get_from_redis("sunflower:metadata")
+        return self.get_from_redis("sunflower:metadata")
 
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
