@@ -147,6 +147,7 @@ class RTL2(Station):
 
 
 class RadioFranceStation(Station):
+    API_RATE_LIMIT_EXCEEDED = 1
 
     @property
     def token(self):
@@ -189,43 +190,75 @@ class RadioFranceStation(Station):
 
     def format_info(self, metadata):
         card_info = {
-            "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
-            "current_thumbnail": metadata["thumbnail_src"],
+            "current_thumbnail" : metadata["thumbnail_src"],
             "current_broadcast_end": metadata["end"] * 1000, # client needs timestamp in ms
-            "current_show_title": metadata["show_title"],
-            "current_broadcast_summary": metadata["summary"],
             "current_station": self.station_name,
         }
+        if metadata["type"] == "Erreur":
+            card_info.update({
+                "current_broadcast_title": "Informations indisponibles",
+                "current_show_title": "Informations indisponibles",
+                "current_broadcast_summary": "Le nombre de requêtes autorisées à l'API de Radio France a été atteinte.",
+            })
+        elif metadata["type"] == "Emission":
+            card_info.update({
+                "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
+                "current_show_title": metadata["show_title"],
+                "current_broadcast_summary": metadata["summary"],
+            })
         return card_info
 
     def get_metadata(self):
         fetched_data = self._fetch_metadata()
-        current_show = fetched_data["data"]["grid"][0]
-        next_show = fetched_data["data"]["grid"][1]
-        diffusion = current_show.get("diffusion")
-        metadata = {
-            "type": "Emission",
-            "end": int(next_show["start"]),
-            "thumbnail_src": self.station_thumbnail,
-        }
-        if diffusion is None:
-            metadata.update({
-                "show_title": current_show["title"],
-                "summary": "",
-            })
-        else:
-            summary = current_show["diffusion"]["standFirst"]
-            if not summary or summary == ".":
-                summary = ""
-            metadata.update({
-                "show_title": diffusion["show"]["title"],
-                "diffusion_title": diffusion["title"],
-                "summary": summary,
-            })
-        return metadata
+        if fetched_data == self.API_RATE_LIMIT_EXCEEDED:
+            return {
+                "message": "Radio France API rate limit exceeded",
+                "type": "Erreur",
+                "station": self.station_name,
+                "end": 0,
+                "thumbnail_src": self.station_thumbnail,
+            }
+        try:
+            current_show = fetched_data["data"]["grid"][0]
+            next_show = fetched_data["data"]["grid"][1]
+            diffusion = current_show.get("diffusion")
+            metadata = {
+                "type": "Emission",
+                "end": int(next_show["start"]),
+                "thumbnail_src": self.station_thumbnail,
+            }
+            if diffusion is None:
+                metadata.update({
+                    "show_title": current_show["title"],
+                    "summary": "",
+                })
+            else:
+                summary = current_show["diffusion"]["standFirst"]
+                if not summary or summary == ".":
+                    summary = ""
+                metadata.update({
+                    "show_title": diffusion["show"]["title"],
+                    "diffusion_title": diffusion["title"],
+                    "summary": summary,
+                })
+            return metadata
+        except KeyError as err:
+            raise RuntimeError("Impossible de décoder la réponse de l'API radiofrance : {}".format(fetched_data)) from err
     
 
     def _fetch_metadata(self):
+        radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
+        api_rate_limit = 1000
+        with open(radiofrance_requests_counter_path, "r") as f:
+            lines = f.read_lines()
+        if lines[0] != datetime.now().date().isoformat():
+            write_mode = "w"
+        else:
+            if len(lines) >= api_rate_limit:
+                return self.API_RATE_LIMIT_EXCEEDED
+            write_mode = "a"
+        with open(radiofrance_requests_counter_path, write_mode) as f:
+            f.write("{}\n".format(datetime.now().date()))
         start = datetime.now()
         end = datetime.now() + timedelta(minutes=120)
         query = self._grid_template.format(
