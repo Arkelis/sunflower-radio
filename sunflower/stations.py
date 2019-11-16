@@ -48,8 +48,8 @@ class Station(RedisMixin, metaclass=StationMeta):
         - metadata fields required by format_info() method (see below)
         """
 
-    def format_info(self):
-        """Format data for displaying in the card.
+    def format_info(self, metadata):
+        """Format metadata for displaying in the card.
         
         Should return a dict containing:
         - current_thumbnail
@@ -79,8 +79,7 @@ class RTL2(Station):
             return "Musique"
         return ""
 
-    def format_info(self):
-        metadata = self.get_from_redis(self.REDIS_METADATA)
+    def format_info(self, metadata):
         card_info = {
             "current_thumbnail": metadata["thumbnail"],
             "current_broadcast_end": metadata["end"] * 1000, # client needs timestamp in ms
@@ -188,8 +187,7 @@ class RadioFranceStation(Station):
     }}
     """
 
-    def format_info(self):
-        metadata = self.get_from_redis(self.REDIS_METADATA)
+    def format_info(self, metadata):
         card_info = {
             "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
             "current_thumbnail": metadata["thumbnail_src"],

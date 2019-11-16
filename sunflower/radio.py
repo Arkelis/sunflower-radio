@@ -90,14 +90,14 @@ class Radio(RedisMixin):
         self._redis.set(self.REDIS_INFO, json.dumps(info))
 
 
-    def get_current_broadcast_info(self):
+    def get_current_broadcast_info(self, metadata):
         """Return data for displaying broadcast info in player.
         
         This is for data display in player client. This method uses format_info()
         method of currently broadcasted station.
         """
         try:
-            card_info = self.current_station.format_info()
+            card_info = self.current_station.format_info(metadata)
             if not card_info["current_broadcast_end"]:
                 card_info["current_broadcast_end"] = int(datetime.now().timestamp() + 5) * 1000
         except requests.exceptions.Timeout:
@@ -161,7 +161,7 @@ class Radio(RedisMixin):
         - play backup song if advertising is detected.
         """
         metadata = self.get_current_broadcast_metadata()
-        info = self.get_current_broadcast_info()
+        info = self.get_current_broadcast_info(metadata)
         metadata, info = self._handle_advertising(metadata, info)
         self.current_broadcast_metadata = metadata
         self.current_broadcast_info = info
