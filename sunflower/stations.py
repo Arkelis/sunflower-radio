@@ -31,10 +31,11 @@ class Station(RedisMixin, metaclass=StationMeta):
         store_data = super().get_from_redis(key)
         if store_data is None:
             return None
+        store_data = json.loads(store_data.decode())
         if key == self.REDIS_METADATA:
             if store_data["station"] != self.station_name:
                 raise KeyError("Station names not matching.")
-        return json.loads(store_data.decode())
+        return store_data
 
 
     def get_metadata(self):
