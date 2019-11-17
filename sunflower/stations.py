@@ -149,6 +149,11 @@ class RTL2(Station):
 class RadioFranceStation(Station):
     API_RATE_LIMIT_EXCEEDED = 1
 
+    def __init__(self):
+        super().__init__()
+        f = open("/tmp/radiofrance-requests.txt", "a")
+        f.close()
+
     @property
     def token(self):
         if os.getenv("TOKEN") is None: # in case of development server
@@ -250,7 +255,7 @@ class RadioFranceStation(Station):
         radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
         api_rate_limit = 1000
         with open(radiofrance_requests_counter_path, "r") as f:
-            lines = f.read_lines()
+            lines = f.read().split("\n")
         if lines[0] != datetime.now().date().isoformat():
             write_mode = "w"
         else:
