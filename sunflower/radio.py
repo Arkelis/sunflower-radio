@@ -37,18 +37,15 @@ class Radio(RedisMixin):
         """
         assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
         timetable = settings.TIMETABLE
-        try:
-            MonkeyPatch.patch_fromisoformat()
-            for t in timetable:
-                station = t[2]
-                start, end = map(time.fromisoformat, t[:2])
-                end = time(23, 59, 59) if end == time(0, 0, 0) else end
-                if start < time_ < end:
-                    return start, end, station
-            else:
-                raise RuntimeError("Aucune station programmée à cet horaire.")
-        except FileNotFoundError:
-            raise RuntimeError("Vous devez créer une configuration d'horaires (fichier timetable.conf).")
+        MonkeyPatch.patch_fromisoformat()
+        for t in timetable:
+            station = t[2]
+            start, end = map(time.fromisoformat, t[:2])
+            end = time(23, 59, 59) if end == time(0, 0, 0) else end
+            if start < time_ < end:
+                return start, end, station
+        else:
+            raise RuntimeError("Aucune station programmée à cet horaire.")
 
     @property
     def current_station(self):
