@@ -17,11 +17,12 @@ from sunflower.utils import RedisMixin, Song
 
 
 class Radio(RedisMixin):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         from sunflower.stations import _stations
         self.backup_songs = []
         self.stations = _stations
+        self.logger = logger # see watcher.py
 
     @property
     def current_station_name(self):
@@ -125,8 +126,10 @@ class Radio(RedisMixin):
     def _handle_advertising(self, metadata, info):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == "Publicités":
+            self.logger.info("Ads detected.")
             if not self.backup_songs:
                 self.backup_songs = self._parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+                self.logger.debug("Backup songs list generated:", self.backup_songs)
             backup_song = self.backup_songs.pop(0)
             
             # tell liquidsoap to play backup song

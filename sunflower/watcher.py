@@ -13,8 +13,6 @@ from sunflower.radio import Radio
 
 def watch():
     """Keep data for radio client up to date."""
-    # instanciate radio
-    radio = Radio()
 
     # instanciate logger
     logger = logging.getLogger(__name__)
@@ -29,6 +27,9 @@ def watch():
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.debug("Starting watcher.")
+
+    # instanciate radio
+    radio = Radio(logger)
 
     if radio.current_broadcast_metadata is None:
         radio.current_broadcast_metadata = radio.get_current_broadcast_metadata()
