@@ -13,13 +13,4 @@ TIMETABLE = [
 
 FLUX_URL = "https://icecast.pycolore.fr/tournesol"
 
-BACKUP_SONGS = [ # In case of ads.
-    # (path/url, artist, title, length in sec)
-    ("~/radio/songs/calogero-en-apesanteur.ogg", "Calogero", "En apesanteur", 203), 
-    ("~/radio/songs/calogero-musique.ogg", "Calogero", "Je joue de la musique", 240), 
-    ("~/radio/songs/calogero-fondamental.ogg", "Calogero", "Fondamental", 184), 
-    ("~/radio/songs/fre-gol-jon-juste-apres.ogg", "Fredericks Goldman Jones", "Juste après", 277), 
-    ("~/radio/songs/goldman-signe.ogg", "Jean-Jacques Goldman", "Il suffira d'un signe (live)", 265), 
-    ("~/radio/songs/cdp-combustible.ogg", "Coeur de Pirate", "Combustible", 226), 
-    ("~/radio/songs/muse-madness.ogg", "Muse", "Madness", 281), 
-]
+BACKUP_SONGS_GLOB_PATTERN = "~/radio/songs/*.ogg"

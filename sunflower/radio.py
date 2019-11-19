@@ -2,27 +2,25 @@
 
 """Module containing radio metadata fetching related functions."""
 
-import os
+import json
 import random
 import telnetlib
-from abc import ABC
-from time import sleep
 from datetime import datetime, time, timedelta
-from backports.datetime_fromisoformat import MonkeyPatch
-import json
-import redis
+import glob
 
+from backports.datetime_fromisoformat import MonkeyPatch
 import requests
+import mutagen
 
 from sunflower import settings
-from sunflower.mixins import RedisMixin
+from sunflower.utils import RedisMixin, Song
+
 
 class Radio(RedisMixin):
     def __init__(self):
         super().__init__()
         from sunflower.stations import _stations
-        self.backup_songs = settings.BACKUP_SONGS.copy()
-        random.shuffle(self.backup_songs)
+        self.backup_songs = []
         self.stations = _stations
 
     @property
@@ -34,7 +32,7 @@ class Radio(RedisMixin):
     def get_station_info(time_):
         """Get info of station playing at given time.
         
-        time_ must be time() instance.
+        time_ must be datetime.time() instance.
         """
         assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
         timetable = settings.TIMETABLE
@@ -123,13 +121,12 @@ class Radio(RedisMixin):
             metadata = {"error": "Metadata can't be fetched.", "end": 0}
         metadata.update({"station": self.current_station.station_name})
         return metadata
-    
+
     def _handle_advertising(self, metadata, info):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == "Publicités":
             if not self.backup_songs:
-                self.backup_songs = settings.BACKUP_SONGS.copy()
-                random.shuffle(self.backup_songs)
+                self.backup_songs = self._parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
             backup_song = self.backup_songs.pop(0)
             
             # tell liquidsoap to play backup song
@@ -153,6 +150,29 @@ class Radio(RedisMixin):
                 "current_broadcast_end": metadata["end"] * 1000,
             }
         return metadata, info
+    
+    @staticmethod
+    def _parse_songs(glob_pattern):
+        """Parse songs matching glob_pattern and return a list of Song objects.
+        
+        Song object is a namedtuple defined in sunflower.utils module.
+        """
+        songs = []
+        if not glob_pattern.endswith(".ogg"):
+            raise RuntimeError("Only ogg files are supported.")
+        for path in glob.iglob(glob_pattern):
+            file = mutagen.File(path)
+            try:
+                songs.append(Song(
+                    path,
+                    file["artist"][0],
+                    file["title"][0],
+                    int(file.info.length),
+                ))
+            except KeyError as err:
+                raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
+        random.shuffle(songs)
+        return songs
 
     def process_radio(self):
         """Fetch metadata, and if needed do some treatment.

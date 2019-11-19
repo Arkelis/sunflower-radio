@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import json
 import os
 
-from sunflower.mixins import RedisMixin
+from sunflower.utils import RedisMixin
 
 _stations = {}
 
