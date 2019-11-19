@@ -35,30 +35,31 @@ def watch():
 
     # loop
     while True:
-        if datetime.now().timestamp() > radio.current_broadcast_metadata["end"]:
-            logger.debug("Processing. Current timestamp is {}".format(datetime.now().timestamp()))
-            logger.debug("Before processing, metadata is {}".format(radio.current_broadcast_metadata))
-            try:
-                radio.process_radio()
-            except Exception as err:
-                import traceback
-                logger.error("Une erreur est survenue pendant la mise à jour des données.")
-                logger.error(traceback.format_exc())
-                metadata = {
-                    "message": "An error occured when fetching data.",
-                    "type": "Erreur",
-                    "end": 0,
-                }
-                info = {
-                    "current_thumbnail": radio.current_station.station_thumbnail,
-                    "current_station": radio.current_station.station_name,
-                    "current_broadcast_title": "Une erreur est survenue",
-                    "current_show_title": "Erreur interne du serveur",
-                    "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
-                    "current_broadcast_end": 0,
-                }
-            logger.debug("After processing, metadata is {}".format(radio.current_broadcast_metadata))
         sleep(5)
+        if datetime.now().timestamp() < radio.current_broadcast_metadata["end"]:
+            continue
+        logger.debug("Processing. Current timestamp is {}".format(datetime.now().timestamp()))
+        logger.debug("Before processing, metadata is {}".format(radio.current_broadcast_metadata))
+        try:
+            radio.process_radio()
+        except Exception as err:
+            import traceback
+            logger.error("Une erreur est survenue pendant la mise à jour des données.")
+            logger.error(traceback.format_exc())
+            metadata = {
+                "message": "An error occured when fetching data.",
+                "type": "Erreur",
+                "end": 0,
+            }
+            info = {
+                "current_thumbnail": radio.current_station.station_thumbnail,
+                "current_station": radio.current_station.station_name,
+                "current_broadcast_title": "Une erreur est survenue",
+                "current_show_title": "Erreur interne du serveur",
+                "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
+                "current_broadcast_end": 0,
+            }
+        logger.debug("After processing, metadata is {}".format(radio.current_broadcast_metadata))
 
 
 if __name__ == "__main__":
