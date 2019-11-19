@@ -6,6 +6,39 @@ function prepareUpdate() {
     setTimeout(updateCardBody, timeout)
 }
 
+class AudioPlayer {
+    element = document.querySelector("audio")
+    y
+
+    get newY() {
+        return this.element.getBoundingClientRect().y
+    }
+
+    constructor() {
+        this.y = this.newY
+    }
+
+    flip() {
+        deltaY = this.newY - this.y
+        this.element.animate(
+             [
+            {
+                transform: `translateY(${deltaY})`
+            },
+            {
+                transform: "none"
+            },
+        ],
+        {
+            duration: "0.7s",
+            fill: "both",
+            easing: "ease-in-out",
+        })
+    }
+}
+
+let audioPlayer = new AudioPlayer()
+
 
 function updateCardBody(schedulePrepare = true) {
     fetch(updateUrl)
