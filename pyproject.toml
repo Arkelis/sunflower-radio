@@ -15,6 +15,7 @@ flask-dotenv = "^0.1.2"
 flask-cors = "^3.0"
 redis = "^3.3"
 daemonize = "^2.5"
+mutagen = "^1.43"
 
 [tool.poetry.dev-dependencies]
 
