@@ -1,5 +1,6 @@
-"""Mixins used by several classes in Sunflower application."""
+"""Utilitary classes used in several parts of sunflower application."""
 
+from collections import namedtuple
 import redis
 
 class RedisMixin:
@@ -23,3 +24,6 @@ class RedisMixin:
         if key not in self.REDIS_KEYS:
             raise KeyError("Only {} keys are used by this application.".format(self.REDIS_KEYS))
         return self._redis.get(key)
+
+
+Song = namedtuple("Song", ["path", "artist", "title", "length"])
