@@ -6,39 +6,42 @@ function prepareUpdate() {
     setTimeout(updateCardBody, timeout)
 }
 
-class AudioPlayer {
-    element = document.querySelector("audio")
+class FlippedElement {
     y
+    element
 
     get newY() {
         return this.element.getBoundingClientRect().y
     }
 
-    constructor() {
+    constructor(element) {
+        this.element = document.querySelector(element)
         this.y = this.newY
     }
 
     flip() {
-        deltaY = this.newY - this.y
+        const newY = this.newY
+        const deltaY = this.y - newY
+        this.y = newY
         this.element.animate(
-             [
+            [
+                {
+                    transform: `translateY(${deltaY}px)`
+                },
+                {
+                    transform: "none"
+                },
+            ],
             {
-                transform: `translateY(${deltaY})`
-            },
-            {
-                transform: "none"
-            },
-        ],
-        {
-            duration: "0.7s",
-            fill: "both",
-            easing: "ease-in-out",
-        })
+                duration: 400,
+                fill: "both",
+                easing: "ease-in-out",
+            })
+        this.element.style.transform = `translateY(${deltaY}px)`
     }
 }
 
-let audioPlayer = new AudioPlayer()
-
+let audioPlayer = new FlippedElement("audio")
 
 function updateCardBody(schedulePrepare = true) {
     fetch(updateUrl)
@@ -66,7 +69,7 @@ function updateCardBody(schedulePrepare = true) {
                 let fetchedText = data[element.replace(/-/g, "_")]
                 let nodeToUpdate = document.getElementById(element)
                 let currentText = nodeToUpdate.innerHTML
-                if (currentText != fetchedText){
+                if (currentText != fetchedText) {
                     divsToUpdate.push([nodeToUpdate, fetchedText])
                 }
             })
@@ -82,13 +85,14 @@ function updateCardBody(schedulePrepare = true) {
             }
 
 
-            divsToUpdate.forEach(element => {element[0].classList.add("fade-out")})
+            divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
             setTimeout(() => {
                 // update info
                 divsToUpdate.forEach(element => {
                     element[0].innerText = element[1]
                     element[0].classList.remove("fade-out")
                 })
+                audioPlayer.flip()
 
                 currentBroadcastEnd.innerText = fetchedEnd
 
