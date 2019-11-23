@@ -34,7 +34,7 @@
 }
 
 @media screen and (min-width: 45em) {
-    #details {
+    #details * {
         animation-name: fade-in-right;
     }
 }
