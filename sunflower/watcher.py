@@ -31,8 +31,7 @@ def watch():
     # instanciate radio
     radio = Radio(logger)
 
-    if radio.current_broadcast_metadata is None:
-        radio.current_broadcast_metadata = radio.get_current_broadcast_metadata()
+    radio.process_radio()
 
     # loop
     while True:

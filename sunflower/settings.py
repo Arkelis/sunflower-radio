@@ -13,4 +13,4 @@ TIMETABLE = [
 
 FLUX_URL = "https://icecast.pycolore.fr/tournesol"
 
-BACKUP_SONGS_GLOB_PATTERN = "~/radio/songs/*.ogg"
+BACKUP_SONGS_GLOB_PATTERN = "/home/guillaume/radio/songs/*.ogg"

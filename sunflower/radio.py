@@ -125,13 +125,13 @@ class Radio(RedisMixin):
         if metadata["type"] == "Publicités":
             self.logger.info("Ads detected.")
             if not self.backup_songs:
+                self.logger.info("Backup songs list must be generated.")
                 self.backup_songs = self._parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-                self.logger.debug("Backup songs list generated:", self.backup_songs)
             backup_song = self.backup_songs.pop(0)
             
             # tell liquidsoap to play backup song
-            session = telnetlib.Telnet("localhost", 1234, 100)
-            session.write("request.push {}\n".format(backup_song[0]).encode())
+            session = telnetlib.Telnet("localhost", 1234)
+            session.write("custom_songs.push {}\n".format(backup_song.path).encode())
             session.close()
 
             # and update metadata
@@ -185,5 +185,3 @@ class Radio(RedisMixin):
         metadata, info = self._handle_advertising(metadata, info)
         self.current_broadcast_metadata = metadata
         self.current_broadcast_info = info
-
-    
