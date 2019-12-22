@@ -185,3 +185,45 @@ class Radio(RedisMixin):
         metadata, info = self._handle_advertising(metadata, info)
         self.current_broadcast_metadata = metadata
         self.current_broadcast_info = info
+    
+    def write_liquidsoap_config(self):
+        with open("test.liq", "w") as f:
+            f.write("#! /usr/bin/env liquidsoap\n\n")
+            f.write("# log file\n")
+            f.write('set("log.file.path", "~/radio/sunflower.log")\n\n')
+            f.write("# activate telnet server\n")
+            f.write('set("server.telnet", true)\n\n')
+            f.write("# streams\n")
+            for station in self.stations.values():
+                formated_name = station.station_name.lower().replace(" ", "")
+                f.write('{} = mksafe(input.http("{}"))\n'.format(formated_name, station.station_url))
+            f.write("\n# timetable\ntimetable = switch(track_sensitive=false, [\n")
+            for days, timetable in settings.TIMETABLE.items():
+                prefix = (
+                    ("(" + " or ".join("{}w".format(wd) for wd in days) + ") and")
+                    if len(days) > 1
+                    else "{}w".format(days[0])
+                )
+                for start, end, station_name in timetable:
+                    if start.count(":") != 1 or end.count(":") != 1:
+                        raise RuntimeError("Time format must be HH:MM.")
+                    formated_start = start.replace(":", "h")
+                    formated_end = end.replace(":", "h")
+                    formated_name = station_name.lower().replace(" ", "")
+                    if len(days) > 1:
+                        line = "    ({{ {} {}-{} }}, {}),\n".format(prefix, formated_start, formated_end, formated_name)
+                    else:
+                        line = "    ({{ {}-{} }}, {}),\n".format(prefix+formated_start, prefix+formated_end, formated_name)
+                    f.write(line)
+            f.write("])\n\n\n")
+            f.write("""radio = fallback([timetable, default])
+radio = fallback(track_sensitive=false, [request.queue(id="custom_songs"), radio])
+
+# output
+output.icecast(%vorbis(quality=0.6),
+    host="localhost", port=3333, password="Arkelis77",
+    mount="tournesol", radio)
+""")
+
+if __name__ == '__main__':
+    Radio().write_liquidsoap_config()

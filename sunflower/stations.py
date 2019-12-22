@@ -14,8 +14,11 @@ _stations = {}
 class StationMeta(type):
     def __new__(mcls, name, bases, attrs):
         cls = super().__new__(mcls, name, bases, attrs)
-        if hasattr(cls, "station_name"):
-            _stations[cls.station_name] = cls
+        if not hasattr(cls, "station_name"):
+            return cls
+        assert hasattr(cls, 'station_thumbnail'), "Station object must define 'station_thumbnail' attribute."
+        assert hasattr(cls, 'station_url'), "Station object must define 'station_url' attribute."
+        _stations[cls.station_name] = cls
         return cls
 
 class Station(RedisMixin, metaclass=StationMeta):
@@ -24,8 +27,9 @@ class Station(RedisMixin, metaclass=StationMeta):
     User defined stations should inherit from this class and define following properties:
     - station_name (str)
     - station_thumbnail (str): link to station thumbnail
+    - station_url (str): url to music stream
     """
-    
+
     def get_from_redis(self, key):
         """Get key from redis and perform other checkings."""
         store_data = super().get_from_redis(key)
@@ -68,6 +72,7 @@ class Station(RedisMixin, metaclass=StationMeta):
 class RTL2(Station):
     station_name = "RTL 2"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
+    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
     _main_data_url = "https://timeline.rtl.fr/RTL2/items"
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
@@ -284,21 +289,25 @@ class FranceInter(RadioFranceStation):
     station_name = "France Inter"
     _station_api_name = "FRANCEINTER"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-inter-numerique.svg"
+    station_url = "http://icecast.radiofrance.fr/franceinter-midfi.mp3"
 
 
 class FranceInfo(RadioFranceStation):
     station_name = "France Info"
     _station_api_name = "FRANCEINFO"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
+    station_url = "http://icecast.radiofrance.fr/franceinfo-midfi.mp3"
 
 
 class FranceMusique(RadioFranceStation):
     station_name = "France Musique"
     _station_api_name = "FRANCEMUSIQUE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-musique-numerique.svg"
+    station_url = "http://icecast.radiofrance.fr/francemusique-midfi.mp3"
 
 
 class FranceCulture(RadioFranceStation):
     station_name = "France Culture"
     _station_api_name = "FRANCECULTURE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"
+    station_url = "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
