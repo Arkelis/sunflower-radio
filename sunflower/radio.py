@@ -15,14 +15,16 @@ import mutagen
 from sunflower import settings
 from sunflower.utils import RedisMixin, Song
 
-
-class Radio(RedisMixin):
-    def __init__(self, logger=None):
+class Channel(RedisMixin):
+    def __init__(self, endpoint, logger=None):
         super().__init__()
         from sunflower.stations import _stations
         self.backup_songs = []
         self.stations = _stations
         self.logger = logger # see watcher.py
+        self.endpoint = endpoint
+        self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
+        self.redis_info_key = "sunflower:" + self.endpoint + ":info"
 
     @property
     def current_station_name(self):
@@ -30,15 +32,27 @@ class Radio(RedisMixin):
         return self.get_station_info(datetime.now().time())[2]
 
     @staticmethod
-    def get_station_info(time_):
+    def get_station_info(time_, timetable=None):
         """Get info of station playing at given time.
         
         time_ must be datetime.time() instance.
         """
-        assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
-        timetable = settings.TIMETABLE
         MonkeyPatch.patch_fromisoformat()
+        if timetable is None:
+            assert hasattr(settings, "TIMETABLE"), "TIMETABLE not defined in settings."
+            timetable = settings.TIMETABLE
+
+        # fisrt, select weekday
+        week_day = datetime.now().weekday()
         for t in timetable:
+            # breakpoint()
+            if week_day in t:
+                key = t
+                break
+        else:
+            raise RuntimeError("Jour de la semaine non supporté.")
+
+        for t in timetable[key]:
             station = t[2]
             start, end = map(time.fromisoformat, t[:2])
             end = time(23, 59, 59) if end == time(0, 0, 0) else end
@@ -65,25 +79,29 @@ class Radio(RedisMixin):
             return None
         return json.loads(stored_data.decode())
     
+    def publish_to_redis(self, metadata):
+        channel = self.endpoint
+        return super().publish_to_redis(channel, metadata)
+
     @property
     def current_broadcast_metadata(self):
         """Retrieve metadata stored in Redis as a dict."""
-        return self.get_from_redis(self.REDIS_METADATA)
+        return self.get_from_redis(self.redis_metadata_key)
 
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
-        self._redis.set(self.REDIS_METADATA, json.dumps(metadata))
+        self._redis.set(self.redis_metadata_key, json.dumps(metadata))
 
     @property
     def current_broadcast_info(self):
         """Retrieve card info stored in Redis as a dict."""
-        return self.get_from_redis(self.REDIS_INFO)
+        return self.get_from_redis(self.redis_info_key)
 
     @current_broadcast_info.setter
     def current_broadcast_info(self, info):
         """Store card info in Redis."""
-        self._redis.set(self.REDIS_INFO, json.dumps(info))
+        self._redis.set(self.redis_info_key, json.dumps(info))
 
 
     def get_current_broadcast_info(self, metadata):
@@ -185,6 +203,7 @@ class Radio(RedisMixin):
         metadata, info = self._handle_advertising(metadata, info)
         self.current_broadcast_metadata = metadata
         self.current_broadcast_info = info
+        self.publish_to_redis(info)
     
     def write_liquidsoap_config(self):
         with open("test.liq", "w") as f:
@@ -225,5 +244,5 @@ output.icecast(%vorbis(quality=0.6),
     mount="tournesol", radio)
 """)
 
-if __name__ == '__main__':
-    Radio().write_liquidsoap_config()
+# if __name__ == '__main__':
+#     Channel().write_liquidsoap_config()
