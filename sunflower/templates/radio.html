@@ -48,5 +48,10 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='app.js') }}" id="info-update" data-update-url="{{ update_url }}"></script>
+    <script>
+    es = new EventSource("https://radio.pycolore.fr/update-events/tournesol")
+    es.onmessage = event => console.log(event.data)
+    es.onerror = err => console.log(err)
+    </script>
 </body>
 </html>

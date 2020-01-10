@@ -7,14 +7,15 @@ import json
 import redis
 
 from sunflower.radio import Channel
+from sunflower.utils import get_channel_or_404
 from sunflower import settings
 
 app = Flask(__name__)
-cors = CORS(app)
-channels = {name: Channel(name) for name in settings.CHANNELS}
+# cors = CORS(app)
+
 
 # En attendant de prendre en charge le multi chaines 
-tournesol = channels["tournesol"]
+tournesol = Channel("tournesol")
 
 
 
@@ -23,29 +24,36 @@ def index():
     context = {
         "card_info": tournesol.current_broadcast_info,
         "flux_url": settings.ICECAST_SERVER_URL + tournesol.endpoint,
-        "update_url": request.url_root + "update",
+        "update_url": request.url_root + "update/tournesol",
     }
     return render_template("radio.html", **context)
 
-@app.route("/update")
-def update_broadcast_info():
-    return jsonify(tournesol.current_broadcast_info)
+@app.route("/channel/<string:channel>/infos")
+@get_channel_or_404
+def get_channel_info(channel):
+    return jsonify({
+        "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
+        "update_url": request.url_root + "update/" + channel.endpoint,
+    })
 
 @app.route("/update/<string:channel>")
+@get_channel_or_404
+def update_broadcast_info(channel):
+    return jsonify(channel.current_broadcast_info)
+
+@app.route("/update-events/<string:channel>")
+@get_channel_or_404
 def update_broadcast_info_stream(channel):
-    # if channel not in settings.CHANNELS:
-    # En attendant de prendre en charge le multi chaines 
-    if channel != "tournesol":
-        abort(404) 
     def updates_generator():
         pubsub = redis.Redis().pubsub()
-        pubsub.subscribe(channel)
+        pubsub.subscribe("sunflower:" + channel.endpoint)
         for message in pubsub.listen():
-            if message.get("message") is None:
+            data = message.get("data")
+            if not isinstance(data, type(b"")):
                 continue
-            yield message["message"]
-    return Response(stream_with_context(updates_generator()), mimetype="text/event-steam")
-
+            yield "data: {}\n\n".format(data.decode())
+        return
+    return Response(stream_with_context(updates_generator()), mimetype="text/event-stream")
 
 @app.route("/on-air")
 def current_show_data():

@@ -52,12 +52,12 @@ class Channel(RedisMixin):
         else:
             raise RuntimeError("Jour de la semaine non supporté.")
 
-        for t in timetable[key]:
-            station = t[2]
+        for t in timetable[key][::-1]:
             start, end = map(time.fromisoformat, t[:2])
-            end = time(23, 59, 59) if end == time(0, 0, 0) else end
-            if start < time_ < end:
-                return start, end, station
+            if time_ < start:
+                continue
+            station = t[2]
+            return start, end, station
         else:
             raise RuntimeError("Aucune station programmée à cet horaire.")
 
@@ -203,15 +203,17 @@ class Channel(RedisMixin):
         metadata, info = self._handle_advertising(metadata, info)
         self.current_broadcast_metadata = metadata
         self.current_broadcast_info = info
-        self.publish_to_redis(info)
+        self.publish_to_redis("updated")
     
     def write_liquidsoap_config(self):
         with open("test.liq", "w") as f:
             f.write("#! /usr/bin/env liquidsoap\n\n")
             f.write("# log file\n")
-            f.write('set("log.file.path", "~/radio/sunflower.log")\n\n')
+            f.write('set("log.file.path", "/tmp/sunflower.log")\n\n')
             f.write("# activate telnet server\n")
             f.write('set("server.telnet", true)\n\n')
+            f.write('# default source\n')
+            f.write('default = single("~/radio/franceinfo-long.ogg")\n\n')
             f.write("# streams\n")
             for station in self.stations.values():
                 formated_name = station.station_name.lower().replace(" ", "")
@@ -219,9 +221,9 @@ class Channel(RedisMixin):
             f.write("\n# timetable\ntimetable = switch(track_sensitive=false, [\n")
             for days, timetable in settings.TIMETABLE.items():
                 prefix = (
-                    ("(" + " or ".join("{}w".format(wd) for wd in days) + ") and")
+                    ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
                     if len(days) > 1
-                    else "{}w".format(days[0])
+                    else "{}w".format(days[0]+1)
                 )
                 for start, end, station_name in timetable:
                     if start.count(":") != 1 or end.count(":") != 1:

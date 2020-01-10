@@ -2,11 +2,12 @@
 
 import json
 from collections import namedtuple
+import functools
 
+from flask import abort
 import redis
 
 from sunflower import settings
-
 
 class RedisMixin:
     """Provide a method to access data from redis database.
@@ -36,13 +37,24 @@ class RedisMixin:
 
         Parameters:
         - channel (str): channel name
-        - data (jsonable data): data to publish
+        - data (jsonable data or str): data to publish
         
         channel in redis is prefixed with 'sunflower:'.
         """
         assert channel in self.REDIS_CHANNELS, "Channel not defined in settings."
-        self._redis.publish(self.REDIS_CHANNELS[channel], json.dumps(data))
+        if not isinstance(data, str):
+            data = json.dumps(data)
+        self._redis.publish(self.REDIS_CHANNELS[channel], data)
 
+
+def get_channel_or_404(view_function):
+    @functools.wraps(view_function)
+    def wrapper(channel):
+        if channel not in settings.CHANNELS:
+            abort(404)
+        from sunflower.radio import Channel
+        return view_function(channel=Channel(channel))
+    return wrapper
 
 
 Song = namedtuple("Song", ["path", "artist", "title", "length"])
