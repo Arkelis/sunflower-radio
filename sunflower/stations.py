@@ -94,8 +94,8 @@ class RTL2(Station):
         }
         if metadata["type"] == "Musique":
             card_info["current_broadcast_title"] = metadata["artist"] + " • " + metadata["title"]
-        else: 
-            card_info["current_broadcast_title"] = metadata["type"]
+        elif metadata["type"] == "Intermède": 
+            card_info["current_broadcast_title"] = "Vous écoutez RTL 2"
         return card_info
 
     def _fetch_metadata(self, song=False):
