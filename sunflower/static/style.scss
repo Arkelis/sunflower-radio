@@ -4,7 +4,7 @@
 
 body {
     position: relative;
-    font-family: "Francois One", sans-serif;
+    font-family: "Fira Sans Condensed", sans-serif;
     margin: 0;
 }
 
@@ -20,6 +20,7 @@ nav {
         padding: 0.5em;
         text-align: center;
         background-color: #333;;
+        font-weight: 600;
     }
 
     ul {
@@ -32,6 +33,7 @@ nav {
         li {
             text-align: center;
             list-style: none;
+            font-weight: 600;
 
             a {
                 color: inherit;
@@ -74,23 +76,26 @@ nav {
     #current-station {
         font-size: 1.25em;
         text-transform: uppercase;
+        font-weight: 600;
     }
     
     #current-broadcast-title {
-        font-family: Lato, "sans-serif";
+        font-family: "Fira Sans", "sans-serif";
         font-size: 1.5em;
-        font-weight: normal;
+        font-weight: 200;
         margin: auto;
     }
 }
 
 #current-broadcast-summary {
-    font-family: "Roboto Condensed", sans-serif;
+    font-family: "Fira Sans Condensed", sans-serif;
+    font-weight: 300;
     margin: 0;
 }
 
 #current-show-title {
-    font-family: "Francois One", sans-serif;
+    font-family: "Fira Sans Condensed", sans-serif;
+    font-weight: 600;
     color: #888;
     justify-self: flex-end;
 }

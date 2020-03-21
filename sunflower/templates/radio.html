@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Radio Tournesol</title>
-    <link href="https://fonts.googleapis.com/css?family=Francois+One|Lato:300|Roboto+Condensed&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans+Condensed:600,400,300|Fira+Sans:200&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" href='{{ url_for("static", filename="style.css") }}'>
     <link rel="stylesheet" href='{{ url_for("static", filename="animations.css") }}'>
     <link rel="stylesheet" href='{{ url_for("static", filename="dark-theme.css") }}'>
@@ -16,7 +16,7 @@
             Radio Tournesol
         </div>
         <ul>
-            <li><a href="{{ url_for('current_show_data') }}">Programme en cours au format JSON</a></li>
+            <li><a href="{{ infos_url }}">Programme en cours au format JSON</a></li>
         </ul>
     </nav>
     <div id="wrapper">
@@ -36,7 +36,6 @@
                                 <p id="current-broadcast-summary"></p>
                         </div>
                     </div>
-                    <div hidden id="current-broadcast-end"></div>
                 </div>
                 <div id="card-footer">
                     <audio controls preload="none" src="{{ flux_url }}">
@@ -47,11 +46,6 @@
             {# <div class="following-broadcasts">A suivre...</div> #}
         </div>
     </div>
-    <script src="{{ url_for('static', filename='app.js') }}" id="info-update" data-update-url="{{ update_url }}"></script>
-    <script>
-    es = new EventSource("https://radio.pycolore.fr/update-events/tournesol")
-    es.onmessage = event => console.log(event.data)
-    es.onerror = err => console.log(err)
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}" id="info-update" data-update-url="{{ update_url }}" data-listen-url="{{ listen_url }}"></script>
 </body>
 </html>

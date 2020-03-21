@@ -1,10 +1,5 @@
 let updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
-
-function prepareUpdate() {
-    let end = parseInt(document.getElementById("current-broadcast-end").innerText, 10)
-    let timeout = end - Date.now() > 0 ? end - Date.now() : 5000
-    setTimeout(updateCardBody, timeout)
-}
+let eventsUrl = document.getElementById("info-update").attributes["data-listen-url"].value
 
 class FlippedElement {
     y
@@ -43,7 +38,30 @@ class FlippedElement {
 
 let audioPlayer = new FlippedElement("audio")
 
-function updateCardBody(schedulePrepare = true) {
+/**
+ * Update metadata which need to be updated according to divsToUpdata parameter.
+ * Used by updateCardBody() function.
+ * @param divsToUpdate 
+ */
+function updateCardInfos(divsToUpdate, thumbnailNode=null) {
+    divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
+    // update info
+    divsToUpdate.forEach(element => {
+        element[0].innerText = element[1]
+        element[0].classList.remove("fade-out")
+    })
+    audioPlayer.flip()
+
+    //update thumbnail if needed
+    if (thumbnailNode !== null) {
+        thumbnailNode.parentElement.classList.remove("fade-out")
+    }
+}
+
+/**
+ * Update metadata in card according to fetched data.
+ */
+function updateCardBody() {
     fetch(updateUrl)
         .then((response) => response.json())
         .then((data) => {
@@ -55,10 +73,6 @@ function updateCardBody(schedulePrepare = true) {
                 "current-show-title",
                 "current-broadcast-summary",
             ]
-            let currentBroadcastEnd = document.getElementById("current-broadcast-end")
-            let fetchedEnd = data.current_broadcast_end
-
-            if (fetchedEnd <= currentBroadcastEnd.innerText) return
 
             let thumbnailNode = document.getElementById("current-thumbnail")
             let thumbnailSrc = thumbnailNode.attributes.src.value
@@ -79,31 +93,24 @@ function updateCardBody(schedulePrepare = true) {
             let fetchedThumbnailSrc = data.current_thumbnail
             if (thumbnailSrc != fetchedThumbnailSrc) {
                 thumbnailNode.parentElement.classList.add("fade-out")
-                thumbnailUpdated = true
+                thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
+                thumbnailNode.attributes.src.value = fetchedThumbnailSrc
             } else {
-                thumbnailUpdated = false
+                updateCardInfos(divsToUpdate, thumbnailNode=null)
             }
 
 
-            divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
-            setTimeout(() => {
-                // update info
-                divsToUpdate.forEach(element => {
-                    element[0].innerText = element[1]
-                    element[0].classList.remove("fade-out")
-                })
-                audioPlayer.flip()
-
-                currentBroadcastEnd.innerText = fetchedEnd
-
-                //update thumbnail if needed
-                if (thumbnailUpdated) {
-                    thumbnailNode.attributes.src.value = fetchedThumbnailSrc
-                    thumbnailNode.parentElement.classList.remove("fade-out")
-                }
-            }, 400)
         })
-    if (schedulePrepare) prepareUpdate()
 }
 
-updateCardBody()
+es = new EventSource(eventsUrl)
+es.onmessage = function(event) {
+    console.log(event.data)
+    if (event.data === "updated") {
+        updateCardBody()
+    }
+}
+es.onerror = err => console.log(err)
+
+    console.log("hello")
+    updateCardBody()

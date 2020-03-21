@@ -13,30 +13,34 @@ from sunflower import settings
 app = Flask(__name__)
 # cors = CORS(app)
 
-@app.route("/<string:channel>")
+@app.route("/<string:channel>/")
 @get_channel_or_404
 def index(channel):
     context = {
         "card_info": channel.current_broadcast_info,
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
-        "update_url": request.url_root + "update/" + channel.endpoint,
+        "update_url": url_for("update_broadcast_info", channel=channel.endpoint),
+        "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
+        "infos_url": url_for("get_channel_info", channel=channel.endpoint),
     }
     return render_template("radio.html", **context)
 
-@app.route("/channel/<string:channel>/infos")
+@app.route("/<string:channel>/infos/")
 @get_channel_or_404
 def get_channel_info(channel):
     return jsonify({
-        "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
-        "update_url": request.url_root + "update/" + channel.endpoint,
+        "audio_stream_url": settings.ICECAST_SERVER_URL + channel.endpoint,
+        "card_formated_metadata_url": url_for("update_broadcast_info", channel=channel.endpoint, _external=True),
+        "metadata_update_events_url": url_for("update_broadcast_info_stream", channel=channel.endpoint, _external=True),
+        "raw_metadata": channel.current_broadcast_metadata,
     })
 
-@app.route("/update/<string:channel>")
+@app.route("/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
     return jsonify(channel.current_broadcast_info)
 
-@app.route("/update-events/<string:channel>")
+@app.route("/<string:channel>/update-events/")
 @get_channel_or_404
 def update_broadcast_info_stream(channel):
     def updates_generator():
@@ -49,7 +53,3 @@ def update_broadcast_info_stream(channel):
             yield "data: {}\n\n".format(data.decode())
         return
     return Response(stream_with_context(updates_generator()), mimetype="text/event-stream")
-
-@app.route("/on-air")
-def current_show_data():
-    return jsonify(tournesol.current_broadcast_metadata)
