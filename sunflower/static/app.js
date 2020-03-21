@@ -41,21 +41,22 @@ let audioPlayer = new FlippedElement("audio")
 /**
  * Update metadata which need to be updated according to divsToUpdata parameter.
  * Used by updateCardBody() function.
- * @param divsToUpdate 
+ * @param divsToUpdate : arry containing [node, newValueToUpdate]
  */
 function updateCardInfos(divsToUpdate, thumbnailNode=null) {
-    divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
-    // update info
-    divsToUpdate.forEach(element => {
-        element[0].innerText = element[1]
-        element[0].classList.remove("fade-out")
-    })
-    audioPlayer.flip()
-
-    //update thumbnail if needed
-    if (thumbnailNode !== null) {
-        thumbnailNode.parentElement.classList.remove("fade-out")
-    }
+    setTimeout(() => {
+        // update info
+        divsToUpdate.forEach(element => {
+            element[0].innerText = element[1]
+            element[0].classList.remove("fade-out")
+        })
+        audioPlayer.flip()
+    
+        //update thumbnail if needed
+        if (thumbnailNode !== null) {
+            thumbnailNode.parentElement.classList.remove("fade-out")
+        }
+    }, 400);
 }
 
 /**
@@ -65,7 +66,6 @@ function updateCardBody() {
     fetch(updateUrl)
         .then((response) => response.json())
         .then((data) => {
-
 
             let textsToCheck = [
                 "current-station",
@@ -88,8 +88,9 @@ function updateCardBody() {
                 }
             })
 
+            divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
+
             // check thumbnail src
-            let thumbnailUpdated
             let fetchedThumbnailSrc = data.current_thumbnail
             if (thumbnailSrc != fetchedThumbnailSrc) {
                 thumbnailNode.parentElement.classList.add("fade-out")
@@ -98,19 +99,16 @@ function updateCardBody() {
             } else {
                 updateCardInfos(divsToUpdate, thumbnailNode=null)
             }
-
-
         })
 }
 
 es = new EventSource(eventsUrl)
 es.onmessage = function(event) {
-    console.log(event.data)
     if (event.data === "updated") {
         updateCardBody()
     }
 }
 es.onerror = err => console.log(err)
 
-    console.log("hello")
-    updateCardBody()
+console.log("hello")
+updateCardBody()
