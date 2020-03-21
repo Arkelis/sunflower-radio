@@ -46,7 +46,7 @@ def watch():
                     channel.process_radio()
                 except Exception as err:
                     import traceback
-                    logger.error(f"Une erreur est survenue pendant la mise à jour des données: {err}.")
+                    logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
                     logger.error(traceback.format_exc())
                     # metadata = {
                     #     "message": "An error occured when fetching data.",

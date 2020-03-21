@@ -220,11 +220,11 @@ class Channel(RedisMixin):
         used_stations = set()
 
         # indication nom de la chaîne
-        string = f"##### {self.endpoint} channel #####\n\n"
+        string = "##### " + str(self.endpoint) + " channel #####\n\n"
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            timetable_to_write = f"# timetable\n{self.endpoint}_timetable = switch(track_sensitive=false, [\n"
+            timetable_to_write = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
             for days, timetable in self.timetable.items():
                 formated_weekday = (
                     ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
@@ -249,9 +249,9 @@ class Channel(RedisMixin):
         string += timetable_to_write
         
         # output
-        fallback = f"{self.endpoint}_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
-        string += f"{self.endpoint}_radio = fallback([{fallback}, default])\n"    
-        string += f'{self.endpoint}_radio = fallback(track_sensitive=false, [request.queue(id="{self.endpoint}_custom_songs"), {self.endpoint}_radio])\n\n'
+        fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
+        string += str(self.endpoint) + "_radio = fallback([{fallback}, default])\n"    
+        string += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
         string += "# output\n"
         string += "output.icecast(%vorbis(quality=0.6),\n"
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
