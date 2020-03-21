@@ -250,12 +250,12 @@ class Channel(RedisMixin):
         
         # output
         fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
-        string += str(self.endpoint) + "_radio = fallback([{fallback}, default])\n"    
+        string += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         string += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
         string += "# output\n"
         string += "output.icecast(%vorbis(quality=0.6),\n"
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
-        string += f'    mount="{self.endpoint}", {self.endpoint}_radio)\n\n'
+        string += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
 
         return used_stations, string
 
