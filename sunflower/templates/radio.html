@@ -13,10 +13,12 @@
 <body>
     <nav>
         <div id="brand">
-            Radio Tournesol
+            Radio PyColore
         </div>
         <ul>
-            <li><a href="{{ infos_url }}">Programme en cours au format JSON</a></li>
+            <li><a href="{{ url_for('channel', channel='tournesol') }}">Chaîne Tournesol</a></li>
+            <li><a href="{{ url_for('channel', channel='music') }}">Chaîne Musique</a></li>
+            <li><a href="{{ infos_url }}">Métadonnées</a></li>
         </ul>
     </nav>
     <div id="wrapper">

@@ -25,7 +25,7 @@ nav {
 
     ul {
         position: absolute;
-        bottom: -3em;
+        bottom: -9em;
         margin-bottom: 1em;
         padding: 0 0 1em 0;
         width: 100%;
@@ -34,6 +34,7 @@ nav {
             text-align: center;
             list-style: none;
             font-weight: 600;
+            margin-bottom: 1em;
 
             a {
                 color: inherit;
@@ -163,7 +164,7 @@ nav {
 
 @media screen and (min-height: 35em) {
     
-    @media screen and (min-width: 30em) {
+    @media screen and (min-width: 45em) {
         body {
             background-color: #333;
             position: initial;
@@ -185,7 +186,10 @@ nav {
                 position: initial;
                 padding: 0;
                 width: auto;
-                margin: 1.5em;
+
+                li {
+                    margin: 1.5em 1.5em 0 0;
+                }
             }
         }
     
@@ -208,6 +212,15 @@ nav {
             box-shadow: 0px 0px 5em black;
             border-radius: 0.5em;
             background-color: white;
+        }
+    }
+    @media screen and (min-width: 45em) {
+        nav ul {
+            display: flex;
+            margin: 0;
+            li {
+                margin-bottom: 0;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-from flask import abort, Flask, jsonify, render_template, url_for, request, stream_with_context, Response
+from flask import abort, Flask, jsonify, render_template, url_for, request, stream_with_context, Response, redirect
 from flask_cors import CORS, cross_origin
 import time
 import threading
@@ -13,9 +13,13 @@ from sunflower import settings
 app = Flask(__name__)
 # cors = CORS(app)
 
+@app.route("/")
+def index():
+    return redirect(url_for("channel", channel="tournesol"))
+
 @app.route("/<string:channel>/")
 @get_channel_or_404
-def index(channel):
+def channel(channel):
     context = {
         "card_info": channel.current_broadcast_info,
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
