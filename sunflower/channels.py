@@ -224,7 +224,7 @@ class Channel(RedisMixin):
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            timetable_to_write = f"\n# timetable\n{self.endpoint}_timetable = switch(track_sensitive=false, [\n"
+            timetable_to_write = f"# timetable\n{self.endpoint}_timetable = switch(track_sensitive=false, [\n"
             for days, timetable in self.timetable.items():
                 formated_weekday = (
                     ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
@@ -245,18 +245,11 @@ class Channel(RedisMixin):
             used_stations = self.stations
             timetable_to_write = ""
         
-        # écriture" des radios utilisées
-        string += "# streams\n"
-        for station in used_stations:
-            url = station.station_url
-            formated_name = station.station_name.lower().replace(" ", "")
-            string += '{} = mksafe(input.http("{}"))\n'.format(formated_name, url)
-        
         # écriture de l'emploi du temps
         string += timetable_to_write
         
         # output
-        fallback = f"{self.endpoint}_timetable" if timetable_to_write else formated_name
+        fallback = f"{self.endpoint}_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
         string += f"{self.endpoint}_radio = fallback([{fallback}, default])\n"    
         string += f'{self.endpoint}_radio = fallback(track_sensitive=false, [request.queue(id="{self.endpoint}_custom_songs"), {self.endpoint}_radio])\n\n'
         string += "# output\n"
@@ -264,7 +257,7 @@ class Channel(RedisMixin):
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
         string += f'    mount="{self.endpoint}", {self.endpoint}_radio)\n\n'
 
-        return string
+        return used_stations, string
 
 
 from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMusique, RTL2
@@ -326,5 +319,24 @@ def write_liquidsoap_config():
         f.write('set("server.telnet", true)\n\n')
         f.write('# default source\n')
         f.write('default = single("~/radio/franceinfo-long.ogg")\n\n')
+        f.write('# streams\n')
+
+        # configuration des chaînes
+        # initialisation
+        all_channels_string = ""
+        used_stations = set()
+
+        # on récupère les infos de chaque chaîne
         for channel in CHANNELS.values():
-            f.write(channel.get_liquidsoap_config())
+            stations_used_by_channel, channel_string = channel.get_liquidsoap_config()
+            used_stations.update(stations_used_by_channel)
+            all_channels_string += channel_string
+        
+        # on commence par énumérer toutes les stations utilisées
+        for station in used_stations:
+            url = station.station_url
+            formated_name = station.station_name.lower().replace(" ", "")
+            f.write('{} = mksafe(input.http("{}"))\n'.format(formated_name, url))
+        
+        # puis on écrit les output
+        f.write("\n" + all_channels_string)
