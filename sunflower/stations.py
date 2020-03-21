@@ -8,17 +8,7 @@ import os
 
 from sunflower.utils import RedisMixin
 
-class StationMeta(type):
-    def __new__(mcls, name, bases, attrs):
-        cls = super().__new__(mcls, name, bases, attrs)
-        if not hasattr(cls, "station_name"):
-            return cls
-        assert hasattr(cls, 'station_thumbnail'), "Station object must define 'station_thumbnail' attribute."
-        assert hasattr(cls, 'station_url'), "Station object must define 'station_url' attribute."
-        _stations[cls.station_name] = cls
-        return cls
-
-class Station(RedisMixin, metaclass=StationMeta):
+class Station(RedisMixin):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:

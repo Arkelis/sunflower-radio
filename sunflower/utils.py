@@ -53,7 +53,7 @@ def get_channel_or_404(view_function):
         if channel not in settings.CHANNELS:
             abort(404)
         from sunflower.channels import CHANNELS
-        return view_function(channel=CHANNELS(channel))
+        return view_function(channel=CHANNELS[channel])
     return wrapper
 
 

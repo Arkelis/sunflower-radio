@@ -9,7 +9,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from daemonize import Daemonize
-from sunflower import radio
+from sunflower import channels
 from sunflower import settings
 
 def watch():
@@ -30,15 +30,15 @@ def watch():
         logger.addHandler(file_handler)
         logger.debug("Starting watcher.")
 
-        # instanciate radio
-        channels = [radio.Channel(name, logger) for name in settings.CHANNELS]
-        for channel in channels:
+        # add logger to channels and init
+        for channel in channels.CHANNELS.values():
+            channel.logger = logger
             channel.process_radio()
 
         # loop
         while True:
             sleep(4)
-            for channel in channels:
+            for channel in channels.CHANNELS.values():
                 if datetime.now().timestamp() < channel.current_broadcast_metadata["end"]:
                     continue
                 logger.debug("New metadata for channel {}: {}.".format(channel.endpoint, channel.current_broadcast_info["current_broadcast_title"]))
@@ -46,21 +46,21 @@ def watch():
                     channel.process_radio()
                 except Exception as err:
                     import traceback
-                    logger.error("Une erreur est survenue pendant la mise à jour des données.")
+                    logger.error(f"Une erreur est survenue pendant la mise à jour des données: {err}.")
                     logger.error(traceback.format_exc())
-                    metadata = {
-                        "message": "An error occured when fetching data.",
-                        "type": "Erreur",
-                        "end": 0,
-                    }
-                    info = {
-                        "current_thumbnail": channel.current_station.station_thumbnail,
-                        "current_station": channel.current_station.station_name,
-                        "current_broadcast_title": "Une erreur est survenue",
-                        "current_show_title": "Erreur interne du serveur",
-                        "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
-                        "current_broadcast_end": 0,
-                    }
+                    # metadata = {
+                    #     "message": "An error occured when fetching data.",
+                    #     "type": "Erreur",
+                    #     "end": 0,
+                    # }
+                    # info = {
+                    #     "current_thumbnail": channel.current_station.station_thumbnail,
+                    #     "current_station": channel.current_station.station_name,
+                    #     "current_broadcast_title": "Une erreur est survenue",
+                    #     "current_show_title": "Erreur interne du serveur",
+                    #     "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
+                    #     "current_broadcast_end": 0,
+                    # }
     except Exception as err:
         import traceback
         logger.error("Erreur fatale")
