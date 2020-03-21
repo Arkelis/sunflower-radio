@@ -8,9 +8,6 @@ import os
 
 from sunflower.utils import RedisMixin
 
-_stations = {}
-
-
 class StationMeta(type):
     def __new__(mcls, name, bases, attrs):
         cls = super().__new__(mcls, name, bases, attrs)

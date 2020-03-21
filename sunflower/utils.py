@@ -52,8 +52,8 @@ def get_channel_or_404(view_function):
     def wrapper(channel):
         if channel not in settings.CHANNELS:
             abort(404)
-        from sunflower.radio import Channel
-        return view_function(channel=Channel(channel))
+        from sunflower.channels import CHANNELS
+        return view_function(channel=CHANNELS(channel))
     return wrapper
 
 

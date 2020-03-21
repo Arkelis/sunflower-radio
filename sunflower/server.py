@@ -6,25 +6,20 @@ import json
 
 import redis
 
-from sunflower.radio import Channel
+from sunflower.channels import Channel
 from sunflower.utils import get_channel_or_404
 from sunflower import settings
 
 app = Flask(__name__)
 # cors = CORS(app)
 
-
-# En attendant de prendre en charge le multi chaines 
-tournesol = Channel("tournesol")
-
-
-
-@app.route("/")
-def index():
+@app.route("/<string:channel>")
+@get_channel_or_404
+def index(channel):
     context = {
-        "card_info": tournesol.current_broadcast_info,
-        "flux_url": settings.ICECAST_SERVER_URL + tournesol.endpoint,
-        "update_url": request.url_root + "update/tournesol",
+        "card_info": channel.current_broadcast_info,
+        "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
+        "update_url": request.url_root + "update/" + channel.endpoint,
     }
     return render_template("radio.html", **context)
 
