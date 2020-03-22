@@ -1,6 +1,7 @@
 #current-thumbnail-container {
     animation-name: fade-in;
     animation-duration: 0.7s;
+    animation-fill-mode: both;
 }
 
 #current-station {

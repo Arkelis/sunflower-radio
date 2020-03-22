@@ -44,19 +44,17 @@ let audioPlayer = new FlippedElement("audio")
  * @param divsToUpdate : arry containing [node, newValueToUpdate]
  */
 function updateCardInfos(divsToUpdate, thumbnailNode=null) {
-    setTimeout(() => {
-        // update info
-        divsToUpdate.forEach(element => {
-            element[0].innerText = element[1]
-            element[0].classList.remove("fade-out")
-        })
-        audioPlayer.flip()
-    
-        //update thumbnail if needed
-        if (thumbnailNode !== null) {
-            thumbnailNode.parentElement.classList.remove("fade-out")
-        }
-    }, 400);
+    // update info
+    divsToUpdate.forEach(element => {
+        element[0].innerText = element[1]
+        element[0].classList.remove("fade-out")
+    })
+    audioPlayer.flip()
+
+    //update thumbnail if needed
+    if (thumbnailNode !== null) {
+        thumbnailNode.parentElement.classList.remove("fade-out")
+    }
 }
 
 /**
@@ -95,9 +93,9 @@ function updateCardBody() {
             if (thumbnailSrc != fetchedThumbnailSrc) {
                 thumbnailNode.parentElement.classList.add("fade-out")
                 thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
-                thumbnailNode.attributes.src.value = fetchedThumbnailSrc
+                setTimeout(() => {thumbnailNode.attributes.src.value = fetchedThumbnailSrc}, 200)
             } else {
-                updateCardInfos(divsToUpdate, thumbnailNode=null)
+                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, 200)
             }
         })
 }
