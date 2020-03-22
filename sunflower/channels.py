@@ -27,7 +27,7 @@ class Channel(RedisMixin):
         - timetable: dict
         """
         super().__init__()
-        
+
         self.endpoint = endpoint
         self.stations = stations
         self.timetable = timetable
@@ -44,7 +44,7 @@ class Channel(RedisMixin):
 
     def get_station_info(self, time_):
         """Get info of station playing at given time.
-        
+
         time_ must be datetime.time() instance.
         """
         MonkeyPatch.patch_fromisoformat()
@@ -76,7 +76,7 @@ class Channel(RedisMixin):
         else:
             CurrentStationClass = self.get_station_info(datetime.now().time())[2]
         return CurrentStationClass()
-    
+
     def get_from_redis(self, key):
         """Get a key from Redis and return it as loaded json.
 
@@ -86,7 +86,7 @@ class Channel(RedisMixin):
         if stored_data is None:
             return None
         return json.loads(stored_data.decode())
-    
+
     def publish_to_redis(self, metadata):
         channel = self.endpoint
         return super().publish_to_redis(channel, metadata)
@@ -114,7 +114,7 @@ class Channel(RedisMixin):
 
     def get_current_broadcast_info(self, metadata):
         """Return data for displaying broadcast info in player.
-        
+
         This is for data display in player client. This method uses format_info()
         method of currently broadcasted station.
         """
@@ -132,10 +132,10 @@ class Channel(RedisMixin):
                 "current_broadcast_end": 0,
             }
         return card_info
-    
+
     def get_current_broadcast_metadata(self):
         """Get metadata of current broadcasted programm for current station.
-        
+
         This is for pure json data exposure. This method uses get_metadata() method
         of currently broadcasted station.
         """
@@ -154,7 +154,7 @@ class Channel(RedisMixin):
                 self.logger.info("Backup songs list must be generated.")
                 self.backup_songs = self._parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
             backup_song = self.backup_songs.pop(0)
-            
+
             # tell liquidsoap to play backup song
             session = telnetlib.Telnet("localhost", 1234)
             session.write("{}_custom_songs.push {}\n".format(self.endpoint, backup_song.path).encode())
@@ -283,8 +283,8 @@ tournesol = Channel(
             ("00:00", "06:00", RTL2),
             ("06:00", "07:00", FranceInfo),
             ("07:00", "09:00", FranceInter),
-            ("09:00", "13:00", RTL2),
-            ("13:00", "14:00", FranceInter),
+            ("09:00", "11:00", RTL2),
+            ("11:00", "14:00", FranceInter),
             ("14:00", "16:00", RTL2),
             ("16:00", "17:00", FranceCulture),
             ("17:00", "20:00", RTL2),
@@ -295,14 +295,13 @@ tournesol = Channel(
             ("00:00", "06:00", RTL2),
             ("06:00", "07:00", FranceInfo),
             ("07:00", "09:00", FranceInter),
-            ("09:00", "13:00", RTL2),
-            ("13:00", "14:00", FranceInter),
+            ("09:00", "12:00", RTL2),
+            ("12:00", "14:00", FranceInter),
             ("14:00", "16:00", RTL2),
             ("16:00", "18:00", FranceMusique),
             ("18:00", "19:00", RTL2),
-            ("19:00", "20:00", FranceInter),
-            ("20:00", "21:00", FranceInfo),
-            ("21:00", "00:00", RTL2),    
+            ("19:00", "21:00", FranceInter),
+            ("21:00", "00:00", RTL2),
         ]
     },
 )
