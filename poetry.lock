@@ -17,6 +17,14 @@ version = ">=1.4.0,<1.5"
 
 [[package]]
 category = "main"
+description = "Backport of Python 3.7's datetime.fromisoformat"
+name = "backports-datetime-fromisoformat"
+optional = false
+python-versions = "*"
+version = "1.0.0"
+
+[[package]]
+category = "main"
 description = "Screen-scraping library"
 name = "beautifulsoup4"
 optional = false
@@ -314,13 +322,16 @@ python-versions = "*"
 version = "1.11.2"
 
 [metadata]
-content-hash = "16f1061877219e13e104a40a3dbd03dc3b6352035e78ed6670c4b9fe00c69c2f"
+content-hash = "7747f392ee9b293ef07e41432562004782338b13bab8f8742cb6e39e90b052cc"
 python-versions = "^3.7"
 
 [metadata.files]
 astroid = [
     {file = "astroid-2.3.3-py3-none-any.whl", hash = "sha256:840947ebfa8b58f318d42301cf8c0a20fd794a33b61cc4638e28e9e61ba32f42"},
     {file = "astroid-2.3.3.tar.gz", hash = "sha256:71ea07f44df9568a75d0f354c49143a4575d90645e9fead6dfb52c26a85ed13a"},
+]
+backports-datetime-fromisoformat = [
+    {file = "backports-datetime-fromisoformat-1.0.0.tar.gz", hash = "sha256:9577a2a9486cd7383a5f58b23bb8e81cf0821dbbc0eb7c87d3fa198c1df40f5c"},
 ]
 beautifulsoup4 = [
     {file = "beautifulsoup4-4.8.0-py2-none-any.whl", hash = "sha256:05668158c7b85b791c5abde53e50265e16f98ad601c402ba44d70f96c4159612"},
