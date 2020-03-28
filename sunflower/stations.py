@@ -202,31 +202,35 @@ class RadioFranceStation(Station):
                 "thumbnail_src": self.station_thumbnail,
             }
         try:
-            current_show = fetched_data["data"]["grid"][0]
+            first_show_in_grid = fetched_data["data"]["grid"][0]
             # si la dernière émission est terminée et la suivante n'a pas encore démarrée
-            if current_show["end"] < int(datetime.now().timestamp()):
+            if first_show_in_grid["end"] < int(datetime.now().timestamp()):
                 next_show = fetched_data["data"]["grid"][1]
                 return {
                     "type": MetadataType.NONE,
                     "end": int(next_show["start"]),
                 }
-
+            if first_show_in_grid["start"] > int(datetime.now().timestamp()):
+                return {
+                    "type": MetadataType.NONE,
+                    "end": int(first_show_in_grid["start"]),
+                }
             # sinon on traite les différentes formes d'émissions possibles
-            diffusion = current_show.get("diffusion")
+            diffusion = first_show_in_grid.get("diffusion")
             metadata = {
                 "type": MetadataType.PROGRAMME,
-                "end": int(current_show["end"]),
+                "end": int(first_show_in_grid["end"]),
                 "thumbnail_src": self.station_thumbnail,
             }
             # il n'y a pas d'info sur la diffusion mais uniquement l'émission
             if diffusion is None:
                 metadata.update({
-                    "show_title": current_show["title"],
+                    "show_title": first_show_in_grid["title"],
                     "summary": "",
                 })
             # il y a à la fois les infos de la diffusion et de l'émission
             else:
-                summary = current_show["diffusion"]["standFirst"]
+                summary = first_show_in_grid["diffusion"]["standFirst"]
                 if not summary or summary == ".":
                     summary = ""
                 metadata.update({

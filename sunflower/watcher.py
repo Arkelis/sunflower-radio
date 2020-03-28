@@ -46,9 +46,10 @@ def watch():
                 ):
                     channel.publish_to_redis("unchanged")
                     continue
-                logger.debug("New metadata for channel {}: {}.".format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
                 try:
                     channel.process_radio()
+                    logger.debug("New metadata for channel {}: {}."
+                                 .format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
                 except Exception as err:
                     import traceback
                     logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))

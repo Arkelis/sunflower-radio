@@ -71,6 +71,8 @@ def update_broadcast_info_stream(channel):
             data = message.get("data")
             if not isinstance(data, type(b"")):
                 continue
+            if data == "unchanged":
+                yield ":"
             yield "data: {}\n\n".format(data.decode())
         return
     return Response(stream_with_context(updates_generator()), mimetype="text/event-stream")

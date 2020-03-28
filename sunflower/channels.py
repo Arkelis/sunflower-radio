@@ -26,6 +26,8 @@ class Channel(RedisMixin):
         - stations: list of Station subclasses
         - timetable: dict
         """
+        assert endpoint in settings.CHANNELS, "{} not mentionned in settings.CHANNELS".format(endpoint)
+
         super().__init__()
 
         self.endpoint = endpoint
@@ -39,7 +41,6 @@ class Channel(RedisMixin):
         self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:" + self.endpoint + ":info"
 
-        global CHANNELS
         CHANNELS[self.endpoint] = self
 
     def get_station_info(self, time_):
