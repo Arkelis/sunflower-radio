@@ -39,7 +39,11 @@ def watch():
         while True:
             sleep(4)
             for channel in channels.CHANNELS.values():
-                if datetime.now().timestamp() < channel.current_broadcast_metadata["end"]:
+                if (
+                    datetime.now().timestamp() < channel.current_broadcast_metadata["end"]
+                    and channel.current_broadcast_metadata["station"] == channel.current_station.station_name
+                ):
+                    channel.publish_to_redis("unchanged")
                     continue
                 logger.debug("New metadata for channel {}: {}.".format(channel.endpoint, channel.current_broadcast_info["current_broadcast_title"]))
                 try:
@@ -48,19 +52,6 @@ def watch():
                     import traceback
                     logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
                     logger.error(traceback.format_exc())
-                    # metadata = {
-                    #     "message": "An error occured when fetching data.",
-                    #     "type": "Erreur",
-                    #     "end": 0,
-                    # }
-                    # info = {
-                    #     "current_thumbnail": channel.current_station.station_thumbnail,
-                    #     "current_station": channel.current_station.station_name,
-                    #     "current_broadcast_title": "Une erreur est survenue",
-                    #     "current_show_title": "Erreur interne du serveur",
-                    #     "current_broadcast_summary": "Une erreur est survenue pendant la récupération des métadonnées . Si cette erreur n'est pas bloquante, les données ont une chance de se mettre à jour automatiquement.",
-                    #     "current_broadcast_end": 0,
-                    # }
     except Exception as err:
         import traceback
         logger.error("Erreur fatale")
