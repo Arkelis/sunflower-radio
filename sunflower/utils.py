@@ -72,7 +72,24 @@ CardMetadata = namedtuple("CardMetadata", ["current_thumbnail",
 # Available metadata types
 
 class MetadataType(Enum):
-    MUSIC = "Music"
-    PROGRAMME = "Program"
-    NONE = "None"
-    ADS = "Advertising"
+    MUSIC = "Musique"
+    PROGRAMME = "Emission"
+    NONE = ""
+    ADS = "Publicité"
+
+class MetadataEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, MetadataType):
+            return obj.value
+        return json.JSONEncoder.default(self, obj)
+
+def as_metadata_type(mapping):
+    type_ = mapping.get("type")
+    if type_ is None:
+        return mapping
+    for member in MetadataType:
+        if type_ != member.value:
+            continue
+        mapping["type"] = MetadataType(type_)
+        break
+    return mapping

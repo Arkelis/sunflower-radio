@@ -13,7 +13,7 @@ import requests
 import mutagen
 
 from sunflower import settings
-from sunflower.utils import RedisMixin, Song
+from sunflower.utils import RedisMixin, Song, CardMetadata, MetadataType, MetadataEncoder, as_metadata_type
 
 CHANNELS = dict()
 
@@ -85,7 +85,7 @@ class Channel(RedisMixin):
         stored_data = super().get_from_redis(key)
         if stored_data is None:
             return None
-        return json.loads(stored_data.decode())
+        return json.loads(stored_data.decode(), object_hook=as_metadata_type)
 
     def publish_to_redis(self, metadata):
         channel = self.endpoint
@@ -99,39 +99,48 @@ class Channel(RedisMixin):
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
-        self._redis.set(self.redis_metadata_key, json.dumps(metadata))
+        self._redis.set(self.redis_metadata_key, json.dumps(metadata, cls=MetadataEncoder))
 
     @property
-    def current_broadcast_info(self):
+    def current_broadcast_info(self) -> CardMetadata:
         """Retrieve card info stored in Redis as a dict."""
-        return self.get_from_redis(self.redis_info_key)
+        redis_data = self.get_from_redis(self.redis_info_key)
+        if redis_data is None:
+            return CardMetadata("", "", "", "", "")
+        return CardMetadata(**redis_data)
 
     @current_broadcast_info.setter
-    def current_broadcast_info(self, info):
+    def current_broadcast_info(self, info: CardMetadata):
         """Store card info in Redis."""
-        self._redis.set(self.redis_info_key, json.dumps(info))
+        self._redis.set(self.redis_info_key, json.dumps(info._asdict(), cls=MetadataEncoder))
+    
+    @property
+    def neutral_card_metadata(self) -> CardMetadata:
+        return CardMetadata(
+            current_thumbnail=self.current_station.station_thumbnail,
+            current_station=self.current_station.station_name,
+            current_broadcast_title="Vous écoutez {}".format(self.current_station.station_name),
+            current_show_title="",
+            current_broadcast_summary="",
+        )
 
-
-    def get_current_broadcast_info(self, metadata):
+    def get_current_broadcast_info(self, metadata) -> CardMetadata:
         """Return data for displaying broadcast info in player.
 
         This is for data display in player client. This method uses format_info()
         method of currently broadcasted station.
         """
-        try:
-            card_info = self.current_station.format_info(metadata)
-            if not card_info["current_broadcast_end"]:
-                card_info["current_broadcast_end"] = int(datetime.now().timestamp() + 5) * 1000
-        except requests.exceptions.Timeout:
-            card_info = {
-                "current_thumbnail": self.current_station.station_thumbnail,
-                "current_station": self.current_station.station_name,
-                "current_broadcast_title": "Métadonnées indisponibles",
-                "current_show_title": "Métadonnées indisponibles",
-                "current_broadcast_summary": "Les métadonnées n'ont pas pu être récupérées : le serveur de la station demandée a mis trop de temps à répondre.",
-                "current_broadcast_end": 0,
-            }
-        return card_info
+        if metadata["type"] == MetadataType.NONE:
+            return self.neutral_card_metadata
+        if metadata.get("error") is not None:
+            return CardMetadata(
+                current_thumbnail=self.current_station.station_thumbnail,
+                current_station=self.current_station.station_name,
+                current_broadcast_title="Métadonnées indisponibles",
+                current_show_title="Métadonnées indisponibles",
+                current_broadcast_summary="Les métadonnées n'ont pas pu être récupérées : le serveur de la station demandée a mis trop de temps à répondre.",
+            )
+        return self.current_station.format_info(metadata)
 
     def get_current_broadcast_metadata(self):
         """Get metadata of current broadcasted programm for current station.
@@ -148,7 +157,7 @@ class Channel(RedisMixin):
 
     def _handle_advertising(self, metadata, info):
         """Play backup songs if advertising is detected on currently broadcasted station."""
-        if metadata["type"] == "Publicités":
+        if metadata["type"] == MetadataType.ADS:
             self.logger.info("Ads detected.")
             if not self.backup_songs:
                 self.logger.info("Backup songs list must be generated.")
@@ -165,16 +174,15 @@ class Channel(RedisMixin):
                 "artist": backup_song[1],
                 "title": backup_song[2],
                 "end": int(datetime.now().timestamp()) + backup_song[3],
-                "type": "Musique",
+                "type": MetadataType.MUSIC,
             }
-            info = {
-                "current_thumbnail": self.current_station.station_thumbnail,
-                "current_station": self.current_station.station_name,
-                "current_broadcast_title": backup_song[1] + " • " + backup_song[2],
-                "current_show_title": "Musique",
-                "current_broadcast_summary": "Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
-                "current_broadcast_end": metadata["end"] * 1000,
-            }
+            info = CardMetadata(
+                current_thumbnail=self.current_station.station_thumbnail,
+                current_station=self.current_station.station_name,
+                current_broadcast_title=backup_song[1] + " • " + backup_song[2],
+                current_show_title=MetadataType.MUSIC,
+                current_broadcast_summary="Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
+            )
         return metadata, info
     
     @staticmethod
@@ -210,7 +218,7 @@ class Channel(RedisMixin):
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
         metadata, info = self._handle_advertising(metadata, info)
-        if info["current_broadcast_title"] != self.current_broadcast_info["current_broadcast_title"]:
+        if info.current_broadcast_title != self.current_broadcast_info.current_broadcast_title:
             self.current_broadcast_metadata = metadata
             self.current_broadcast_info = info
             self.publish_to_redis("updated")

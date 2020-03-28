@@ -30,22 +30,23 @@ def watch():
         logger.addHandler(file_handler)
         logger.debug("Starting watcher.")
 
-        # add logger to channels and init
+        # add logger to channels
         for channel in channels.CHANNELS.values():
             channel.logger = logger
-            channel.process_radio()
-
+    
         # loop
         while True:
             sleep(4)
             for channel in channels.CHANNELS.values():
+                current_broadcast_metadata = channel.current_broadcast_metadata
                 if (
-                    datetime.now().timestamp() < channel.current_broadcast_metadata["end"]
-                    and channel.current_broadcast_metadata["station"] == channel.current_station.station_name
+                    current_broadcast_metadata is not None
+                    and datetime.now().timestamp() < current_broadcast_metadata["end"]
+                    and current_broadcast_metadata["station"] == channel.current_station.station_name
                 ):
                     channel.publish_to_redis("unchanged")
                     continue
-                logger.debug("New metadata for channel {}: {}.".format(channel.endpoint, channel.current_broadcast_info["current_broadcast_title"]))
+                logger.debug("New metadata for channel {}: {}.".format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
                 try:
                     channel.process_radio()
                 except Exception as err:

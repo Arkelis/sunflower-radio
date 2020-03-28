@@ -7,11 +7,14 @@ import json
 import redis
 
 from sunflower.channels import Channel
-from sunflower.utils import get_channel_or_404
+from sunflower.utils import get_channel_or_404, MetadataEncoder
 from sunflower import settings
 
 app = Flask(__name__)
+app.json_encoder = MetadataEncoder
 # cors = CORS(app)
+
+# Views
 
 @app.route("/")
 def index():
@@ -29,22 +32,36 @@ def channel(channel):
     }
     return render_template("radio.html", **context)
 
-@app.route("/<string:channel>/infos/")
+# API views
+
+@app.route("/api/")
+def api_root():
+    return jsonify({
+        "available channels": {endpoint: url_for("get_channel_links", channel=endpoint, _external=True) 
+                               for endpoint in settings.CHANNELS}
+    })
+
+@app.route("/api/<string:channel>/")
 @get_channel_or_404
-def get_channel_info(channel):
+def get_channel_links(channel):
     return jsonify({
         "audio_stream_url": settings.ICECAST_SERVER_URL + channel.endpoint,
         "card_formated_metadata_url": url_for("update_broadcast_info", channel=channel.endpoint, _external=True),
         "metadata_update_events_url": url_for("update_broadcast_info_stream", channel=channel.endpoint, _external=True),
-        "raw_metadata": channel.current_broadcast_metadata,
+        "raw_metadata": url_for("get_channel_info", channel=channel.endpoint, _external=True),
     })
 
-@app.route("/<string:channel>/update/")
+@app.route("/api/<string:channel>/metadata/")
+@get_channel_or_404
+def get_channel_info(channel):
+    return jsonify(channel.current_broadcast_metadata)
+
+@app.route("/api/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
-    return jsonify(channel.current_broadcast_info)
+    return jsonify(channel.current_broadcast_info._asdict())
 
-@app.route("/<string:channel>/update-events/")
+@app.route("/api/<string:channel>/events/")
 @get_channel_or_404
 def update_broadcast_info_stream(channel):
     def updates_generator():

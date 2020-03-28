@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import json
 import os
 
-from sunflower.utils import RedisMixin
+from sunflower.utils import RedisMixin, CardMetadata, MetadataType
 
 class Station(RedisMixin):
     """Base station.
@@ -35,23 +35,16 @@ class Station(RedisMixin):
         This is data meant to be exposed as json and used by format_info() method.
         
         Required fields:
-        - type: Emission|Musique|Publicité
+        - type: element of MetadataType enum (see utils.py)
         - metadata fields required by format_info() method (see below)
         """
 
-    def format_info(self, metadata):
+    def format_info(self, metadata) -> CardMetadata:
         """Format metadata for displaying in the card.
         
-        Should return a dict containing:
-        - current_thumbnail
-        - current_station
-        - current_broadcast_title
-        - current_show_title
-        - current_broadcast_summary
-        - current_broadcast_end
-
-        If empty, a given key should have "" (empty string) as value, and not None, except
-        for current_broadcast_end which is False if unknown.
+        Should return a CardMetadata namedtuple (see utils.py).
+        If empty, a given key should have "" (empty string) as value, and not None.
+        Don't support MetadataType.NONE case as it is done in Channel class.
         """
     
 
@@ -67,23 +60,18 @@ class RTL2(Station):
     def get_show_title(metadata):
         if time(21, 00) < datetime.now().time() < time(22, 00):
             return "RTL 2 Made in France"
-        if metadata["type"] == "Musique":
-            return "Musique"
+        if metadata["type"] == MetadataType.MUSIC:
+            return MetadataType.MUSIC
         return ""
 
-    def format_info(self, metadata):
-        card_info = {
-            "current_thumbnail": metadata["thumbnail"],
-            "current_broadcast_end": metadata["end"] * 1000, # client needs timestamp in ms
-            "current_show_title": self.get_show_title(metadata),
-            "current_broadcast_summary": "",
-            "current_station": self.station_name,
-        }
-        if metadata["type"] == "Musique":
-            card_info["current_broadcast_title"] = metadata["artist"] + " • " + metadata["title"]
-        elif metadata["type"] == "Intermède": 
-            card_info["current_broadcast_title"] = "Vous écoutez RTL 2"
-        return card_info
+    def format_info(self, metadata) -> CardMetadata:
+        return CardMetadata(
+            current_thumbnail=metadata["thumbnail"],
+            current_show_title=self.get_show_title(metadata),
+            current_broadcast_summary="",
+            current_station=self.station_name,
+            current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
+        )
 
     def _fetch_metadata(self, song=False):
         if song:
@@ -102,44 +90,44 @@ class RTL2(Station):
             except:
                 raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
         if diffusion_type == "Pubs":
-            return {"type": "Publicités", "end": 0}
+            return {"type": MetadataType.ADS, "end": 0}
         if diffusion_type != "Musique":
-            return {"type": "Intermède", "end": 0}
+            return {"type": MetadataType.NONE, "end": 0}
         else:
             return self._fetch_metadata(True)
 
     def get_metadata(self):
         """Returns mapping containing info about current song.
 
-        If music: {"type": "Musique", "artist": artist, "title": title}
-        If ads: "type": Publicité"
-        Else: "type": "Intermède"
+        If music: {"type": MetadataType.MUSIC, "artist": artist, "title": title}
+        If ads: "type": MetadataType.ADS
+        Else: "type": MetadataType.NONE
 
         Moreover, returns other metadata for postprocessing.
         end datetime object
 
         To sum up, here are the keys of returned mapping:
         - type: str
-        - end: str (ISO format) or False if unknown
+        - end: str (ISO format) or 0 if unknown
         - artist: str (optionnal)
         - title: str (optionnal)
         """
         fetched_data = self._fetch_metadata()
-        if fetched_data.get("type") in ("Publicités", "Intermède"):
-            fetched_data.update({"thumbnail": self.station_thumbnail})
+        if fetched_data.get("type") in (MetadataType.ADS, MetadataType.NONE):
             return fetched_data
         metadata = {
             "artist": fetched_data["singer"],
             "title": fetched_data["title"],
             "end": int(fetched_data["end"] / 1000),
-            "thumbnail": fetched_data["thumbnail"] or self.station_thumbnail,
-            "type": "Musique",
+            "thumbnail": fetched_data.get("thumbnail") or self.station_thumbnail,
+            "type": MetadataType.MUSIC,
         }
         return metadata
 
 
 class RadioFranceStation(Station):
     API_RATE_LIMIT_EXCEEDED = 1
+    station_name = str()
 
     def __init__(self):
         super().__init__()
@@ -185,25 +173,24 @@ class RadioFranceStation(Station):
     }}
     """
 
-    def format_info(self, metadata):
+    def format_info(self, metadata) -> CardMetadata:
         card_info = {
             "current_thumbnail" : metadata["thumbnail_src"],
-            "current_broadcast_end": metadata["end"] * 1000, # client needs timestamp in ms
             "current_station": self.station_name,
         }
         if metadata["type"] == "Erreur":
             card_info.update({
-                "current_broadcast_title": "Informations indisponibles",
+                "current_broadcast_title": "Vous écoutez {}".format(self.station_name),
                 "current_show_title": "Informations indisponibles",
                 "current_broadcast_summary": "Le nombre de requêtes autorisées à l'API de Radio France a été atteinte.",
             })
-        elif metadata["type"] == "Emission":
+        elif metadata["type"] == MetadataType.PROGRAMME:
             card_info.update({
                 "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
                 "current_show_title": metadata["show_title"],
                 "current_broadcast_summary": metadata["summary"],
             })
-        return card_info
+        return CardMetadata(**card_info)
 
     def get_metadata(self):
         fetched_data = self._fetch_metadata()
@@ -211,24 +198,33 @@ class RadioFranceStation(Station):
             return {
                 "message": "Radio France API rate limit exceeded",
                 "type": "Erreur",
-                "station": self.station_name,
-                "end": 0,
+                "end": int((datetime.now() + timedelta(hours=24)).timestamp()),
                 "thumbnail_src": self.station_thumbnail,
             }
         try:
             current_show = fetched_data["data"]["grid"][0]
-            next_show = fetched_data["data"]["grid"][1]
+            # si la dernière émission est terminée et la suivante n'a pas encore démarrée
+            if current_show["end"] < int(datetime.now().timestamp()):
+                next_show = fetched_data["data"]["grid"][1]
+                return {
+                    "type": MetadataType.NONE,
+                    "end": int(next_show["start"]),
+                }
+
+            # sinon on traite les différentes formes d'émissions possibles
             diffusion = current_show.get("diffusion")
             metadata = {
-                "type": "Emission",
-                "end": int(next_show["start"]),
+                "type": MetadataType.PROGRAMME,
+                "end": int(current_show["end"]),
                 "thumbnail_src": self.station_thumbnail,
             }
+            # il n'y a pas d'info sur la diffusion mais uniquement l'émission
             if diffusion is None:
                 metadata.update({
                     "show_title": current_show["title"],
                     "summary": "",
                 })
+            # il y a à la fois les infos de la diffusion et de l'émission
             else:
                 summary = current_show["diffusion"]["standFirst"]
                 if not summary or summary == ".":
