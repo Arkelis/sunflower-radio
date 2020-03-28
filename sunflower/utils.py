@@ -2,12 +2,15 @@
 
 import json
 from collections import namedtuple
+from enum import Enum
 import functools
 
 from flask import abort
 import redis
 
 from sunflower import settings
+
+# Mixins
 
 class RedisMixin:
     """Provide a method to access data from redis database.
@@ -46,6 +49,7 @@ class RedisMixin:
             data = json.dumps(data)
         self._redis.publish(self.REDIS_CHANNELS[channel], data)
 
+# Custom views
 
 def get_channel_or_404(view_function):
     @functools.wraps(view_function)
@@ -56,5 +60,19 @@ def get_channel_or_404(view_function):
         return view_function(channel=CHANNELS[channel])
     return wrapper
 
+# Custom datamodel
 
 Song = namedtuple("Song", ["path", "artist", "title", "length"])
+CardMetadata = namedtuple("CardMetadata", ["current_thumbnail",
+                                           "current_station",
+                                           "current_broadcast_title",
+                                           "current_show_title",
+                                           "current_broadcast_summary",])
+
+# Available metadata types
+
+class MetadataType(Enum):
+    MUSIC = "Music"
+    PROGRAMME = "Program"
+    NONE = "None"
+    ADS = "Advertising"
