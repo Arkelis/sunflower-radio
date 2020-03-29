@@ -6,14 +6,14 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Radio Tournesol</title>
     <link href="https://fonts.googleapis.com/css?family=Fira+Sans+Condensed:600,400,300|Fira+Sans:200&display=swap" rel="stylesheet"> 
-    <link rel="stylesheet" href='{{ url_for("static", filename="style.css") }}'>
-    <link rel="stylesheet" href='{{ url_for("static", filename="animations.css") }}'>
-    <link rel="stylesheet" href='{{ url_for("static", filename="dark-theme.css") }}'>
+    <link rel="stylesheet" href='{{ url_for("static", filename="style.css", v=1) }}'>
+    <link rel="stylesheet" href='{{ url_for("static", filename="animations.css", v=1) }}'>
+    <link rel="stylesheet" href='{{ url_for("static", filename="dark-theme.css", v=1) }}'>
 </head>
 <body>
     <nav>
         <div id="brand">
-            Radio PyColore
+            Radio Pycolore
         </div>
         <ul>
             <li><a href="{{ url_for('channel', channel='tournesol') }}">Chaîne Tournesol</a></li>
@@ -26,12 +26,12 @@
             <div id="current-broadcast-card">
                 <div id="card-body">
                     <div id="current-thumbnail-container">
-                        <img id="current-thumbnail" src="" alt="Current broadcast thumbail.">
+                        <img id="current-thumbnail" src='{{ url_for("static", filename="thumbnail-placeholder.svg") }}' alt="Current broadcast thumbail.">
                     </div>
                     <div id="current-broadcast-info">
                         <div id="head-info">
-                            <div id="current-station"></div>
-                            <h2 id="current-broadcast-title"></h2>
+                            <div id="current-station"><div class="skeleton"></div></div>
+                            <h2 id="current-broadcast-title"><div class="skeleton"></div></h2>
                         </div>
                         <div id="details">
                                 <div id="current-show-title"></div>
@@ -45,9 +45,8 @@
                     </audio>
                 </div>
             </div>
-            {# <div class="following-broadcasts">A suivre...</div> #}
         </div>
     </div>
-    <script src="{{ url_for('static', filename='app.js') }}" id="info-update" data-update-url="{{ update_url }}" data-listen-url="{{ listen_url }}"></script>
+    <script src="{{ url_for('static', filename='app.js', v=1) }}" id="info-update" data-update-url="{{ update_url }}" data-listen-url="{{ listen_url }}"></script>
 </body>
 </html>

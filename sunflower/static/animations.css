@@ -4,7 +4,7 @@
     animation-fill-mode: both;
 }
 
-#current-thumbnail-container {
+#current-thumbnail-container.fade-in {
     animation-name: fade-in;
     animation-duration: 0.5s;
     animation-fill-mode: both;

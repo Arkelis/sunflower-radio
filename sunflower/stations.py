@@ -57,17 +57,15 @@ class RTL2(Station):
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
     @staticmethod
-    def get_show_title(metadata):
+    def get_show_title():
         if time(21, 00) < datetime.now().time() < time(22, 00):
             return "RTL 2 Made in France"
-        if metadata["type"] == MetadataType.MUSIC:
-            return MetadataType.MUSIC
         return ""
 
     def format_info(self, metadata) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=metadata["thumbnail"],
-            current_show_title=self.get_show_title(metadata),
+            current_show_title=self.get_show_title(),
             current_broadcast_summary="",
             current_station=self.station_name,
             current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
@@ -113,12 +111,17 @@ class RTL2(Station):
         - title: str (optionnal)
         """
         fetched_data = self._fetch_metadata()
+
         if fetched_data.get("type") in (MetadataType.ADS, MetadataType.NONE):
             return fetched_data
+
+        end = int(fetched_data["end"] / 1000)
+        if datetime.now().timestamp() > end:
+            return {"type": MetadataType.NONE, "end": 0}
         metadata = {
             "artist": fetched_data["singer"],
             "title": fetched_data["title"],
-            "end": int(fetched_data["end"] / 1000),
+            "end": end,
             "thumbnail": fetched_data.get("thumbnail") or self.station_thumbnail,
             "type": MetadataType.MUSIC,
         }

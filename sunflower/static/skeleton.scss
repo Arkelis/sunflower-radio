@@ -1,30 +1,19 @@
-$color-base: #ccc;
-$color-highlight: lighten($color-base, 7%);
-
 .skeleton {
   position: relative;
   overflow: hidden;
-  width: 50%;
-  height: 40px;
-  background: $color-base;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, $color-base, $color-highlight, $color-base);
-    animation: progress 1s ease-in-out infinite;
-  }
+  width: 5em;
+  height: 1em;
+  background: #CCC;
+  margin: auto;
 }
 
-@keyframes progress {
-  0% {
-    transform: translate3d(-100%, 0, 0);
-  }
-  100% {
-    transform: translate3d(100%, 0, 0);
+#current-broadcast-title .skeleton {
+  margin-top: .5em;
+  width: 8em;
+}
+
+@media screen and (min-width: 30em) {
+  .skeleton {
+    margin-left: 0;
   }
 }

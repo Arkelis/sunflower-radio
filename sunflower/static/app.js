@@ -18,6 +18,7 @@ class FlippedElement {
         const newY = this.newY
         const deltaY = this.y - newY
         this.y = newY
+        console.log("flipped")
         this.element.animate(
             [
                 {
@@ -28,7 +29,7 @@ class FlippedElement {
                 },
             ],
             {
-                duration: 400,
+                duration: 5 * Math.abs(deltaY),
                 fill: "both",
                 easing: "ease-in-out",
             })
@@ -46,17 +47,21 @@ let audioPlayer = new FlippedElement("audio")
 function updateCardInfos(divsToUpdate, thumbnailNode=null) {
     // update info
     divsToUpdate.forEach((element, i) => {
+        element[0].innerText = element[1]
+    })
+    audioPlayer.flip()
+
+    divsToUpdate.forEach((element, i) => {
         setTimeout(() => {
-            element[0].innerText = element[1]
             element[0].classList.remove("fade-out")
             element[0].classList.add("fade-in")
         }, 100*(i+1))
     })
-    audioPlayer.flip()
 
     //update thumbnail if needed
     if (thumbnailNode !== null) {
         thumbnailNode.parentElement.classList.remove("fade-out")
+        thumbnailNode.parentElement.classList.add("fade-in")
     }
 }
 
@@ -99,13 +104,14 @@ function updateCardBody() {
             // check thumbnail src
             let fetchedThumbnailSrc = data.current_thumbnail
             if (thumbnailSrc != fetchedThumbnailSrc) {
+                thumbnailNode.parentElement.classList.remove("fade-in")
                 thumbnailNode.parentElement.classList.add("fade-out")
                 setTimeout(() => {
                     thumbnailNode.attributes.src.value = fetchedThumbnailSrc
                     thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
-                }, 200)
+                }, divsToUpdate.length*100)
             } else {
-                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, 200)
+                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, divsToUpdate.length*100)
             }
         })
 }
