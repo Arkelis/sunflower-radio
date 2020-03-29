@@ -63,18 +63,30 @@ class RTL2(Station):
         return ""
 
     def format_info(self, metadata) -> CardMetadata:
+        current_broadcast_title = {
+            MetadataType.ADS: "Publicité",
+            MetadataType.MUSIC: "{} • {}".format(metadata["artist"], metadata["title"]),
+        }.get(metadata["type"], "Vous écoutez RTL 2")
+
         return CardMetadata(
-            current_thumbnail=metadata["thumbnail"],
+            current_thumbnail=metadata["thumbnail_src"],
             current_show_title=self.get_show_title(),
             current_broadcast_summary="",
             current_station=self.station_name,
-            current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
+            current_broadcast_title=current_broadcast_title,
         )
 
-    def _fetch_metadata(self, song=False):
-        if song:
-            rep = requests.get(self._songs_data_url, timeout=1)
-            return json.loads(rep.content.decode())[0]
+    def _fetch_song_metadata(self):
+        """Return mapping containing song info"""
+        rep = requests.get(self._songs_data_url, timeout=1)
+        return json.loads(rep.content.decode())[0]
+
+    def _fetch_metadata(self):
+        """Fetch data from timeline.rtl.fr.
+        
+        Scrap from items page. If song object detected, get data from songs endpoint.
+        Else return MetadataType object. 
+        """
         rep = requests.get(self._main_data_url, timeout=1)
         soup = BeautifulSoup(rep.content.decode(), "html.parser")
         try:
@@ -88,11 +100,11 @@ class RTL2(Station):
             except:
                 raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
         if diffusion_type == "Pubs":
-            return {"type": MetadataType.ADS, "end": 0}
+            return {"type": MetadataType.ADS}
         if diffusion_type != "Musique":
-            return {"type": MetadataType.NONE, "end": 0}
+            return {"type": MetadataType.NONE}
         else:
-            return self._fetch_metadata(True)
+            return self._fetch_song_metadata()
 
     def get_metadata(self):
         """Returns mapping containing info about current song.
@@ -105,27 +117,38 @@ class RTL2(Station):
         end datetime object
 
         To sum up, here are the keys of returned mapping:
-        - type: str
-        - end: str (ISO format) or 0 if unknown
+        - type: MetadataType object
+        - end: timestamp in sec
         - artist: str (optionnal)
         - title: str (optionnal)
+        - thumbnail_src: url to thumbnail
         """
         fetched_data = self._fetch_metadata()
+        thumbnail_src = fetched_data.get("thumbnail") or self.station_thumbnail
+        fetched_data_type = fetched_data.get("type")
 
-        if fetched_data.get("type") in (MetadataType.ADS, MetadataType.NONE):
-            return fetched_data
+        if fetched_data_type in (MetadataType.ADS, MetadataType.NONE):
+            return {
+                "thumbnail_src": thumbnail_src,
+                "type": fetched_data_type,
+                "end": 0,
+            }
 
         end = int(fetched_data["end"] / 1000)
         if datetime.now().timestamp() > end:
-            return {"type": MetadataType.NONE, "end": 0}
-        metadata = {
+            return {
+                "thumbnail_src": thumbnail_src,
+                "type": MetadataType.NONE,
+                "end": 0,
+            }
+
+        return {
             "artist": fetched_data["singer"],
             "title": fetched_data["title"],
             "end": end,
-            "thumbnail": fetched_data.get("thumbnail") or self.station_thumbnail,
             "type": MetadataType.MUSIC,
+            "thumbnail_src": thumbnail_src,
         }
-        return metadata
 
 
 class RadioFranceStation(Station):

@@ -33,7 +33,7 @@ class FlippedElement {
                 fill: "both",
                 easing: "ease-in-out",
             })
-        this.element.style.transform = `translateY(${deltaY}px)`
+        //this.element.style.transform = `translateY(${deltaY}px)`
     }
 }
 
