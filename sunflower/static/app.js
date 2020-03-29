@@ -1,5 +1,5 @@
-let updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
-let eventsUrl = document.getElementById("info-update").attributes["data-listen-url"].value
+const updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
+const eventsUrl = document.getElementById("info-update").attributes["data-listen-url"].value
 
 class FlippedElement {
     y
@@ -45,9 +45,12 @@ let audioPlayer = new FlippedElement("audio")
  */
 function updateCardInfos(divsToUpdate, thumbnailNode=null) {
     // update info
-    divsToUpdate.forEach(element => {
-        element[0].innerText = element[1]
-        element[0].classList.remove("fade-out")
+    divsToUpdate.forEach((element, i) => {
+        setTimeout(() => {
+            element[0].innerText = element[1]
+            element[0].classList.remove("fade-out")
+            element[0].classList.add("fade-in")
+        }, 100*(i+1))
     })
     audioPlayer.flip()
 
@@ -86,14 +89,21 @@ function updateCardBody() {
                 }
             })
 
-            divsToUpdate.forEach(element => { element[0].classList.add("fade-out") })
+            divsToUpdate.forEach((element, i) => { 
+                setTimeout(() => {
+                    element[0].classList.remove("fade-in")
+                    element[0].classList.add("fade-out")
+                }, 100*i)
+            })
 
             // check thumbnail src
             let fetchedThumbnailSrc = data.current_thumbnail
             if (thumbnailSrc != fetchedThumbnailSrc) {
                 thumbnailNode.parentElement.classList.add("fade-out")
-                thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
-                setTimeout(() => {thumbnailNode.attributes.src.value = fetchedThumbnailSrc}, 200)
+                setTimeout(() => {
+                    thumbnailNode.attributes.src.value = fetchedThumbnailSrc
+                    thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
+                }, 200)
             } else {
                 setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, 200)
             }

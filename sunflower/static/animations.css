@@ -1,48 +1,32 @@
+#current-broadcast-info .fade-in {
+    animation-name: fade-in-up;
+    animation-duration: 0.5s;
+    animation-fill-mode: both;
+}
+
 #current-thumbnail-container {
     animation-name: fade-in;
-    animation-duration: 0.7s;
-    animation-fill-mode: both;
-}
-
-#current-station {
-    animation-delay: 0.2s;
-    animation-duration: 0.7s;
-    animation-name: fade-in-up;
-    animation-fill-mode: both;
-}
-
-#current-broadcast-title {
-    animation-delay: 0.4s;
-    animation-duration: 0.7s;
-    animation-name: fade-in-up;
-    animation-fill-mode: both;
-}
-
-#details * {
-    animation-delay: 0.6s;
-    animation-duration: 0.7s;
-    animation-name: fade-in-up;
+    animation-duration: 0.5s;
     animation-fill-mode: both;
 }
 
 @media screen and (min-width: 30em) {
-    #current-station {
-        animation-name: fade-in-right;
-    }
-    #current-broadcast-title {
+    #current-station.fade-in,
+    #current-broadcast-title.fade-in {
         animation-name: fade-in-right;
     }
 }
 
 @media screen and (min-width: 45em) {
-    #details * {
+    #details .fade-in {
         animation-name: fade-in-right;
     }
 }
 
 .fade-out {
-    animation-name: fade-out!important;
-    animation-duration: 0.2s!important;
+    animation-name: fade-out;
+    animation-duration: 0.2s;
+    animation-fill-mode: both;
 }
 
 @keyframes fade-in {
@@ -53,7 +37,7 @@
 @keyframes fade-in-up {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -64,7 +48,7 @@
 @keyframes fade-in-right {
     from {
         opacity: 0;
-        transform: translateX(20px);
+        transform: translateX(10px);
     }
     to {
         opacity: 1;
