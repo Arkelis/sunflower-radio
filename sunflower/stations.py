@@ -65,7 +65,7 @@ class RTL2(Station):
     def format_info(self, metadata) -> CardMetadata:
         current_broadcast_title = {
             MetadataType.ADS: "Publicité",
-            MetadataType.MUSIC: "{} • {}".format(metadata["artist"], metadata["title"]),
+            MetadataType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
         }.get(metadata["type"], "Vous écoutez RTL 2")
 
         return CardMetadata(
