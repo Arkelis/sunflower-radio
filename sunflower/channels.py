@@ -169,19 +169,25 @@ class Channel(RedisMixin):
             session = telnetlib.Telnet("localhost", 1234)
             session.write("{}_custom_songs.push {}\n".format(self.endpoint, backup_song.path).encode())
             session.close()
-
+            
+            type_ = MetadataType.MUSIC
+            station = metadata["station"]
+            thumbnail = self.current_station.station_thumbnail
+ 
             # and update metadata
             metadata = {
                 "artist": backup_song[1],
                 "title": backup_song[2],
                 "end": int(datetime.now().timestamp()) + backup_song[3],
-                "type": MetadataType.MUSIC,
+                "type": type_,
+                "station": station,
+                "thumbnail_src": thumbnail,
             }
             info = CardMetadata(
-                current_thumbnail=self.current_station.station_thumbnail,
-                current_station=self.current_station.station_name,
+                current_thumbnail=thumbnail,
+                current_station=station,
                 current_broadcast_title=backup_song[1] + " • " + backup_song[2],
-                current_show_title=MetadataType.MUSIC,
+                current_show_title=type_,
                 current_broadcast_summary="Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
             )
         return metadata, info
