@@ -293,7 +293,7 @@ tournesol = Channel(
             ("09:00", "11:00", RTL2), # Musique
             ("11:00", "12:00", FranceCulture), # Toute une vie
             ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
-            ("15:00", "18:00", RTL2), # Musique
+            ("15:00", "18:00", FranceCulture), # La compagnie des auteurs/poètes, La Méthode scientifique, LSD (la série docu)
             ("18:00", "20:00", FranceInter), # Soirée
             ("20:00", "21:00", FranceInfo), # Les informés
             ("21:00", "00:00", RTL2), # Musique
@@ -304,21 +304,20 @@ tournesol = Channel(
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "11:00", RTL2), # Musique
             ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
-            ("14:00", "16:00", RTL2),
-            ("16:00", "17:00", FranceCulture), # La Conversation scientifique
-            ("17:00", "20:00", RTL2),
+            ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
+            ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
+            ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
             ("20:00", "21:00", FranceInfo), # Les informés
-            ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, Toute une vie)
+            ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
         ],
         (6,): [
             ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
             ("07:00", "09:00", FranceInter), # Matinale
             ("09:00", "12:00", RTL2),
             ("12:00", "14:00", FranceInter), # Politique + journal
-            ("14:00", "16:00", RTL2),
-            ("16:00", "18:00", FranceMusique), # La tribune des critiques de disques
-            ("18:00", "19:00", RTL2),
-            ("19:00", "21:00", FranceInter), # info et le masque et la plume
+            ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
+            # ("18:00", "19:00", RTL2),
+            ("18:00", "21:00", FranceInter), # Spécial Corona : téléphone sonne et le masque et la plume
             ("21:00", "00:00", RTL2),
         ]
     },
