@@ -302,25 +302,25 @@ class FranceInter(RadioFranceStation):
     station_name = "France Inter"
     _station_api_name = "FRANCEINTER"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-inter-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/franceinter-hifi.aac"
+    station_url = "http://icecast.radiofrance.fr/franceinter-midfi.mp3"
 
 
 class FranceInfo(RadioFranceStation):
     station_name = "France Info"
     _station_api_name = "FRANCEINFO"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
-    station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
+    station_url = "http://icecast.radiofrance.fr/franceinfo-midfi.mp3"
 
 
 class FranceMusique(RadioFranceStation):
     station_name = "France Musique"
     _station_api_name = "FRANCEMUSIQUE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-musique-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/francemusique-hifi.aac"
+    station_url = "http://icecast.radiofrance.fr/francemusique-midfi.mp3"
 
 
 class FranceCulture(RadioFranceStation):
     station_name = "France Culture"
     _station_api_name = "FRANCECULTURE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/franceculture-hifi.aac"
+    station_url = "http://icecast.radiofrance.fr/franceculture-midfi.mp3"

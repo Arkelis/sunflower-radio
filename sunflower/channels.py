@@ -287,38 +287,38 @@ tournesol = Channel(
         # (weekday1, weekday2, ...)
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
-            ("00:00", "06:00", RTL2),
-            ("06:00", "07:00", FranceInfo),
-            ("07:00", "09:00", FranceInter),
-            ("09:00", "12:30", RTL2),
-            ("12:30", "14:30", FranceInter),
-            ("14:30", "18:00", RTL2),
-            ("18:00", "20:00", FranceInter),
-            ("20:00", "21:00", FranceInfo),
-            ("21:00", "00:00", RTL2),
+            ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
+            ("05:00", "07:00", FranceInfo), # Matinale
+            ("07:00", "09:00", FranceInter), # Matinale
+            ("09:00", "11:00", RTL2), # Musique
+            ("11:00", "12:00", FranceCulture), # Toute une vie
+            ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
+            ("15:00", "18:00", RTL2), # Musique
+            ("18:00", "20:00", FranceInter), # Soirée
+            ("20:00", "21:00", FranceInfo), # Les informés
+            ("21:00", "00:00", RTL2), # Musique
         ],
         (5,): [
-            ("00:00", "06:00", RTL2),
-            ("06:00", "07:00", FranceInfo),
-            ("07:00", "09:00", FranceInter),
-            ("09:00", "11:00", RTL2),
-            ("11:00", "14:00", FranceInter),
+            ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
+            ("06:00", "07:00", FranceInfo), # Matinale
+            ("06:00", "09:00", FranceInter), # Matinale
+            ("09:00", "11:00", RTL2), # Musique
+            ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
             ("14:00", "16:00", RTL2),
-            ("16:00", "17:00", FranceCulture),
+            ("16:00", "17:00", FranceCulture), # La Conversation scientifique
             ("17:00", "20:00", RTL2),
-            ("20:00", "21:00", FranceInfo),
-            ("21:00", "00:00", RTL2),
+            ("20:00", "21:00", FranceInfo), # Les informés
+            ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, Toute une vie)
         ],
         (6,): [
-            ("00:00", "06:00", RTL2),
-            ("06:00", "07:00", FranceInfo),
-            ("07:00", "09:00", FranceInter),
+            ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
+            ("07:00", "09:00", FranceInter), # Matinale
             ("09:00", "12:00", RTL2),
-            ("12:00", "14:00", FranceInter),
+            ("12:00", "14:00", FranceInter), # Politique + journal
             ("14:00", "16:00", RTL2),
-            ("16:00", "18:00", FranceMusique),
+            ("16:00", "18:00", FranceMusique), # La tribune des critiques de disques
             ("18:00", "19:00", RTL2),
-            ("19:00", "21:00", FranceInter),
+            ("19:00", "21:00", FranceInter), # info et le masque et la plume
             ("21:00", "00:00", RTL2),
         ]
     },
