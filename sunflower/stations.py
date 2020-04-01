@@ -16,6 +16,9 @@ class Station(RedisMixin):
     - station_thumbnail (str): link to station thumbnail
     - station_url (str): url to music stream
     """
+    station_name = str()
+    station_thumbnail = str()
+    station_url = str()
 
     def get_from_redis(self, key):
         """Get key from redis and perform other checkings."""
@@ -57,7 +60,7 @@ class RTL2(Station):
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
     @staticmethod
-    def get_show_title():
+    def _get_show_title():
         if time(21, 00) < datetime.now().time() < time(22, 00):
             return "RTL 2 Made in France"
         return ""
@@ -70,7 +73,7 @@ class RTL2(Station):
 
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
-            current_show_title=self.get_show_title(),
+            current_show_title=self._get_show_title(),
             current_broadcast_summary="",
             current_station=self.station_name,
             current_broadcast_title=current_broadcast_title,
@@ -153,7 +156,6 @@ class RTL2(Station):
 
 class RadioFranceStation(Station):
     API_RATE_LIMIT_EXCEEDED = 1
-    station_name = str()
 
     def __init__(self):
         super().__init__()
@@ -168,35 +170,62 @@ class RadioFranceStation(Station):
                 raise RuntimeError("No token for Radio France API found.")
         return os.getenv("TOKEN")
 
-    _grid_template = """
-    {{
+    _grid_template = """{{
     grid(start: {start}, end: {end}, station: {station}) {{
         ... on DiffusionStep {{
-        start
-        end
-        diffusion {{
-            title
-            standFirst
-            show {{
-            title
+            start
+            end
+            diffusion {{
+                title
+                standFirst
+                show {{
+                    url
+                    title
+                }}
+            }}
+            children {{
+                ... on DiffusionStep {{
+                    start
+                    end
+                    diffusion {{
+                        title
+                        standFirst
+                        show {{
+                            url
+                            title
+                        }}
+                    }}
+                }}
+                ... on TrackStep {{
+                    start
+                    end
+                    track {{
+                        title
+                        albumTitle
+                    }}
+                }}
+                ... on BlankStep {{
+                    start
+                    end
+                    title
+                }}
             }}
         }}
-        }}
         ... on TrackStep {{
-        start
-        end
-        track {{
-            title
-            albumTitle
-        }}
+            start
+            end
+            track {{
+                title
+                albumTitle
+            }}
         }}
         ... on BlankStep {{
-        start
-        end
-        title
+            start
+            end
+            title
         }}
     }}
-    }}
+}}
     """
 
     def format_info(self, metadata) -> CardMetadata:
@@ -246,30 +275,43 @@ class RadioFranceStation(Station):
             metadata = {
                 "type": MetadataType.PROGRAMME,
                 "end": int(first_show_in_grid["end"]),
-                "thumbnail_src": self.station_thumbnail,
             }
             # il n'y a pas d'info sur la diffusion mais uniquement l'émission
             if diffusion is None:
                 metadata.update({
                     "show_title": first_show_in_grid["title"],
                     "summary": "",
+                    "thumbnail_src": self.station_thumbnail,
                 })
             # il y a à la fois les infos de la diffusion et de l'émission
             else:
-                summary = first_show_in_grid["diffusion"]["standFirst"]
+                summary = diffusion["standFirst"]
                 if not summary or summary == ".":
                     summary = ""
+                podcast_link = diffusion["show"]["podcast"]["itunes"]
+                thumbnail_src = self._fetch_cover(podcast_link)
                 metadata.update({
                     "show_title": diffusion["show"]["title"],
                     "diffusion_title": diffusion["title"],
                     "summary": summary,
+                    "thumbnail_src": thumbnail_src,
                 })
             return metadata
         except KeyError as err:
             raise RuntimeError("Impossible de décoder la réponse de l'API radiofrance : {}".format(fetched_data)) from err
     
 
+    def _fetch_cover(self, podcast_link):
+        """Scrap cover url from provided Apple Podcast link."""
+        req = requests.get(podcast_link)
+        bs = BeautifulSoup(req.content.decode(), "html.parser")
+        sources = bs.find_all("source")
+        cover_url = sources[2].attrs["srcset"].split(",")[2].replace(" 3x", "")
+        return cover_url
+
+
     def _fetch_metadata(self):
+        """Fetch metadata from radiofrance open API."""
         radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
         api_rate_limit = 1000
         with open(radiofrance_requests_counter_path, "r") as f:
