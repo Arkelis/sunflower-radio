@@ -179,7 +179,9 @@ class RadioFranceStation(Station):
                 title
                 standFirst
                 show {{
-                    url
+                    podcast {{
+                        itunes
+                    }}
                     title
                 }}
             }}
@@ -191,7 +193,9 @@ class RadioFranceStation(Station):
                         title
                         standFirst
                         show {{
-                            url
+                            podcast {{
+                                itunes
+                            }}
                             title
                         }}
                     }}
