@@ -142,9 +142,9 @@ function updateCardBody() {
                 setTimeout(() => {
                     thumbnailNode.attributes.src.value = fetchedThumbnailSrc
                     thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
-                }, divsToUpdate.length*100)
+                }, divsToUpdate.length*100 + 200)
             } else {
-                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, divsToUpdate.length*100)
+                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, divsToUpdate.length*100 + 200)
             }
         })
 }
