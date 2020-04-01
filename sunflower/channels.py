@@ -225,8 +225,8 @@ class Channel(RedisMixin):
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
         metadata, info = self._handle_advertising(metadata, info)
-        if info.current_broadcast_title != self.current_broadcast_info.current_broadcast_title:
-            self.current_broadcast_metadata = metadata
+        self.current_broadcast_metadata = metadata
+        if info != self.current_broadcast_info:
             self.current_broadcast_info = info
             self.publish_to_redis("updated")
         else:
