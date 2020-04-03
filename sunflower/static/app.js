@@ -1,11 +1,14 @@
 const updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
 const eventsUrl = document.getElementById("info-update").attributes["data-listen-url"].value
 
+/**
+ * Class for supporting FLIP animation.
+ */
 class FlippedElement {
     x
     y
-    h
-    w
+    // h
+    // w
     element
 
     get newY() {
@@ -16,43 +19,43 @@ class FlippedElement {
         return this.element.getBoundingClientRect().x
     }
 
-    get newH() {
-        return this.element.getBoundingClientRect().height
-    }
+    // get newH() {
+    //     return this.element.getBoundingClientRect().height
+    // }
 
-    get newW() {
-        return this.element.getBoundingClientRect().width
-    }
+    // get newW() {
+    //     return this.element.getBoundingClientRect().width
+    // }
 
 
-    constructor(element) {
-        this.element = document.querySelector(element)
+    constructor(selector) {
+        this.element = document.querySelector(selector)
         this.y = this.newY
         this.x = this.newX
-        this.h = this.newH
-        this.w = this.newW
+        // this.h = this.newH
+        // this.w = this.newW
     }
 
     read() {
         this.x = this.newX
         this.y = this.newY
-        this.h = this.newH
-        this.w = this.newW
+        // this.h = this.newH
+        // this.w = this.newW
     }
 
     flip() {
         const newY = this.newY
         const newX = this.newX
-        const newH = this.newH
-        const newW = this.newW
+        // const newH = this.newH
+        // const newW = this.newW
         const deltaY = this.y - newY
         const deltaX = this.x - newX
-        const ratioH = this.w / newW
-        const ratioW = this.h / newH
+        // const ratioH = this.w / newW
+        // const ratioW = this.h / newH
         this.element.animate(
             [
                 {
-                    transform: `translate(${deltaX}px, ${deltaY}px) scale(${ratioW}, ${ratioH})`
+                    transform: `translate(${deltaX}px, ${deltaY}px)`
                 },
                 {
                     transform: "none"
@@ -66,6 +69,13 @@ class FlippedElement {
         )
     }
 }
+
+
+
+
+
+
+/* ---------------------------- U P D A T E   C A R D   M E T A D A T A ---------------------------- */
 
 let audioPlayer = new FlippedElement("audio")
 
@@ -160,17 +170,83 @@ es.onerror = err => console.log(err)
 console.log("hello")
 updateCardBody()
 
-// Toggle channels list
+
+
+
+
+
+
+
+
+/* ---------------------------- T O G G L E   C H A N N E L S   M E N U ---------------------------- */
 
 const channelsListHead = document.querySelector(".channels-list-head")
 const channelsListChevron = document.querySelector(".hide-channels-list")
 const channelsList = document.querySelector(".channels-list")
 
-channelsListHead.onclick = () => { channelsList.classList.add("show") }
-channelsListChevron.onclick = () => { channelsList.classList.remove("show")}
+channelsListHead.onclick = () => { 
+    channelsList.classList.add("show")
+    channelsListHead.style.opacity = 0;
+}
+channelsListChevron.onclick = () => { 
+    channelsList.classList.remove("show")
+    channelsListHead.style.opacity = 1;
+}
 
-// Toggle cover size
 
-document.querySelector("#current-thumbnail-container").onclick = () => {
-    document.querySelector("body").classList.toggle("big-cover");
+
+
+
+
+
+
+
+
+
+
+/* -------------------------------- T O G G L E   C O V E R   S I Z E -------------------------------- */
+
+let thumbnailContainer = new FlippedElement("#current-thumbnail");
+let headInfoChildren = document.querySelector("#head-info").children
+let detailsChildren = document.querySelector("#details").children
+
+document.querySelector("#current-thumbnail").onclick = () => {
+    thumbnailContainer.read()
+
+    if (window.innerWidth > 480) {
+        for (let i = 0; i < headInfoChildren.length; i++) {
+            setTimeout(() => {
+                headInfoChildren[i].classList.remove("fade-in")
+                headInfoChildren[i].classList.add("fade-out")
+            }, 100*i);
+        }
+    }
+    if (window.innerWidth > 720) {
+        for (let i = 0; i < detailsChildren.length; i++) {
+            setTimeout(() => {
+                detailsChildren[i].classList.remove("fade-in")
+                detailsChildren[i].classList.add("fade-out")
+            }, 200 + 100*i);
+        }
+    }
+    
+    
+    setTimeout(() => {
+        document.querySelector("body").classList.toggle("big-cover");
+        thumbnailContainer.flip()
+    }, (window.innerWidth > 480 ? 400 : 0) + (window.innerWidth > 720 ? 400 : 0));
+    
+    
+    for (let i = 0; i < headInfoChildren.length; i++) {
+        setTimeout(() => {
+            headInfoChildren[i].classList.remove("fade-out")
+            headInfoChildren[i].classList.add("fade-in")
+        }, 800 + 100*i + (window.innerWidth > 720 ? 400 : 0));
+    }
+    for (let i = 0; i < detailsChildren.length; i++) {
+        setTimeout(() => {
+            detailsChildren[i].classList.remove("fade-out")
+            detailsChildren[i].classList.add("fade-in")
+        }, 1000 + 100*i + (window.innerWidth > 720 ? 400 : 0));
+    }
 }

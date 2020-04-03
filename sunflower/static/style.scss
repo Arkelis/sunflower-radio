@@ -6,23 +6,27 @@ body {
     position: relative;
     font-family: "Fira Sans Condensed", sans-serif;
     margin: 0;
+    transition: all .4s ease-in-out;
 }
 
 nav {
 
     text-align: center;
     max-height: 3em;
-    transition: max-height .4s ease-in-out;
-
+    transition: all .4s ease-in-out;
+    
+    // brand
     #brand {
-        display: inline-block;
         color: white;
+        display: inline-block;
         margin: 1em 0 0 0;
         padding: 0.5em;
         background-color: #333;;
         font-weight: 600;
+        transition: all .4s ease-in-out;
     }
 
+    // channels list
     .channels-list-container {
 
         position: absolute;
@@ -33,13 +37,14 @@ nav {
         overflow: hidden;
         
         .channels-list-head {
-            margin: 1em 0
+            margin: 1em 0;
+            transition: all .4s ease-in-out;
         }
         
-        ul {
+        ul {        
+            color: white;
             background-color: #333;
             cursor: default;
-            color: #FFF;
             display: flex;
             justify-content: space-evenly;
             margin: 0;
@@ -53,9 +58,6 @@ nav {
             transform: translateY(calc(100% + .5em));
             transition: transform ease-in-out .4s;
             border-radius: 1em 1em 0 0;
-            // box-shadow: 0 0 .25em black;
-
-
             
             &.show {
                 transform: translateY(0);
@@ -69,7 +71,6 @@ nav {
                 &:first-child {
                     position: absolute;
                     top: 5px;
-                    color: white;
                     width: .5em;
                     cursor: pointer;
                 }
@@ -85,8 +86,9 @@ nav {
 }
 
 #current-broadcast-card {
+    transition: all .4s ease-in-out;
     padding: 1em;
-
+    
     #card-footer {
         margin-top: 1em;
 
@@ -97,10 +99,12 @@ nav {
 }
 
 #current-thumbnail-container {
+    cursor: pointer;
+    z-index: 100;
     display: flex;
     justify-content: center;
     margin-bottom: 1em;
-    transition: margin .4s ease-in-out;
+    transition: all .4s ease-in-out;
 
     img {
         height: 10em;
@@ -112,6 +116,7 @@ nav {
 #head-info {
     text-align: center;
     margin-bottom: 1em;
+    transition: all .4s ease-in-out;
 
     #current-station {
         font-size: 1.25em;
@@ -128,12 +133,14 @@ nav {
 }
 
 #current-broadcast-summary {
+    transition: color .4s ease-in-out;
     font-family: "Fira Sans Condensed", sans-serif;
     font-weight: 300;
     margin: 0;
 }
 
 #current-show-title {
+    transition: color .4s ease-in-out;
     font-family: "Fira Sans Condensed", sans-serif;
     font-weight: 600;
     color: #888;
@@ -142,27 +149,47 @@ nav {
 
 /* ------------- T O G G L E   B I G   C O V E R ------------- */
 
-@media screen and (max-width: 30em) {
-    .big-cover {
-        nav {
-            max-height: 0;
+
+.big-cover {
+    background-color: #333;
+
+    nav {
+        max-height: 0;
+        
+        #brand {
+            opacity: 0;
         }
-        #current-thumbnail-container {
-            margin: -1em -1em 1em -1em;
-            width: auto;
-            height: auto;
-            img {
-                width: 100%;
-                height: 100%;
-            }
+
+        .channels-list-head {
+            color: white;
+        }
+    }
+
+    #current-thumbnail-container {
+        margin-top: 2em;
+ 
+        img {
+        width: 20em;
+        height: 20em;
+        border-radius: .25em;
+        box-shadow: 0 0 5em black;
+        }
+    }
+
+    #current-broadcast-info {
+        color: white;
+
+        #head-info {
+            margin: 2em 0;
         }
     }
 }
 
 
+
 /* -------------  M E D I U M   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 
-@media screen and (min-width: 30em) {
+@media screen and (min-width: 480px) {
 
     #current-broadcast-card {
         margin: 0 2em;
@@ -174,8 +201,6 @@ nav {
         
         #current-thumbnail-container {
             position: absolute;
-            left: 0;
-            margin: 0;
         }
 
         #current-broadcast-info #head-info {
@@ -185,11 +210,30 @@ nav {
         }
     }
 
+    .big-cover {
+        
+        #card-body {
+            color: white;
+
+            #current-thumbnail-container {
+                position: relative;
+            }
+
+            #current-broadcast-info {
+                #head-info {
+                    padding: 0;
+                    margin: 2em;
+                    height: auto;
+                    text-align: center;
+                }
+            }
+        }
+    }
 }
 
 /* -------------  B I G   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 
-@media screen and (min-width: 45em) {
+@media screen and (min-width: 720px) {
     #current-broadcast-card {
         margin: auto;
         width: 40em;
@@ -201,8 +245,7 @@ nav {
         
         #current-thumbnail-container {
             position: initial;
-            flex-shrink: 0;
-            margin: 0;
+            margin-bottom: 0;
         }
 
         #current-broadcast-info {
@@ -217,11 +260,16 @@ nav {
             }
         }
     }
+
+    .big-cover {
+        #card-body { display: block; }
+    }
+
 }
 
 /* -------------  B I G   H E I G H T ------------- */
 
-@media screen and (min-height: 35em) and (min-width: 30em) {
+@media screen and (min-height: 35em) and (min-width: 480px) {
     
     body {
         background-color: #333;
@@ -231,7 +279,6 @@ nav {
     nav {
         position: relative;
         justify-content: space-between;
-        color: white;
         z-index: 10;
 
         #brand {
@@ -265,9 +312,10 @@ nav {
 
     #timeline {
         margin: auto;
+        width: 100%
     }
 
-    #current-broadcast-card {
+    body:not(.big-cover) #current-broadcast-card {
         box-shadow: 0px 0px 5em black;
         border-radius: 0.5em;
         background-color: white;
@@ -299,6 +347,15 @@ nav {
                     &:first-child { display: none; }
                 }
             }
+        }
+    }
+
+    .big-cover {
+        nav {
+            transform: translateY(-100%);
+        }
+        #current-broadcast-card #current-broadcast-info {
+            padding-left: 0;
         }
     }
 }

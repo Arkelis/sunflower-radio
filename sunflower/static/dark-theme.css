@@ -12,7 +12,7 @@
     }
 
     #current-broadcast-card {
-        box-shadow: none;
-        background-color: inherit;
+        box-shadow: none !important;
+        background-color: inherit !important;
     }
 }
