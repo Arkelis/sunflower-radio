@@ -1,23 +1,17 @@
 # Radio Tournesol
 
-Ce programme a deux vocations :
-- Afficher les métadonnées d'une radio en cours de lecture sur une page avec un lecteur.
-- Exposer en json les métadonnées.
-- Interagir avec un server telnet [liquidsoap](https://www.liquidsoap.info)
-
-Grâce à liquidsoap, on peut changer la station diffusée au cours de la journée, d'où le nom Radio Tournesol.
-
 ## Principe
 
 Une webradio est composé de divers éléments :
 
 - un encodeur de flux audio, par exemple liquidsoap
 - un diffuseur de flux audio, par exemple icecast
-- un client de lecture (cette application !)
+- un client de lecture
 
-Radio tournesol a donc pour principale vocation d'afficher les métadonnées de la radio en cours de lecture. Cependant, grâce au serveur telnet de liquidsoap, Radio tournesol peut aussi interagir avec celui-ci ; cela permet d'étendre les possibilités : par exemple Radio tournesol peut détecter de la publicité et donc demander à liquidsoap de jouer de la musique à la place.
+Radio Tournesol s'insère dans deux de ces éléments :
 
-En plus d'être un client de lecture, Radio Tournesol participe donc aussi à l'encodage de flux audio.
+- l'encodage : le programme génère, à partir d'un planning, la configuration pour liquidsoap qui changer de chaîne en fonction des horaires. De plus un *watcher* surveille les publicités et demande à liquidsoap de jouer de la musique à la place de la station s'il en détecte ;
+- le client de lecture : Radio Tournesol propose sa propre interface web ainsi qu'une API exposant des données.
 
 ## Fonctionnement de Radio Tournesol
 
@@ -25,9 +19,54 @@ En plus d'être un client de lecture, Radio Tournesol participe donc aussi à l'
 
 Le client de lecture se présente sous forme d'un serveur Flask. Celui-ci s'appuie sur deux types d'objets :
 
-#### Radio
+#### Channel
 
-Elle est composée de stations. Elle va puiser les métadonnées chez les stations enregistrées. Pour savoir à quelle station elle doit s'adresser, elle s'appuie sur un fichier de configuration (cf. paragraphe **Configuration** plus bas).
+Elle est composée de stations. Elle va puiser les métadonnées chez les stations enregistrées. Lors de son instanciation, on indique les stations utilisées, son nom (qui sera aussi son endpoint), ainsi que sa table d'horaires. Par exemple, la chaîne Tournesol de Radio Pycolore est définie comme suit :
+
+```python
+tournesol = Channel(
+    endpoint="tournesol",
+    stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2),
+    timetable={
+        # (weekday1, weekday2, ...)
+        (0, 1, 2, 3, 4): [
+            # (start, end, station_name),
+            ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
+            ("05:00", "07:00", FranceInfo), # Matinale
+            ("07:00", "09:00", FranceInter), # Matinale
+            ("09:00", "11:00", RTL2), # Musique
+            ("11:00", "12:00", FranceCulture), # Toute une vie
+            ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
+            ("15:00", "18:00", FranceCulture), # La compagnie des auteurs/poètes, La Méthode scientifique, LSD (la série docu)
+            ("18:00", "20:00", FranceInter), # Soirée
+            ("20:00", "21:00", FranceInfo), # Les informés
+            ("21:00", "00:00", RTL2), # Musique
+        ],
+        (5,): [
+            ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
+            ("06:00", "07:00", FranceInfo), # Matinale
+            ("06:00", "09:00", FranceInter), # Matinale
+            ("09:00", "11:00", RTL2), # Musique
+            ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
+            ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
+            ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
+            ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
+            ("20:00", "21:00", FranceInfo), # Les informés
+            ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
+        ],
+        (6,): [
+            ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
+            ("07:00", "09:00", FranceInter), # Matinale
+            ("09:00", "12:00", RTL2),
+            ("12:00", "14:00", FranceInter), # Politique + journal
+            ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
+            # ("18:00", "19:00", RTL2),
+            ("18:00", "21:00", FranceInter), # Spécial Corona : téléphone sonne et le masque et la plume
+            ("21:00", "00:00", RTL2),
+        ]
+    },
+)
+```
 
 #### Station
 
@@ -47,23 +86,10 @@ Il faut [poetry](https://github.com/sdispater/poetry).
 
 ## Configuration
 
-Vous devez créer une liste de plages horaires dans `settings.py` (au même niveau que `radio.py`). Ce fichier
-permet de savoir quelle radio inspecter en fonction de l'heure. Exemple :
-
-```python
-TIMETABLE = [
-    # (start, end, station_name),
-    ("00:00", "06:00", "France Inter"),
-    ("06:00", "07:00", "France Info"),
-    ("07:00", "09:00", "France Inter"),
-    ("09:00", "13:00", "RTL 2"),
-    ("13:00", "14:00", "France Inter"),
-    ("14:00", "19:00", "RTL 2"),
-    ("19:00", "20:00", "France Inter"),
-    ("20:00", "21:00", "France Info"),
-    ("21:00", "00:00", "RTL 2"),
-]
-```
+Le fichier `settings.py` contient trois éléments :
+- l'url du serveur icecast
+- le chemin vers le dossier contenant les musiques à jouer en cas de pub ;
+- les noms des chaînes créées dans `channels.py`
 
 **Radio supportées :**
 
