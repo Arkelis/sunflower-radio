@@ -106,7 +106,7 @@ $ poetry run flask run
 ```
 
 - Aller à `localhost:8080` pour accéder au client de lecture.
-- Aller à `localhost:8080/on-air` pour accéder métadonnées au format json du programme en cours.
+- Aller à `localhost:8080/api` pour accéder aux données exposées en JSON.
 
 ## Feuille de route
  
