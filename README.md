@@ -4,8 +4,8 @@
 
 Une webradio est composé de divers éléments :
 
-- un encodeur de flux audio, par exemple liquidsoap
-- un diffuseur de flux audio, par exemple icecast
+- un encodeur de flux audio, par exemple [liquidsoap](http://liquidsoap.info)
+- un diffuseur de flux audio, par exemple [icecast](http://icecast.org/)
 - un client de lecture
 
 Radio Tournesol s'insère dans deux de ces éléments :
