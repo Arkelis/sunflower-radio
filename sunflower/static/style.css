@@ -77,7 +77,6 @@ nav {
           text-decoration-line: none; }
 
 #current-broadcast-card {
-  transition: all .4s ease-in-out;
   padding: 1em; }
   #current-broadcast-card #card-footer {
     margin-top: 1em; }

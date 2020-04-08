@@ -84,7 +84,7 @@ let audioPlayer = new FlippedElement("audio")
  * Used by updateCardBody() function.
  * @param divsToUpdate : arry containing [node, newValueToUpdate]
  */
-function updateCardInfos(divsToUpdate, thumbnailNode=null) {
+function updateCardInfos(divsToUpdate) {
     // update info
     audioPlayer.read()
     divsToUpdate.forEach((element, i) => {
@@ -98,12 +98,6 @@ function updateCardInfos(divsToUpdate, thumbnailNode=null) {
             element[0].classList.add("fade-in")
         }, 100*(i+1))
     })
-
-    //update thumbnail if needed
-    if (thumbnailNode !== null) {
-        thumbnailNode.parentElement.classList.remove("fade-out")
-        thumbnailNode.parentElement.classList.add("fade-in")
-    }
 }
 
 /**
@@ -121,10 +115,8 @@ function updateCardBody() {
                 "current-broadcast-summary",
             ]
 
-            let thumbnailNode = document.getElementById("current-thumbnail")
-            let thumbnailSrc = thumbnailNode.attributes.src.value
             let divsToUpdate = []
-
+            
             // check text info
             textsToCheck.forEach(element => {
                 let fetchedText = data[element.replace(/-/g, "_")]
@@ -134,28 +126,22 @@ function updateCardBody() {
                     divsToUpdate.push([nodeToUpdate, fetchedText])
                 }
             })
-
+            
+            // fade out elements to update
             divsToUpdate.forEach((element, i) => { 
-                if (element.innerHTML !== "") {
+                if (element.innerText != "") {
                     setTimeout(() => {
                         element[0].classList.remove("fade-in")
                         element[0].classList.add("fade-out")
                     }, 100*i)
                 }
             })
-
-            // check thumbnail src
-            let fetchedThumbnailSrc = data.current_thumbnail
-            if (thumbnailSrc != fetchedThumbnailSrc) {
-                thumbnailNode.parentElement.classList.remove("fade-in")
-                thumbnailNode.parentElement.classList.add("fade-out")
-                setTimeout(() => {
-                    thumbnailNode.attributes.src.value = fetchedThumbnailSrc
-                    thumbnailNode.onload = updateCardInfos(divsToUpdate, thumbnailNode)
-                }, divsToUpdate.length*100 + 200)
-            } else {
-                setTimeout(() => {updateCardInfos(divsToUpdate, thumbnailNode=null)}, divsToUpdate.length*100 + 200)
-            }
+            
+            // update divs to update and thumbnail src
+            setTimeout(() => {
+                document.getElementById("current-thumbnail").attributes.src.value = data.current_thumbnail
+                updateCardInfos(divsToUpdate)
+            }, divsToUpdate.length*100 + 200)
         })
 }
 
@@ -167,7 +153,6 @@ es.onmessage = function(event) {
 }
 es.onerror = err => console.log(err)
 
-console.log("hello")
 updateCardBody()
 
 
@@ -221,8 +206,12 @@ document.querySelector("#current-thumbnail").onclick = () => {
             }, 100*i);
         }
     }
+
+    let detailDivsToMove = 0
     if (window.innerWidth > 720) {
         for (let i = 0; i < detailsChildren.length; i++) {
+            if (detailsChildren[i].innerText == "") continue
+            detailDivsToMove++
             setTimeout(() => {
                 detailsChildren[i].classList.remove("fade-in")
                 detailsChildren[i].classList.add("fade-out")
@@ -234,19 +223,19 @@ document.querySelector("#current-thumbnail").onclick = () => {
     setTimeout(() => {
         document.querySelector("body").classList.toggle("big-cover");
         thumbnailContainer.flip()
-    }, (window.innerWidth > 480 ? 400 : 0) + (window.innerWidth > 720 ? 400 : 0));
+    }, (window.innerWidth > 480 ? 400 : 0) + detailDivsToMove*100);
     
     
     for (let i = 0; i < headInfoChildren.length; i++) {
         setTimeout(() => {
             headInfoChildren[i].classList.remove("fade-out")
             headInfoChildren[i].classList.add("fade-in")
-        }, 800 + 100*i + (window.innerWidth > 720 ? 400 : 0));
+        }, 800 + 100*i + detailDivsToMove*100);
     }
     for (let i = 0; i < detailsChildren.length; i++) {
         setTimeout(() => {
             detailsChildren[i].classList.remove("fade-out")
             detailsChildren[i].classList.add("fade-in")
-        }, 1000 + 100*i + (window.innerWidth > 720 ? 400 : 0));
+        }, 1000 + 100*i + detailDivsToMove*100);
     }
 }
