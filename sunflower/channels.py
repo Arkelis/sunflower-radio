@@ -78,19 +78,14 @@ class Channel(RedisMixin):
             CurrentStationClass = self.get_station_info(datetime.now().time())[2]
         return CurrentStationClass()
 
-    def get_from_redis(self, key):
-        """Get a key from Redis and return it as loaded json.
+    def get_from_redis(self, key, object_hook=as_metadata_type):
+        return super().get_from_redis(key, object_hook)
 
-        If key is empty, return None.
-        """
-        stored_data = super().get_from_redis(key)
-        if stored_data is None:
-            return None
-        return json.loads(stored_data.decode(), object_hook=as_metadata_type)
+    def set_to_redis(self, key, value, json_encoder_cls=MetadataEncoder):
+        super().set_to_redis(key, value, json_encoder_cls)
 
     def publish_to_redis(self, metadata):
-        channel = self.endpoint
-        return super().publish_to_redis(channel, metadata)
+        return super().publish_to_redis(self.endpoint, metadata)
 
     @property
     def current_broadcast_metadata(self):
@@ -100,7 +95,7 @@ class Channel(RedisMixin):
     @current_broadcast_metadata.setter
     def current_broadcast_metadata(self, metadata):
         """Store metadata in Redis."""
-        self._redis.set(self.redis_metadata_key, json.dumps(metadata, cls=MetadataEncoder))
+        self.set_to_redis(self.redis_metadata_key, metadata)
 
     @property
     def current_broadcast_info(self) -> CardMetadata:
@@ -113,7 +108,7 @@ class Channel(RedisMixin):
     @current_broadcast_info.setter
     def current_broadcast_info(self, info: CardMetadata):
         """Store card info in Redis."""
-        self._redis.set(self.redis_info_key, json.dumps(info._asdict(), cls=MetadataEncoder))
+        self.set_to_redis(self.redis_info_key, info._asdict())
     
     @property
     def neutral_card_metadata(self) -> CardMetadata:
@@ -131,16 +126,8 @@ class Channel(RedisMixin):
         This is for data display in player client. This method uses format_info()
         method of currently broadcasted station.
         """
-        if metadata["type"] == MetadataType.NONE:
+        if metadata["type"] in (MetadataType.NONE, MetadataType.ERROR):
             return self.neutral_card_metadata
-        if metadata.get("error") is not None:
-            return CardMetadata(
-                current_thumbnail=self.current_station.station_thumbnail,
-                current_station=self.current_station.station_name,
-                current_broadcast_title="Métadonnées indisponibles",
-                current_show_title="Métadonnées indisponibles",
-                current_broadcast_summary="Les métadonnées n'ont pas pu être récupérées : le serveur de la station demandée a mis trop de temps à répondre.",
-            )
         return self.current_station.format_info(metadata)
 
     def get_current_broadcast_metadata(self):
@@ -149,10 +136,7 @@ class Channel(RedisMixin):
         This is for pure json data exposure. This method uses get_metadata() method
         of currently broadcasted station.
         """
-        try:
-            metadata = self.current_station.get_metadata()
-        except requests.exceptions.Timeout:
-            metadata = {"error": "Metadata can't be fetched.", "end": 0}
+        metadata = self.current_station.get_metadata()
         metadata.update({"station": self.current_station.station_name})
         return metadata
 
@@ -220,17 +204,32 @@ class Channel(RedisMixin):
         
         Treatments:
         - play backup song if advertising is detected.
+
+        If card info changed and need to be updated in client, return True.
+        Else return False.
         """
         assert hasattr(self, "logger"), "You must provide a logger to call process_radio() method."
+        
+        if (
+            self.current_broadcast_metadata is not None
+            and datetime.now().timestamp() < self.current_broadcast_metadata["end"]
+            and self.current_broadcast_metadata["station"] == self.current_station.station_name
+        ):
+            self.publish_to_redis("unchanged")
+            return False
+
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
+
         metadata, info = self._handle_advertising(metadata, info)
+        
         self.current_broadcast_metadata = metadata
-        if info != self.current_broadcast_info:
-            self.current_broadcast_info = info
-            self.publish_to_redis("updated")
-        else:
+        if info == self.current_broadcast_info:
             self.publish_to_redis("unchanged")
+            return False
+        self.current_broadcast_info = info
+        self.publish_to_redis("updated")
+        return True
     
     def get_liquidsoap_config(self):
         """Renvoie une chaîne de caractères à écrire dans le fichier de configuration liquidsoap."""

@@ -30,10 +30,26 @@ class RedisMixin:
     def __init__(self, *args, **kwargs):
         self._redis = redis.Redis()
 
-    def get_from_redis(self, key):
-        if key not in self.REDIS_KEYS:
-            raise KeyError("Only {} keys are used by this application.".format(self.REDIS_KEYS))
-        return self._redis.get(key)
+    def get_from_redis(self, key, object_hook=None):
+        """Get value for given key from Redis.
+        
+        Data got from Redis is loaded from json with given object_hook.
+        If no data is found, return None.
+        """
+        assert key in self.REDIS_KEYS, "Only {} keys are used by this application.".format(self.REDIS_KEYS)
+        raw_data = self._redis.get(key)
+        if raw_data is None:
+            return None
+        return json.loads(raw_data.decode(), object_hook=object_hook)
+    
+    def set_to_redis(self, key, value, json_encoder_cls=None):
+        """Set new value for given key in Redis.
+        
+        value is dumped as json with given json_encoder_cls.
+        """
+        assert key in self.REDIS_KEYS, "Only {} keys are used by this application.".format(self.REDIS_KEYS)
+        json_data = json.dumps(value, cls=json_encoder_cls)
+        return self._redis.set(key, json_data, ex=86400)
 
     def publish_to_redis(self, channel, data):
         """publish a message to a redis channel.
@@ -76,6 +92,7 @@ class MetadataType(Enum):
     PROGRAMME = "Emission"
     NONE = ""
     ADS = "Publicité"
+    ERROR = "Erreur"
 
 class MetadataEncoder(json.JSONEncoder):
     def default(self, obj):

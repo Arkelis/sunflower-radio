@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 import json
 import os
 
-from sunflower.utils import RedisMixin, CardMetadata, MetadataType
+from sunflower.utils import CardMetadata, MetadataType
 
-class Station(RedisMixin):
+class Station:
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -20,16 +20,14 @@ class Station(RedisMixin):
     station_thumbnail = str()
     station_url = str()
 
-    def get_from_redis(self, key):
-        """Get key from redis and perform other checkings."""
-        store_data = super().get_from_redis(key)
-        if store_data is None:
-            return None
-        store_data = json.loads(store_data.decode())
-        if key == self.REDIS_METADATA:
-            if store_data["station"] != self.station_name:
-                raise KeyError("Station names not matching.")
-        return store_data
+
+    def _get_error_metadata(self, message, seconds):
+        return {
+            "type": MetadataType.ERROR,
+            "message": message,
+            "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
+            "thumbnail_src": self.station_thumbnail,
+        }
 
 
     def get_metadata(self):
@@ -79,29 +77,39 @@ class RTL2(Station):
             current_broadcast_title=current_broadcast_title,
         )
 
-    def _fetch_song_metadata(self):
+    def _fetch_song_metadata(self, retry=0):
         """Return mapping containing song info"""
-        rep = requests.get(self._songs_data_url, timeout=1)
-        return json.loads(rep.content.decode())[0]
+        try:
+            rep = requests.get(self._songs_data_url, timeout=1)
+            return json.loads(rep.content.decode())[0]
+        except requests.exceptions.Timeout:
+            if (retry == 11):
+                return self._get_error_metadata("API Timeout", 90)
+            return self._fetch_song_metadata(retry+1)
 
-    def _fetch_metadata(self):
+    def _fetch_metadata(self, retry=0):
         """Fetch data from timeline.rtl.fr.
         
         Scrap from items page. If song object detected, get data from songs endpoint.
         Else return MetadataType object. 
         """
-        rep = requests.get(self._main_data_url, timeout=1)
-        soup = BeautifulSoup(rep.content.decode(), "html.parser")
         try:
-            diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
-        except IndexError:
-            previous_url = "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[6].attrs["href"]
-            rep = requests.get(previous_url, timeout=1)
+            rep = requests.get(self._main_data_url, timeout=1)
             soup = BeautifulSoup(rep.content.decode(), "html.parser")
             try:
                 diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
-            except:
-                raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
+            except IndexError:
+                previous_url = "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[6].attrs["href"]
+                rep = requests.get(previous_url, timeout=1)
+                soup = BeautifulSoup(rep.content.decode(), "html.parser")
+                try:
+                    diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
+                except:
+                    raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
+        except requests.exceptions.Timeout:
+            if (retry == 11):
+                return self._get_error_metadata("API Timeout", 90)
+            return self._fetch_metadata(retry+1)
         if diffusion_type == "Pubs":
             return {"type": MetadataType.ADS}
         if diffusion_type != "Musique":
@@ -238,28 +246,23 @@ class RadioFranceStation(Station):
             "current_station": self.station_name,
         }
         if metadata["type"] == "Erreur":
-            card_info.update({
-                "current_broadcast_title": "Vous écoutez {}".format(self.station_name),
-                "current_show_title": "Informations indisponibles",
-                "current_broadcast_summary": "Le nombre de requêtes autorisées à l'API de Radio France a été atteinte.",
-            })
+            return MetadataType.NONE
         elif metadata["type"] == MetadataType.PROGRAMME:
-            card_info.update({
-                "current_broadcast_title": metadata.get("diffusion_title", metadata["show_title"]),
-                "current_show_title": metadata["show_title"],
-                "current_broadcast_summary": metadata["summary"],
-            })
-        return CardMetadata(**card_info)
+            return CardMetadata(
+                current_thumbnail=metadata["thumbnail_src"],
+                current_station=self.station_name,
+                current_broadcast_title=metadata.get("diffusion_title", metadata["show_title"]),
+                current_show_title=metadata["show_title"],
+                current_broadcast_summary=metadata["summary"],
+            )
 
     def get_metadata(self):
-        fetched_data = self._fetch_metadata()
-        if fetched_data == self.API_RATE_LIMIT_EXCEEDED:
-            return {
-                "message": "Radio France API rate limit exceeded",
-                "type": "Erreur",
-                "end": int((datetime.now() + timedelta(hours=24)).timestamp()),
-                "thumbnail_src": self.station_thumbnail,
-            }
+        try:
+            fetched_data = self._fetch_metadata()
+        except requests.exceptions.Timeout:
+            return self._get_error_metadata("API Timeout", 90) 
+        if "API rate limit exceeded" in fetched_data.values():
+            return self._get_error_metadata("Radio France API rate limit exceeded", 90)
         try:
             first_show_in_grid = fetched_data["data"]["grid"][0]
             # si la dernière émission est terminée et la suivante n'a pas encore démarrée
@@ -316,18 +319,18 @@ class RadioFranceStation(Station):
 
     def _fetch_metadata(self):
         """Fetch metadata from radiofrance open API."""
-        radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
-        api_rate_limit = 1000
-        with open(radiofrance_requests_counter_path, "r") as f:
-            lines = f.read().split("\n")
-        if lines[0] != datetime.now().date().isoformat():
-            write_mode = "w"
-        else:
-            if len(lines) >= api_rate_limit:
-                return self.API_RATE_LIMIT_EXCEEDED
-            write_mode = "a"
-        with open(radiofrance_requests_counter_path, write_mode) as f:
-            f.write("{}\n".format(datetime.now().date()))
+        # radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
+        # api_rate_limit = 1000
+        # with open(radiofrance_requests_counter_path, "r") as f:
+        #     lines = f.read().split("\n")
+        # if lines[0] != datetime.now().date().isoformat():
+        #     write_mode = "w"
+        # else:
+        #     if len(lines) >= api_rate_limit:
+        #         return self.API_RATE_LIMIT_EXCEEDED
+        #     write_mode = "a"
+        # with open(radiofrance_requests_counter_path, write_mode) as f:
+        #     f.write("{}\n".format(datetime.now().date()))
         start = datetime.now()
         end = datetime.now() + timedelta(minutes=120)
         query = self._grid_template.format(

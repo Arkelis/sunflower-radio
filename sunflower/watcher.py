@@ -38,18 +38,11 @@ def watch():
         while True:
             sleep(4)
             for channel in channels.CHANNELS.values():
-                current_broadcast_metadata = channel.current_broadcast_metadata
-                if (
-                    current_broadcast_metadata is not None
-                    and datetime.now().timestamp() < current_broadcast_metadata["end"]
-                    and current_broadcast_metadata["station"] == channel.current_station.station_name
-                ):
-                    channel.publish_to_redis("unchanged")
-                    continue
                 try:
-                    channel.process_radio()
-                    logger.debug("New metadata for channel {}: {}."
-                                 .format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
+                    info_changed = channel.process_radio()
+                    if info_changed:
+                        logger.debug("New metadata for channel {}: {}."
+                                    .format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
                 except Exception as err:
                     import traceback
                     logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))

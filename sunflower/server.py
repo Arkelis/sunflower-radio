@@ -45,9 +45,9 @@ def api_root():
 @get_channel_or_404
 def get_channel_links(channel):
     return jsonify({
-        "audio_stream_url": settings.ICECAST_SERVER_URL + channel.endpoint,
-        "card_formated_metadata_url": url_for("update_broadcast_info", channel=channel.endpoint, _external=True),
-        "metadata_update_events_url": url_for("update_broadcast_info_stream", channel=channel.endpoint, _external=True),
+        "audio_stream": settings.ICECAST_SERVER_URL + channel.endpoint,
+        "card_formated_metadata": url_for("update_broadcast_info", channel=channel.endpoint, _external=True),
+        "metadata_update_events": url_for("update_broadcast_info_stream", channel=channel.endpoint, _external=True),
         "raw_metadata": url_for("get_channel_info", channel=channel.endpoint, _external=True),
     })
 
