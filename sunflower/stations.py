@@ -257,9 +257,8 @@ class RadioFranceStation(Station):
             )
 
     def get_metadata(self):
-        try:
-            fetched_data = self._fetch_metadata()
-        except requests.exceptions.Timeout:
+        fetched_data = self._fetch_metadata()
+        if "API Timeout" in fetched_data.values():
             return self._get_error_metadata("API Timeout", 90) 
         if "API rate limit exceeded" in fetched_data.values():
             return self._get_error_metadata("Radio France API rate limit exceeded", 90)
@@ -313,7 +312,7 @@ class RadioFranceStation(Station):
         req = requests.get(podcast_link)
         bs = BeautifulSoup(req.content.decode(), "html.parser")
         sources = bs.find_all("source")
-        cover_url = sources[2].attrs["srcset"].split(",")[2].replace(" 3x", "")
+        cover_url = sources[0].attrs["srcset"].split(",")[1].replace(" 2x", "")
         return cover_url
 
 
@@ -338,11 +337,14 @@ class RadioFranceStation(Station):
             end=int(end.timestamp()),
             station=self._station_api_name
         )
-        rep = requests.post(
-            url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
-            json={"query": query},
-            timeout=4,
-        )
+        try:
+            rep = requests.post(
+                url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
+                json={"query": query},
+                timeout=4,
+            )
+        except requests.exceptions.Timeout:
+            return {"message": "API Timeout"}
         data = json.loads(rep.content.decode())
         return data
 
