@@ -6,25 +6,24 @@ import json
 import random
 import telnetlib
 from datetime import datetime, time, timedelta
-import glob
 
 from backports.datetime_fromisoformat import MonkeyPatch
-import requests
-import mutagen
 
 from sunflower import settings
-from sunflower.utils import RedisMixin, Song, CardMetadata, MetadataType, MetadataEncoder, as_metadata_type
+from sunflower.utils import (RedisMixin, Song, CardMetadata, MetadataType, MetadataEncoder,
+                             as_metadata_type, AdsHandler)
 
 CHANNELS = dict()
 
 class Channel(RedisMixin):
-    def __init__(self, endpoint, stations, timetable=None):
+    def __init__(self, endpoint, stations, handlers=[], timetable=None):
         """Channel constructor.
 
         Parameters:
         - endpoint: string
         - stations: list of Station subclasses
         - timetable: dict
+        - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
         assert endpoint in settings.CHANNELS, "{} not mentionned in settings.CHANNELS".format(endpoint)
 
@@ -33,11 +32,12 @@ class Channel(RedisMixin):
         self.endpoint = endpoint
         self.stations = stations
         self.timetable = timetable
+        self.logger = None # see watcher.py
+        self.handlers = [Handler(self) for Handler in handlers]
 
         if len(self.stations) > 1:
             assert self.timetable is not None, "You must provide a timetable."
 
-        self.backup_songs = []
         self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:" + self.endpoint + ":info"
 
@@ -140,65 +140,6 @@ class Channel(RedisMixin):
         metadata.update({"station": self.current_station.station_name})
         return metadata
 
-    def _handle_advertising(self, metadata, info):
-        """Play backup songs if advertising is detected on currently broadcasted station."""
-        if metadata["type"] == MetadataType.ADS:
-            self.logger.info("Ads detected.")
-            if not self.backup_songs:
-                self.logger.info("Backup songs list must be generated.")
-                self.backup_songs = self._parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-            backup_song = self.backup_songs.pop(0)
-
-            # tell liquidsoap to play backup song
-            session = telnetlib.Telnet("localhost", 1234)
-            session.write("{}_custom_songs.push {}\n".format(self.endpoint, backup_song.path).encode())
-            session.close()
-            
-            type_ = MetadataType.MUSIC
-            station = metadata["station"]
-            thumbnail = self.current_station.station_thumbnail
- 
-            # and update metadata
-            metadata = {
-                "artist": backup_song[1],
-                "title": backup_song[2],
-                "end": int(datetime.now().timestamp()) + backup_song[3],
-                "type": type_,
-                "station": station,
-                "thumbnail_src": thumbnail,
-            }
-            info = CardMetadata(
-                current_thumbnail=thumbnail,
-                current_station=station,
-                current_broadcast_title=backup_song[1] + " • " + backup_song[2],
-                current_show_title=type_,
-                current_broadcast_summary="Publicité en cours sur RTL 2. Dans un instant, retour sur la station.",
-            )
-        return metadata, info
-    
-    @staticmethod
-    def _parse_songs(glob_pattern):
-        """Parse songs matching glob_pattern and return a list of Song objects.
-        
-        Song object is a namedtuple defined in sunflower.utils module.
-        """
-        songs = []
-        if not glob_pattern.endswith(".ogg"):
-            raise RuntimeError("Only ogg files are supported.")
-        for path in glob.iglob(glob_pattern):
-            file = mutagen.File(path)
-            try:
-                songs.append(Song(
-                    path,
-                    file["artist"][0],
-                    file["title"][0],
-                    int(file.info.length),
-                ))
-            except KeyError as err:
-                raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
-        random.shuffle(songs)
-        return songs
-
     def process_radio(self):
         """Fetch metadata, and if needed do some treatment.
         
@@ -221,7 +162,8 @@ class Channel(RedisMixin):
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
 
-        metadata, info = self._handle_advertising(metadata, info)
+        for handler in self.handlers:
+            metadata, info = handler.process(metadata, info, self.logger)
         
         self.current_broadcast_metadata = metadata
         if info == self.current_broadcast_info:
@@ -322,7 +264,7 @@ tournesol = Channel(
     },
 )
 
-music = Channel("music", (RTL2,))
+music = Channel("music", (RTL2,), (AdsHandler,),)
 
 def write_liquidsoap_config():
     with open("test.liq", "w") as f:

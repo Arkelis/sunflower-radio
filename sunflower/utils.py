@@ -1,12 +1,18 @@
 """Utilitary classes used in several parts of sunflower application."""
 
-import json
-from collections import namedtuple
-from enum import Enum
 import functools
+import glob
+import json
+import random
+import telnetlib
+from collections import namedtuple
+from datetime import datetime
+from enum import Enum
 
-from flask import abort
+import mutagen
 import redis
+import requests
+from flask import abort
 
 from sunflower import settings
 
@@ -110,3 +116,85 @@ def as_metadata_type(mapping):
         mapping["type"] = MetadataType(type_)
         break
     return mapping
+
+# utils functions
+
+class AdsHandler:
+    def __init__(self, channel):
+        self.channel = channel
+        self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
+        self.backup_songs = self._parse_songs()
+
+    def _fetch_cover_on_deezer(self, artist, track):
+        """Get cover from Deezer API.
+
+        Search for a track with given artist and track. 
+        Take the cover of the album of the first found track.
+        """
+        req = requests.get("http://api.deezer.com/search/track?q=artist:'{}' track:'{}'".format(artist, track))
+        data = json.loads(req.content.decode())
+        if not data:
+            return self.channel.current_station.station_thumbnail
+        track = data[0]
+        cover_src = track["album"]["cover_big"]
+        return cover_src
+
+    def _parse_songs(self):
+        """Parse songs matching self.glob_pattern and return a list of Song objects.
+        
+        Song object is a namedtuple defined in sunflower.utils module.
+        """
+        songs = []
+        if not self.glob_pattern.endswith(".ogg"):
+            raise RuntimeError("Only ogg files are supported.")
+        for path in glob.iglob(self.glob_pattern):
+            file = mutagen.File(path)
+            try:
+                songs.append(Song(
+                    path,
+                    file["artist"][0],
+                    file["title"][0],
+                    int(file.info.length),
+                ))
+            except KeyError as err:
+                raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
+        random.shuffle(songs)
+        return songs
+
+    def process(self, metadata, info, logger) -> (dict(), CardMetadata):
+        """Play backup songs if advertising is detected on currently broadcasted station."""
+        if metadata["type"] == MetadataType.ADS:
+            self.channel.logger.info("Ads detected.")
+            if not self.backup_songs:
+                self.channel.logger.info("Backup songs list must be generated.")
+                self.backup_songs = self._parse_songs()
+            backup_song = self.backup_songs.pop(0)
+
+            # tell liquidsoap to play backup song
+            session = telnetlib.Telnet("localhost", 1234)
+            session.write("{}_custom_songs.push {}\n".format(self.channel.endpoint, backup_song.path).encode())
+            session.close()
+            
+            type_ = MetadataType.MUSIC
+            station = metadata["station"]
+            artist = backup_song.artist
+            title = backup_song.title
+            thumbnail = self._fetch_cover_on_deezer(artist, title)
+
+            # and update metadata
+            metadata = {
+                "artist": artist,
+                "title": title,
+                "end": int(datetime.now().timestamp()) + backup_song.length,
+                "type": type_,
+                "station": station,
+                "thumbnail_src": thumbnail,
+            }
+            info = CardMetadata(
+                current_thumbnail=thumbnail,
+                current_station=station,
+                current_broadcast_title=backup_song.artist + " • " + backup_song.title,
+                current_show_title=type_,
+                current_broadcast_summary="Publicité en cours sur {}. Dans un instant, retour sur la station.".format(station),
+            )
+        return metadata, info

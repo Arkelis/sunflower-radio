@@ -164,6 +164,7 @@ class RTL2(Station):
 
 class RadioFranceStation(Station):
     API_RATE_LIMIT_EXCEEDED = 1
+    _station_api_name = str()
 
     def __init__(self):
         super().__init__()
@@ -241,20 +242,20 @@ class RadioFranceStation(Station):
     """
 
     def format_info(self, metadata) -> CardMetadata:
-        card_info = {
-            "current_thumbnail" : metadata["thumbnail_src"],
-            "current_station": self.station_name,
-        }
-        if metadata["type"] == "Erreur":
-            return MetadataType.NONE
-        elif metadata["type"] == MetadataType.PROGRAMME:
-            return CardMetadata(
-                current_thumbnail=metadata["thumbnail_src"],
-                current_station=self.station_name,
-                current_broadcast_title=metadata.get("diffusion_title", metadata["show_title"]),
-                current_show_title=metadata["show_title"],
-                current_broadcast_summary=metadata["summary"],
-            )
+        assert metadata["type"] == MetadataType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
+        if metadata.get("diffusion_title") is None:
+            current_broadcat_title = metadata["show_title"]
+            current_show_title = ""
+        else:
+            current_broadcat_title = metadata["diffusion_title"]
+            current_show_title = metadata["show_title"]
+        return CardMetadata(
+            current_thumbnail=metadata["thumbnail_src"],
+            current_station=self.station_name,
+            current_broadcast_title=current_broadcat_title,
+            current_show_title=current_show_title,
+            current_broadcast_summary=metadata["summary"],
+        )
 
     def get_metadata(self):
         fetched_data = self._fetch_metadata()
