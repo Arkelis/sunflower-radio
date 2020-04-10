@@ -135,7 +135,7 @@ class RTL2(Station):
         - thumbnail_src: url to thumbnail
         """
         fetched_data = self._fetch_metadata()
-        thumbnail_src = fetched_data.get("thumbnail") or self.station_thumbnail
+        thumbnail_src = fetched_data.get("cover") or self.station_thumbnail
         fetched_data_type = fetched_data.get("type")
 
         if fetched_data_type in (MetadataType.ADS, MetadataType.NONE):
