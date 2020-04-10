@@ -132,7 +132,7 @@ class AdsHandler:
         Take the cover of the album of the first found track.
         """
         req = requests.get("http://api.deezer.com/search/track?q=artist:'{}' track:'{}'".format(artist, track))
-        data = json.loads(req.content.decode())
+        data = json.loads(req.content.decode())["data"]
         if not data:
             return self.channel.current_station.station_thumbnail
         track = data[0]
