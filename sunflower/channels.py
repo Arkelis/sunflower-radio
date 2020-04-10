@@ -224,6 +224,7 @@ from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMus
 tournesol = Channel(
     endpoint="tournesol",
     stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2),
+    handlers=(AdsHandler,),
     timetable={
         # (weekday1, weekday2, ...)
         (0, 1, 2, 3, 4): [
