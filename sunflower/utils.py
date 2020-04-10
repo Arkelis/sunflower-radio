@@ -131,12 +131,12 @@ class AdsHandler:
         Search for a track with given artist and track. 
         Take the cover of the album of the first found track.
         """
-        req = requests.get("http://api.deezer.com/search/track?q=artist:'{}' track:'{}'".format(artist, track))
+        req = requests.get('http://api.deezer.com/search/track?q=artist:"{}" track:"{}"'.format(artist, track))
         data = json.loads(req.content.decode())["data"]
         if not data:
             return self.channel.current_station.station_thumbnail
         track = data[0]
-        cover_src = track["album"]["cover_big"]
+        cover_src = track["album"]["cover_big"].replace("http://e-cdn-images.deezer.com", "https://e-cdns-images.dzcdn.net")
         return cover_src
 
     def _parse_songs(self):
