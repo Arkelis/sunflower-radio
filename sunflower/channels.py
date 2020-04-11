@@ -277,7 +277,13 @@ tournesol = Channel(
     },
 )
 
-music = Channel("music", (RTL2,), (AdsHandler,),)
+music = Channel("music", (RTL2, PycolorePlaylistStation), (AdsHandler,),
+                {(0, 1, 2, 3, 4, 5, 6,): [
+                    ("00:00", "09:00", RTL2),
+                    ("09:00", "11:00", PycolorePlaylistStation),
+                    ("11:00", "22:00", RTL2),
+                    ("22:00", "00:00", PycolorePlaylistStation),
+                ]})
 
 def write_liquidsoap_config():
     with open("test.liq", "w") as f:
