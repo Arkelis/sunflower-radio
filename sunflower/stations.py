@@ -386,7 +386,7 @@ class PycolorePlaylistStation(Station):
     
     def __init__(self):
         self._songs_to_play = []
-        self._currenat_song = None
+        self._current_song = None
         self._current_song_end = 0
 
     @property
@@ -399,14 +399,18 @@ class PycolorePlaylistStation(Station):
     def _artists(self):
         """Property returning artists of the 5 next-played songs."""
         songs_to_play = self._songs_to_play
-        artists_set = set()
-        for song in songs_to_play[:5]:
+        artists_set = {self._current_song.artist}
+        for song in songs_to_play:
             artists_set.add(song.artist)
+            if len(artists_set) == 5:
+                break
         return artists_set
         
-    def _play(self):
+    def _play(self, delay):
+        if delay < 0:
+            delay = 0
         self._current_song = self._next_song
-        self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp())
+        self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()) + delay
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
@@ -434,8 +438,8 @@ class PycolorePlaylistStation(Station):
     def process(self):
         """Play new song if needed."""
         now = int(datetime.now().timestamp())
-        if self._current_song_end < now:
-            self._play()
+        if self._current_song_end - 10 < now:
+            self._play(self._current_song_end - now)
 
     @classmethod
     def get_liquidsoap_config(cls):

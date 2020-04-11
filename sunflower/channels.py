@@ -275,7 +275,7 @@ tournesol = Channel(
     },
 )
 
-music = Channel("music", (RTL2,), (AdsHandler,),)
+music = Channel("music", (PycolorePlaylistStation,), (AdsHandler,),)
 
 def write_liquidsoap_config():
     with open("test.liq", "w") as f:
