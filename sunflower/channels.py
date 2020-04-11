@@ -211,7 +211,7 @@ class Channel(RedisMixin):
                     timetable_to_write += line
             timetable_to_write += "])\n\n"
         else:
-            used_stations = self.stations
+            used_stations = {type(self.stations[0])}
             timetable_to_write = ""
         
         # écriture de l'emploi du temps
@@ -242,20 +242,21 @@ tournesol = Channel(
             ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
             ("05:00", "07:00", FranceInfo), # Matinale
             ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", RTL2), # Musique
+            ("09:00", "11:00", PycolorePlaylistStation), # Musique
             ("11:00", "12:00", FranceCulture), # Toute une vie
             ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
             ("15:00", "18:00", FranceCulture), # La compagnie des auteurs/poètes, La Méthode scientifique, LSD (la série docu)
             ("18:00", "20:00", FranceInter), # Soirée
             ("20:00", "21:00", FranceInfo), # Les informés
-            ("21:00", "00:00", RTL2), # Musique
+            ("21:00", "22:00", RTL2), # Musique
+            ("22:00", "00:00", PycolorePlaylistStation), # Musique
         ],
         (5,): [
             ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
             ("06:00", "07:00", FranceInfo), # Matinale
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "11:00", RTL2), # Musique
-            ("11:00", "14:00", PycolorePlaylistStation), # Sur les épaules de Darwin + politique + midi
+            ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
             ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
             ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
             ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
@@ -270,12 +271,13 @@ tournesol = Channel(
             ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
             # ("18:00", "19:00", RTL2),
             ("18:00", "21:00", FranceInter), # Spécial Corona : téléphone sonne et le masque et la plume
-            ("21:00", "00:00", RTL2),
+            ("21:00", "22:00", RTL2),
+            ("22:00", "00:00", PycolorePlaylistStation),
         ]
     },
 )
 
-music = Channel("music", (PycolorePlaylistStation,), (AdsHandler,),)
+music = Channel("music", (RTL2,), (AdsHandler,),)
 
 def write_liquidsoap_config():
     with open("test.liq", "w") as f:
