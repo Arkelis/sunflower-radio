@@ -143,18 +143,21 @@ class Channel(RedisMixin):
     def process_radio(self):
         """If needed, update metadata.
 
-        If needed:
         1. If current station is not a simple http stream, call station.process() method.
-        1. Get metadata and card info with stations methods
-        2. Apply changements operated by handlers
-        3. Update metadata in Redis
-        4. If needed, send SSE and update card info in Redis.
+        2. Check if metadata needs to be updated
+        3. Get metadata and card info with stations methods
+        4. Apply changements operated by handlers
+        5. Update metadata in Redis
+        6. If needed, send SSE and update card info in Redis.
 
         If card info changed and need to be updated in client, return True.
         Else return False.
         """
         assert hasattr(self, "logger"), "You must provide a logger to call process_radio() method."
         
+        if not self.current_station.station_url:
+            self.current_station.process()
+
         if (
             self.current_broadcast_metadata is not None
             and datetime.now().timestamp() < self.current_broadcast_metadata["end"]
@@ -163,8 +166,6 @@ class Channel(RedisMixin):
             self.publish_to_redis("unchanged")
             return False
 
-        if not self.current_station.station_url:
-            self.current_station.process()
 
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
