@@ -146,12 +146,12 @@ def fetch_cover_on_deezer(artist, track, backup_cover):
     Search for a track with given artist and track. 
     Take the cover of the album of the first found track.
     """
-    req = requests.get('http://api.deezer.com/search/track?q=artist:"{}" track:"{}"'.format(artist, track))
+    req = requests.get('https://api.deezer.com/search/track?q=artist:"{}" track:"{}"'.format(artist, track))
     data = json.loads(req.content.decode())["data"]
     if not data:
         return backup_cover
     track = data[0]
-    cover_src = track["album"]["cover_big"].replace("http://e-cdn-images.deezer.com", "https://e-cdns-images.dzcdn.net")
+    cover_src = track["album"]["cover_big"]
     return cover_src
 
 # utils classes
