@@ -30,7 +30,7 @@ class Channel(RedisMixin):
         super().__init__()
 
         self.endpoint = endpoint
-        self.stations = stations
+        self.stations = [Station() for Station in stations]
         self.timetable = timetable
         self.logger = None # see watcher.py
         self.handlers = [Handler(self) for Handler in handlers]
@@ -64,8 +64,8 @@ class Channel(RedisMixin):
             start, end = map(time.fromisoformat, t[:2])
             if time_ < start:
                 continue
-            station = t[2]
-            return start, end, station
+            station_cls = t[2]
+            return start, end, station_cls
         else:
             raise RuntimeError("Aucune station programmée à cet horaire.")
 
@@ -73,10 +73,12 @@ class Channel(RedisMixin):
     def current_station(self):
         """Return Station object currently on air."""
         if len(self.stations) == 1:
-            CurrentStationClass = self.stations[0]
+            return self.stations[0]
         else:
             CurrentStationClass = self.get_station_info(datetime.now().time())[2]
-        return CurrentStationClass()
+            for station_instance in self.stations:
+                if isinstance(station_instance, CurrentStationClass):
+                    return station_instance
 
     def get_from_redis(self, key, object_hook=as_metadata_type):
         return super().get_from_redis(key, object_hook)
