@@ -387,6 +387,7 @@ class PycolorePlaylistStation(Station):
     def __init__(self):
         self._songs_to_play = []
         self._current_song = None
+        self._current_song_end = None
 
     @property
     def _next_song(self):
@@ -403,8 +404,9 @@ class PycolorePlaylistStation(Station):
             artists_set.add(song.artist)
         return artists_set
         
-    def _play(self):
+    def _play(self, delay):
         self._current_song = self._next_song
+        self._current_song_end = int((datetime.now() + delay + timedelta(seconds=self._current_song.length)).timestamp())
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
@@ -416,7 +418,7 @@ class PycolorePlaylistStation(Station):
             "artist": self._current_song.artist,
             "title": self._current_song.title,
             "thumbnail_src": fetch_cover_on_deezer(self._current_song.artist, self._current_song.title, self.station_thumbnail),
-            "end": int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()),
+            "end": self._current_song_end,
         }
 
     def format_info(self, metadata):
@@ -431,15 +433,16 @@ class PycolorePlaylistStation(Station):
 
     def process(self):
         """Play new song if needed."""
-        now = int(datetime.now().timestamp())
+        now = int(datetime.now().timestamp() - timedelta(seconds=4))
+        end = self.get_metadata()["end"]
         if (
             self._current_song is None 
-            or self.get_metadata()["end"] < now
+            or end < now
         ):
-            self._play()
+            self._play(now - end)
 
     @classmethod
     def get_liquidsoap_config(cls):
         formated_name = cls.station_name.lower().replace(" ", "")
-        string = '{0} = fallback([request.queue(id="{0}_station_queue"), default])\n'.format(formated_name)
+        string = '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(formated_name)
         return string
