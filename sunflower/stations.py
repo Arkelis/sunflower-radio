@@ -405,7 +405,7 @@ class PycolorePlaylistStation(Station):
         
     def _play(self):
         self._current_song = self._next_song
-        formated_station_name = self.station_name.lower().replace(" ", "_")
+        formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
         session.close()
@@ -437,3 +437,9 @@ class PycolorePlaylistStation(Station):
             or self.get_metadata()["end"] < now
         ):
             self._play()
+
+    @classmethod
+    def get_liquidsoap_config(cls):
+        formated_name = cls.station_name.lower().replace(" ", "")
+        string = '{0} = fallback([request.queue(id="{0}_station_queue"), default])\n'.format(formated_name)
+        return string

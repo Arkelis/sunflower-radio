@@ -300,8 +300,11 @@ def write_liquidsoap_config():
         # on commence par énumérer toutes les stations utilisées
         for station in used_stations:
             url = station.station_url
-            formated_name = station.station_name.lower().replace(" ", "")
-            f.write('{} = mksafe(input.http("{}"))\n'.format(formated_name, url))
+            if url == "":
+                f.write(station.get_liquidsoap_config())
+            else:
+                formated_name = station.station_name.lower().replace(" ", "")
+                f.write('{} = mksafe(input.http("{}"))\n'.format(formated_name, url))
         
         # puis on écrit les output
         f.write("\n" + all_channels_string)
