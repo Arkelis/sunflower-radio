@@ -1,12 +1,14 @@
 import requests
 from datetime import datetime, date, time, timedelta
+import telnetlib
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import json
 import os
 
-from sunflower.utils import CardMetadata, MetadataType
+from sunflower import settings
+from sunflower.utils import CardMetadata, MetadataType, parse_songs, fetch_cover_on_deezer
 
 class Station:
     """Base station.
@@ -376,3 +378,50 @@ class FranceCulture(RadioFranceStation):
     _station_api_name = "FRANCECULTURE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"
     station_url = "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
+
+
+class PycolorePlaylistStation(Station):
+    station_name = "Radio Pycolore"
+    station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
+
+    def __init__(self):
+        self.songs_to_play = 
+        self.current_song = None
+
+    def init_songs(self):
+        songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        artists_set = set()
+        
+
+    def _play(self):
+        if not self.songs_to_play:
+            self.songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        self.current_song = self.songs_to_play.pop(0)
+        
+        session = telnetlib.Telnet("localhost", 1234)
+        session.write("{}_custom_songs.push {}\n".format(self.current_song.path).encode())
+        session.close()
+
+    def get_metadata(self):
+        return {
+            "type": MetadataType.MUSIC,
+            "artist": self.current_song.artist,
+            "title": self.current_song.title,
+            "thumbnail_src": fetch_cover_on_deezer(self.current_song.artist, self.current_song.title, self.station_thumbnail),
+            "end": int((datetime.now() + timedelta(seconds=self.current_song.length)).timestamp()),
+        }
+
+    def format_info(self, metadata):
+        return CardMetadata(
+            current_thumbnail=metadata["thumbnail_src"],
+            current_station=self.station_name,
+            current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
+            current_show_title="La playlist Pycolore",
+            current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}".format(self._artists_list)
+        )
+
+    def process(self):
+        """Play new song if needed."""
+        now = int(datetime.now().timestamp())
+        if self.get_metadata()["end"] < now:
+            self._play()

@@ -111,13 +111,50 @@ def as_metadata_type(mapping):
     if type_ is None:
         return mapping
     for member in MetadataType:
-        if type_ != member.value:
-            continue
-        mapping["type"] = MetadataType(type_)
-        break
+        if type_ == member.value:
+            mapping["type"] = MetadataType(type_)
+            break
     return mapping
 
 # utils functions
+
+def parse_songs(glob_pattern):
+    """Parse songs matching glob_pattern and return a list of Song objects.
+    
+    Song object is a namedtuple defined in sunflower.utils module.
+    """
+    songs = []
+    if not glob_pattern.endswith(".ogg"):
+        raise RuntimeError("Only ogg files are supported.")
+    for path in glob.iglob(glob_pattern):
+        file = mutagen.File(path)
+        try:
+            songs.append(Song(
+                path,
+                file["artist"][0],
+                file["title"][0],
+                int(file.info.length),
+            ))
+        except KeyError as err:
+            raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
+    random.shuffle(songs)
+    return songs
+
+def fetch_cover_on_deezer(artist, track, backup_cover):
+    """Get cover from Deezer API.
+
+    Search for a track with given artist and track. 
+    Take the cover of the album of the first found track.
+    """
+    req = requests.get('http://api.deezer.com/search/track?q=artist:"{}" track:"{}"'.format(artist, track))
+    data = json.loads(req.content.decode())["data"]
+    if not data:
+        return backup_cover
+    track = data[0]
+    cover_src = track["album"]["cover_big"].replace("http://e-cdn-images.deezer.com", "https://e-cdns-images.dzcdn.net")
+    return cover_src
+
+# utils classes
 
 class AdsHandler:
     def __init__(self, channel):
@@ -126,40 +163,10 @@ class AdsHandler:
         self.backup_songs = self._parse_songs()
 
     def _fetch_cover_on_deezer(self, artist, track):
-        """Get cover from Deezer API.
-
-        Search for a track with given artist and track. 
-        Take the cover of the album of the first found track.
-        """
-        req = requests.get('http://api.deezer.com/search/track?q=artist:"{}" track:"{}"'.format(artist, track))
-        data = json.loads(req.content.decode())["data"]
-        if not data:
-            return self.channel.current_station.station_thumbnail
-        track = data[0]
-        cover_src = track["album"]["cover_big"].replace("http://e-cdn-images.deezer.com", "https://e-cdns-images.dzcdn.net")
-        return cover_src
+        return fetch_cover_on_deezer(artist, track, self.channel.current_station.station_thumbnail)
 
     def _parse_songs(self):
-        """Parse songs matching self.glob_pattern and return a list of Song objects.
-        
-        Song object is a namedtuple defined in sunflower.utils module.
-        """
-        songs = []
-        if not self.glob_pattern.endswith(".ogg"):
-            raise RuntimeError("Only ogg files are supported.")
-        for path in glob.iglob(self.glob_pattern):
-            file = mutagen.File(path)
-            try:
-                songs.append(Song(
-                    path,
-                    file["artist"][0],
-                    file["title"][0],
-                    int(file.info.length),
-                ))
-            except KeyError as err:
-                raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
-        random.shuffle(songs)
-        return songs
+        return parse_songs(self.glob_pattern)
 
     def process(self, metadata, info, logger) -> (dict(), CardMetadata):
         """Play backup songs if advertising is detected on currently broadcasted station."""
