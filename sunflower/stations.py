@@ -383,45 +383,57 @@ class FranceCulture(RadioFranceStation):
 class PycolorePlaylistStation(Station):
     station_name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
-
+    
     def __init__(self):
-        self.songs_to_play = 
-        self.current_song = None
+        self._songs_to_play = []
+        self._current_song = None
 
-    def init_songs(self):
-        songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+    @property
+    def _next_song(self):
+        if not self._songs_to_play:
+            self._songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        return self._songs_to_play.pop(0)
+    
+    @property
+    def _artists(self):
+        """Property returning artists of the 5 next-played songs."""
+        songs_to_play = self._songs_to_play
         artists_set = set()
+        for song in songs_to_play[:5]:
+            artists_set.add(song.artist)
+        return artists_set
         
-
     def _play(self):
-        if not self.songs_to_play:
-            self.songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-        self.current_song = self.songs_to_play.pop(0)
-        
+        self._current_song = self._next_song
+        formated_station_name = self.station_name.lower().replace(" ", "_")
         session = telnetlib.Telnet("localhost", 1234)
-        session.write("{}_custom_songs.push {}\n".format(self.current_song.path).encode())
+        session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
         session.close()
 
     def get_metadata(self):
         return {
             "type": MetadataType.MUSIC,
-            "artist": self.current_song.artist,
-            "title": self.current_song.title,
-            "thumbnail_src": fetch_cover_on_deezer(self.current_song.artist, self.current_song.title, self.station_thumbnail),
-            "end": int((datetime.now() + timedelta(seconds=self.current_song.length)).timestamp()),
+            "artist": self._current_song.artist,
+            "title": self._current_song.title,
+            "thumbnail_src": fetch_cover_on_deezer(self._current_song.artist, self._current_song.title, self.station_thumbnail),
+            "end": int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()),
         }
 
     def format_info(self, metadata):
+        artists_str = ", ".join(self._artists)
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
             current_station=self.station_name,
             current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
             current_show_title="La playlist Pycolore",
-            current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}".format(self._artists_list)
+            current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}...".format(artists_str),
         )
 
     def process(self):
         """Play new song if needed."""
         now = int(datetime.now().timestamp())
-        if self.get_metadata()["end"] < now:
+        if (
+            self._current_song is None 
+            or self.get_metadata()["end"] < now
+        ):
             self._play()

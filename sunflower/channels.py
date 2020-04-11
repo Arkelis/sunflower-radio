@@ -141,10 +141,14 @@ class Channel(RedisMixin):
         return metadata
 
     def process_radio(self):
-        """Fetch metadata, and if needed do some treatment.
-        
-        Treatments:
-        - play backup song if advertising is detected.
+        """If needed, update metadata.
+
+        If needed:
+        1. If current station is not a simple http stream, call station.process() method.
+        1. Get metadata and card info with stations methods
+        2. Apply changements operated by handlers
+        3. Update metadata in Redis
+        4. If needed, send SSE and update card info in Redis.
 
         If card info changed and need to be updated in client, return True.
         Else return False.
@@ -158,6 +162,9 @@ class Channel(RedisMixin):
         ):
             self.publish_to_redis("unchanged")
             return False
+
+        if not self.current_station.station_url:
+            self.current_station.process()
 
         metadata = self.get_current_broadcast_metadata()
         info = self.get_current_broadcast_info(metadata)
@@ -219,11 +226,11 @@ class Channel(RedisMixin):
         return used_stations, string
 
 
-from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMusique, RTL2
+from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMusique, RTL2, PycolorePlaylistStation
 
 tournesol = Channel(
     endpoint="tournesol",
-    stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2),
+    stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2, PycolorePlaylistStation),
     handlers=(AdsHandler,),
     timetable={
         # (weekday1, weekday2, ...)
@@ -245,7 +252,7 @@ tournesol = Channel(
             ("06:00", "07:00", FranceInfo), # Matinale
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "11:00", RTL2), # Musique
-            ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
+            ("11:00", "14:00", PycolorePlaylistStation), # Sur les épaules de Darwin + politique + midi
             ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
             ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
             ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
