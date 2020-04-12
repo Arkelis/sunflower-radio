@@ -47,12 +47,12 @@ class Channel(RedisMixin):
         """Get info of station playing at given time.
 
         Parameters:
-        - time_ must be datetime.time() instance.
+        - time_ must be datetime.time instance.
         - if following=True, return next station and not current station.
 
         Return (start, end, station_cls):
-        - start: datetime.datetime object
-        - end: datetime.datetime object
+        - start: datetime.time object
+        - end: datetime.time object
         - station_cls: Station class
         """
         MonkeyPatch.patch_fromisoformat()
@@ -68,11 +68,11 @@ class Channel(RedisMixin):
 
         for t in self.timetable[key][::-1]:
             # on parcourt la table en partant de la fin
-            start, end = map(datetime.fromisoformat, t[:2])
+            start, end = map(time.fromisoformat, t[:2])
 
             # tant qu'on est avant le démarrage de la plage courante, on continue
             # tout en gardant en mémoire la station
-            if time_ < start.time():
+            if time_ < start:
                 station_cls = t[2]
                 continue
 
