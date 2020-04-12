@@ -99,6 +99,7 @@ class MetadataType(Enum):
     NONE = ""
     ADS = "Publicité"
     ERROR = "Erreur"
+    WAITING_FOLLOWING = "Transition"
 
 class MetadataEncoder(json.JSONEncoder):
     def default(self, obj):

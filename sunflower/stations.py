@@ -389,12 +389,14 @@ class PycolorePlaylistStation(Station):
         self._current_song = None
         self._current_song_end = 0
 
-    @property
-    def _next_song(self):
+    def _get_next_song(self, max_length):
         if not self._songs_to_play:
             self._songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-        return self._songs_to_play.pop(0)
-    
+        for (i, song) in enumerate(self._songs_to_play):
+            if song.length < max_length:
+                return self._songs_to_play.pop(i)
+        return None
+
     @property
     def _artists(self):
         """Property returning artists of the 5 next-played songs."""
@@ -406,10 +408,11 @@ class PycolorePlaylistStation(Station):
                 break
         return artists_set
         
-    def _play(self, delay):
-        if delay < 0:
-            delay = 0
-        self._current_song = self._next_song
+    def _play(self, delay, max_length):
+        self._current_song = self._get_next_song(max_length)
+        if self._current_song is None:
+            self._current_song_end = int(datetime.now().timestamp()) + max_length
+            return
         self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()) + delay
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
@@ -417,6 +420,11 @@ class PycolorePlaylistStation(Station):
         session.close()
 
     def get_metadata(self):
+        if self._current_song is None:
+            return {
+                "type": MetadataType.WAITING_FOLLOWING,
+                "end": self._current_song_end,
+            }
         return {
             "type": MetadataType.MUSIC,
             "artist": self._current_song.artist,
@@ -435,11 +443,13 @@ class PycolorePlaylistStation(Station):
             current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}...".format(artists_str),
         )
 
-    def process(self):
+    def process(self, channel):
         """Play new song if needed."""
-        now = int(datetime.now().timestamp())
-        if self._current_song_end - 10 < now:
-            self._play(self._current_song_end - now)
+        now = datetime.now()
+        if self._current_song_end - 10 < int(now.timestamp()):
+            delay = max(self._current_song_end - now, 0)
+            max_length = (channel.get_station_info(now.time())[1] - now).seconds - delay
+            self._play(delay, max_length)
 
     @classmethod
     def get_liquidsoap_config(cls):

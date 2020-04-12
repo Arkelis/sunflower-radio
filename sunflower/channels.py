@@ -43,17 +43,23 @@ class Channel(RedisMixin):
 
         CHANNELS[self.endpoint] = self
 
-    def get_station_info(self, time_):
+    def get_station_info(self, time_, following=False):
         """Get info of station playing at given time.
 
-        time_ must be datetime.time() instance.
+        Parameters:
+        - time_ must be datetime.time() instance.
+        - if following=True, return next station and not current station.
+
+        Return (start, end, station_cls):
+        - start: datetime.datetime object
+        - end: datetime.datetime object
+        - station_cls: Station class
         """
         MonkeyPatch.patch_fromisoformat()
 
         # fisrt, select weekday
         week_day = datetime.now().weekday()
         for t in self.timetable:
-            # breakpoint()
             if week_day in t:
                 key = t
                 break
@@ -61,24 +67,42 @@ class Channel(RedisMixin):
             raise RuntimeError("Jour de la semaine non supporté.")
 
         for t in self.timetable[key][::-1]:
-            start, end = map(time.fromisoformat, t[:2])
-            if time_ < start:
+            # on parcourt la table en partant de la fin
+            start, end = map(datetime.fromisoformat, t[:2])
+
+            # tant qu'on est avant le démarrage de la plage courante, on continue
+            # tout en gardant en mémoire la station
+            if time_ < start.time():
+                station_cls = t[2]
                 continue
-            station_cls = t[2]
+
+            # si on veut la station courante on la sélectionne
+            if not following:
+                station_cls = t[2]
+            # sinon on renvoie celle encore en mémoire (la suivante puisqu'on parcourt
+            # la table à l'envers)
             return start, end, station_cls
         else:
             raise RuntimeError("Aucune station programmée à cet horaire.")
 
+    def _get_station_instance(self, time_, following):
+        if len(self.stations) == 1:
+            return self.stations[0]
+        
+        CurrentStationClass = self.get_station_info(time_, following)[2]
+        for station_instance in self.stations:
+            if isinstance(station_instance, CurrentStationClass):
+                return station_instance
+
     @property
     def current_station(self):
         """Return Station object currently on air."""
-        if len(self.stations) == 1:
-            return self.stations[0]
-        else:
-            CurrentStationClass = self.get_station_info(datetime.now().time())[2]
-            for station_instance in self.stations:
-                if isinstance(station_instance, CurrentStationClass):
-                    return station_instance
+        return self._get_station_instance(datetime.now().time(), following=False)
+    
+    @property
+    def following_station(self):
+        """Return next Station object to be on air."""
+        return self._get_station_instance(datetime.now().time(), following=True)
 
     def get_from_redis(self, key, object_hook=as_metadata_type):
         return super().get_from_redis(key, object_hook)
@@ -121,6 +145,16 @@ class Channel(RedisMixin):
             current_show_title="",
             current_broadcast_summary="",
         )
+    
+    @property
+    def waiting_following_card_metadata(self) -> CardMetadata:
+        return CardMetadata(
+            current_thumbnail=self.current_station.station_thumbnail,
+            current_station=self.current_station.station_name,
+            current_broadcast_title="Dans un instant : {}".format(self.following_station.station_name),
+            current_show_title="",
+            current_broadcast_summary="",
+        )
 
     def get_current_broadcast_info(self, metadata) -> CardMetadata:
         """Return data for displaying broadcast info in player.
@@ -128,8 +162,11 @@ class Channel(RedisMixin):
         This is for data display in player client. This method uses format_info()
         method of currently broadcasted station.
         """
-        if metadata["type"] in (MetadataType.NONE, MetadataType.ERROR):
+        metadata_type = metadata["type"]
+        if metadata_type in (MetadataType.NONE, MetadataType.ERROR):
             return self.neutral_card_metadata
+        if metadata_type == MetadataType.WAITING_FOLLOWING:
+            return self.waiting_following_card_metadata
         return self.current_station.format_info(metadata)
 
     def get_current_broadcast_metadata(self):
@@ -158,7 +195,7 @@ class Channel(RedisMixin):
         assert hasattr(self, "logger"), "You must provide a logger to call process_radio() method."
         
         if not self.current_station.station_url:
-            self.current_station.process()
+            self.current_station.process(self)
 
         if (
             self.current_broadcast_metadata is not None
@@ -255,7 +292,7 @@ tournesol = Channel(
             ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
             ("06:00", "07:00", FranceInfo), # Matinale
             ("06:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", RTL2), # Musique
+            ("09:00", "11:00", PycolorePlaylistStation), # Musique
             ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
             ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
             ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
@@ -266,7 +303,7 @@ tournesol = Channel(
         (6,): [
             ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
             ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "12:00", RTL2),
+            ("09:00", "12:00", PycolorePlaylistStation),
             ("12:00", "14:00", FranceInter), # Politique + journal
             ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
             # ("18:00", "19:00", RTL2),
