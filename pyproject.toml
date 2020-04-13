@@ -17,6 +17,7 @@ redis = "^3.3"
 daemonize = "^2.5"
 mutagen = "^1.43"
 backports-datetime-fromisoformat = "^1.0.0"
+pytest = "^5.4.1"
 
 [tool.poetry.dev-dependencies]
 rope = "^0.16.0"
