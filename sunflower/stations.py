@@ -448,7 +448,8 @@ class PycolorePlaylistStation(Station):
         now = datetime.now()
         if self._current_song_end - 10 < int(now.timestamp()):
             delay = max(self._current_song_end - now, 0)
-            max_length = (channel.get_station_info(now.time())[1] - now.time()).seconds - delay
+            end_of_current_station = datetime.combine(date.today(), channel.get_station_info(now.time())[1])
+            max_length = (end_of_current_station - now).seconds - delay
             self._play(delay, max_length)
 
     @classmethod
