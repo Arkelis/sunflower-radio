@@ -93,10 +93,10 @@ class Channel(RedisMixin):
 
     def _get_station_instance(self, time_, following):
         if len(self.stations) == 1:
-            return self.stations[0]
+            return self.stations[0]()
         
         CurrentStationClass = self.get_station_info(time_, following)[2]
-        return CurrentStationClass.instance
+        return CurrentStationClass()
 
     @property
     def current_station(self):

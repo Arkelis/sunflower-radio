@@ -13,14 +13,8 @@ from sunflower.utils import CardMetadata, MetadataType, parse_songs, fetch_cover
 
 STATIONS_INSTANCES = dict()
 
-class StationMeta(type):
-    def __new__(mcls, name, bases, attrs):
-        StationClass = super().__new__(mcls, name, bases, attrs)
-        STATIONS_INSTANCES[name] = StationClass()
-        return StationClass
 
-
-class Station(metaclass=StationMeta):
+class Station():
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -34,9 +28,10 @@ class Station(metaclass=StationMeta):
     instance = None
 
     def __new__(cls):
-        if cls.instance is None or not isinstance(cls.instance, cls):
-            cls.instance = super().__new__(cls)
-        return cls.instance
+        instance_of_dict = STATIONS_INSTANCES.get(cls.__name__)
+        if instance_of_dict is None:
+            instance_of_dict = STATIONS_INSTANCES[cls.__name__] = super().__new__(cls)
+        return instance_of_dict
 
     station_name = str()
     station_thumbnail = str()
