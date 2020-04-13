@@ -125,8 +125,6 @@ def parse_songs(glob_pattern):
     Song object is a namedtuple defined in sunflower.utils module.
     """
     songs = []
-    if not glob_pattern.endswith(".ogg"):
-        raise RuntimeError("Only ogg files are supported.")
     for path in glob.iglob(glob_pattern):
         file = mutagen.File(path)
         try:
