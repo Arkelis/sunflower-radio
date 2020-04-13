@@ -16,7 +16,7 @@ from sunflower.utils import (RedisMixin, Song, CardMetadata, MetadataType, Metad
 CHANNELS = dict()
 
 class Channel(RedisMixin):
-    def __init__(self, endpoint, stations, handlers=[], timetable=None):
+    def __init__(self, endpoint, timetable, handlers=[]):
         """Channel constructor.
 
         Parameters:
@@ -30,18 +30,24 @@ class Channel(RedisMixin):
         super().__init__()
 
         self.endpoint = endpoint
-        self.stations = [Station() for Station in stations]
         self.timetable = timetable
         self.logger = None # see watcher.py
         self.handlers = [Handler(self) for Handler in handlers]
-
-        if len(self.stations) > 1:
-            assert self.timetable is not None, "You must provide a timetable."
 
         self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:" + self.endpoint + ":info"
 
         CHANNELS[self.endpoint] = self
+
+    @property
+    def stations(self) -> set:
+        """Cached property returning list of stations used by channel."""
+        stations = set()
+        for l in self.timetable.values():
+            for t in l:
+                stations.add(t[2])
+        stations = self.__dict__["stations"] = tuple(stations)
+        return stations
 
     def get_station_info(self, time_, following=False):
         """Get info of station playing at given time.
@@ -90,9 +96,7 @@ class Channel(RedisMixin):
             return self.stations[0]
         
         CurrentStationClass = self.get_station_info(time_, following)[2]
-        for station_instance in self.stations:
-            if isinstance(station_instance, CurrentStationClass):
-                return station_instance
+        return CurrentStationClass.instance
 
     @property
     def current_station(self):
@@ -270,7 +274,6 @@ from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMus
 
 tournesol = Channel(
     endpoint="tournesol",
-    stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2, PycolorePlaylistStation),
     handlers=(AdsHandler,),
     timetable={
         # (weekday1, weekday2, ...)
@@ -314,8 +317,8 @@ tournesol = Channel(
     },
 )
 
-music = Channel("music", (RTL2, PycolorePlaylistStation), (AdsHandler,),
-                {(0, 1, 2, 3, 4, 5, 6,): [
+music = Channel("music", handlers=(AdsHandler,),
+                timetable={(0, 1, 2, 3, 4, 5, 6,): [
                     ("00:00", "09:00", RTL2),
                     ("09:00", "11:00", PycolorePlaylistStation),
                     ("11:00", "22:00", RTL2),

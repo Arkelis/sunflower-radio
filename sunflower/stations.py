@@ -10,14 +10,34 @@ import os
 from sunflower import settings
 from sunflower.utils import CardMetadata, MetadataType, parse_songs, fetch_cover_on_deezer
 
-class Station:
+
+STATIONS_INSTANCES = dict()
+
+class StationMeta(type):
+    def __new__(mcls, name, bases, attrs):
+        StationClass = super().__new__(mcls, name, bases, attrs)
+        STATIONS_INSTANCES[name] = StationClass()
+        return StationClass
+
+
+class Station(StationMeta):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
     - station_name (str)
     - station_thumbnail (str): link to station thumbnail
     - station_url (str): url to music stream
+
+    Station classes are singletons.
     """
+
+    instance = None
+
+    def __new__(cls):
+        assert cls.instance is None, "This class is a singleton. Get the created instance with Station.instance."
+        instance = cls.instance = super().__new__(cls)
+        return instance
+
     station_name = str()
     station_thumbnail = str()
     station_url = str()
