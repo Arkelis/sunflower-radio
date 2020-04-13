@@ -183,11 +183,6 @@ class RadioFranceStation(Station):
     API_RATE_LIMIT_EXCEEDED = 1
     _station_api_name = str()
 
-    def __init__(self):
-        super().__init__()
-        f = open("/tmp/radiofrance-requests.txt", "a")
-        f.close()
-
     @property
     def token(self):
         if os.getenv("TOKEN") is None: # in case of development server
@@ -400,9 +395,10 @@ class PycolorePlaylistStation(Station):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     
     def __init__(self):
-        self._songs_to_play = []
-        self._current_song = None
-        self._current_song_end = 0
+        if not hasattr(self, "_songs_to_play"):
+            self._songs_to_play = []
+            self._current_song = None
+            self._current_song_end = 0
 
     def _get_next_song(self, max_length):
         if not self._songs_to_play:
