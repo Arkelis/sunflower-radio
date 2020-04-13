@@ -20,7 +20,7 @@ class StationMeta(type):
         return StationClass
 
 
-class Station(StationMeta):
+class Station(metaclass=StationMeta):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -34,9 +34,9 @@ class Station(StationMeta):
     instance = None
 
     def __new__(cls):
-        assert cls.instance is None, "This class is a singleton. Get the created instance with Station.instance."
-        instance = cls.instance = super().__new__(cls)
-        return instance
+        if cls.instance is None or not isinstance(cls.instance, cls):
+            cls.instance = super().__new__(cls)
+        return cls.instance
 
     station_name = str()
     station_thumbnail = str()
