@@ -71,7 +71,8 @@ class Channel(RedisMixin):
                 break
         else:
             raise RuntimeError("Jour de la semaine non supporté.")
-
+        
+        station_cls = self.timetable[key][0][2]
         for t in self.timetable[key][::-1]:
             # on parcourt la table en partant de la fin
             start, end = map(time.fromisoformat, t[:2])
@@ -87,6 +88,7 @@ class Channel(RedisMixin):
                 station_cls = t[2]
             # sinon on renvoie celle encore en mémoire (la suivante puisqu'on parcourt
             # la table à l'envers)
+            
             return start, end, station_cls
         else:
             raise RuntimeError("Aucune station programmée à cet horaire.")
