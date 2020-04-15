@@ -1,6 +1,6 @@
+from sunflower.core.bases import STATIONS_INSTANCES
+
 from sunflower.stations import (
-    STATIONS_INSTANCES,
-    Station,
     RTL2,
     FranceCulture, FranceInter, FranceMusique, FranceInfo,
     PycolorePlaylistStation,

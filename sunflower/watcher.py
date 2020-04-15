@@ -1,58 +1,36 @@
-import logging
-import logging.handlers
+
 import os
 import sys
-from datetime import datetime
-from time import sleep
+import logging
+import logging.handlers
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from daemonize import Daemonize
-from sunflower import channels
+from sunflower.core.watcher import Watcher
 from sunflower import settings
+from sunflower.stations import RTL2, FranceCulture, FranceInfo, FranceInter, PycolorePlaylistStation, FranceMusique
+from sunflower.channels import tournesol, music
 
-def watch():
-    """Keep data for radio client up to date."""
 
-    try:
-        # instanciate logger
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
+# instanciate logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-        # format msg
-        formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
+# format msg
+formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
 
-        # rotate
-        file_handler = logging.handlers.RotatingFileHandler("/tmp/watcher.log", "a", 1000000, 1)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        logger.debug("Starting watcher.")
+# rotate
+file_handler = logging.handlers.RotatingFileHandler("/tmp/watcher.log", "a", 1000000, 1)
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.debug("Starting watcher.")
 
-        # add logger to channels
-        for channel in channels.CHANNELS.values():
-            channel.logger = logger
-    
-        # loop
-        while True:
-            sleep(4)
-            for channel in channels.CHANNELS.values():
-                try:
-                    info_changed = channel.process_radio()
-                    if info_changed:
-                        logger.debug("New metadata for channel {}: {}."
-                                    .format(channel.endpoint, channel.current_broadcast_info.current_broadcast_title))
-                except Exception as err:
-                    import traceback
-                    logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
-                    logger.error(traceback.format_exc())
-    except Exception as err:
-        import traceback
-        logger.error("Erreur fatale")
-        logger.error(traceback.format_exc())
+watcher = Watcher([music, tournesol], logger)
 
 if __name__ == "__main__":
     pid = "/tmp/sunflower-radio-watcher.pid"
-    daemon = Daemonize(app="sunflower-radio-watcher", pid=pid, action=watch)
+    daemon = Daemonize(app="sunflower-radio-watcher", pid=pid, action=watcher.run)
     daemon.start()

@@ -1,14 +1,16 @@
-from flask import abort, Flask, jsonify, render_template, url_for, request, stream_with_context, Response, redirect
-from flask_cors import CORS, cross_origin
-import time
-import threading
 import json
+import threading
+import time
 
 import redis
+from flask import (Flask, Response, abort, jsonify, redirect, render_template,
+                   request, stream_with_context, url_for)
+from flask_cors import CORS, cross_origin
 
-from sunflower.channels import Channel
-from sunflower.utils import get_channel_or_404, MetadataEncoder
 from sunflower import settings
+from sunflower.channels import Channel
+from sunflower.core.types import MetadataEncoder
+from sunflower.utils.functions import get_channel_or_404
 
 app = Flask(__name__)
 app.json_encoder = MetadataEncoder

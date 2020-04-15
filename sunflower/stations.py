@@ -8,66 +8,11 @@ import json
 import os
 
 from sunflower import settings
-from sunflower.utils import CardMetadata, MetadataType, parse_songs, fetch_cover_on_deezer
+from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.bases import URLStation, DynamicStation
+from sunflower.utils.functions import parse_songs, fetch_cover_on_deezer
 
-
-STATIONS_INSTANCES = dict()
-
-
-class Station():
-    """Base station.
-
-    User defined stations should inherit from this class and define following properties:
-    - station_name (str)
-    - station_thumbnail (str): link to station thumbnail
-    - station_url (str): url to music stream
-
-    Station classes are singletons.
-    """
-
-    instance = None
-
-    def __new__(cls):
-        instance_of_dict = STATIONS_INSTANCES.get(cls.__name__)
-        if instance_of_dict is None:
-            instance_of_dict = STATIONS_INSTANCES[cls.__name__] = super().__new__(cls)
-        return instance_of_dict
-
-    station_name = str()
-    station_thumbnail = str()
-    station_url = str()
-
-
-    def _get_error_metadata(self, message, seconds):
-        return {
-            "type": MetadataType.ERROR,
-            "message": message,
-            "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
-            "thumbnail_src": self.station_thumbnail,
-        }
-
-
-    def get_metadata(self):
-        """Return mapping containing metadata about current broadcast.
-        
-        This is data meant to be exposed as json and used by format_info() method.
-        
-        Required fields:
-        - type: element of MetadataType enum (see utils.py)
-        - metadata fields required by format_info() method (see below)
-        """
-
-    def format_info(self, metadata) -> CardMetadata:
-        """Format metadata for displaying in the card.
-        
-        Should return a CardMetadata namedtuple (see utils.py).
-        If empty, a given key should have "" (empty string) as value, and not None.
-        Don't support MetadataType.NONE case as it is done in Channel class.
-        """
-    
-
-
-class RTL2(Station):
+class RTL2(URLStation):
     station_name = "RTL 2"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
     station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
@@ -179,7 +124,7 @@ class RTL2(Station):
         }
 
 
-class RadioFranceStation(Station):
+class RadioFranceStation(URLStation):
     API_RATE_LIMIT_EXCEEDED = 1
     _station_api_name = str()
 
@@ -390,7 +335,7 @@ class FranceCulture(RadioFranceStation):
     station_url = "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
 
 
-class PycolorePlaylistStation(Station):
+class PycolorePlaylistStation(DynamicStation):
     station_name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     
@@ -399,6 +344,7 @@ class PycolorePlaylistStation(Station):
             self._songs_to_play = []
             self._current_song = None
             self._current_song_end = 0
+            self._end_of_use = 0
 
     def _get_next_song(self, max_length):
         if not self._songs_to_play:
@@ -454,16 +400,27 @@ class PycolorePlaylistStation(Station):
             current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}...".format(artists_str),
         )
 
-    def process(self, channel):
+    def process(self, logger, channels_using, **kwargs):
         """Play new song if needed."""
         now = datetime.now()
-        if self._current_song_end - 10 < int(now.timestamp()):
-            delay = max(self._current_song_end - int(now.timestamp()), 0)
+
+        # if station is not used, return
+        channels_using_self = channels_using[self]
+        if not channels_using_self:
+            return
+
+        # compute end of use
+        for channel in channels_using_self:
             end_of_current_station_time = channel.get_station_info(now.time())[1]
             end_of_current_station = datetime.combine(date.today(), end_of_current_station_time)
             if end_of_current_station_time == time(0, 0, 0):
                 end_of_current_station += timedelta(hours=24)
-            max_length = (end_of_current_station - now).seconds - delay
+            if self._end_of_use < end_of_current_station:
+                self._end_of_use = end_of_current_station
+
+        if self._current_song_end - 10 < int(now.timestamp()):
+            delay = max(self._current_song_end - int(now.timestamp()), 0)
+            max_length = (self._end_of_use - now).seconds - delay
             self._play(delay, max_length)
 
     @classmethod
