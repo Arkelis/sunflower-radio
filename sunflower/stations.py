@@ -344,7 +344,7 @@ class PycolorePlaylistStation(DynamicStation):
             self._songs_to_play = []
             self._current_song = None
             self._current_song_end = 0
-            self._end_of_use = 0
+            self._end_of_use = datetime.now()
 
     def _get_next_song(self, max_length):
         if not self._songs_to_play:

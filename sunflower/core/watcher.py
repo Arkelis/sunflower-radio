@@ -34,6 +34,7 @@ class Watcher(RedisMixin):
                 objects_to_process.append(station)
         
         self.objects_to_process = objects_to_process
+        self.logger.debug("Watcher initialized")
 
 
     @property
