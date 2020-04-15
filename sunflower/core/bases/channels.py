@@ -219,8 +219,6 @@ class Channel(RedisMixin):
     def get_liquidsoap_config(self):
         """Renvoie une chaîne de caractères à écrire dans le fichier de configuration liquidsoap."""
 
-        used_stations = set()
-
         # indication nom de la chaîne
         string = "##### " + str(self.endpoint) + " channel #####\n\n"
 
@@ -234,7 +232,6 @@ class Channel(RedisMixin):
                     else "{}w and".format(days[0]+1)
                 )
                 for start, end, station in timetable:
-                    used_stations.add(station)
                     if start.count(":") != 1 or end.count(":") != 1:
                         raise RuntimeError("Time format must be HH:MM.")
                     formated_start = start.replace(":", "h")
@@ -244,7 +241,6 @@ class Channel(RedisMixin):
                     timetable_to_write += line
             timetable_to_write += "])\n\n"
         else:
-            used_stations = {type(self.stations[0])}
             timetable_to_write = ""
         
         # écriture de l'emploi du temps
@@ -259,4 +255,4 @@ class Channel(RedisMixin):
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
         string += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
 
-        return used_stations, string
+        return string

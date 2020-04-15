@@ -1,9 +1,8 @@
 # This is sunflower radio
 # This module contains core functions.
 
-from sunflower.core.bases import CHANNELS
 
-def write_liquidsoap_config():
+def write_liquidsoap_config(*channels):
     """Write complete liquidsoap config file."""
     with open("test.liq", "w") as f:
         # config de base (pas de log, activation server telnet, source par défaut)
@@ -22,7 +21,7 @@ def write_liquidsoap_config():
         used_stations = set()
 
         # on récupère les infos de chaque chaîne
-        for channel in CHANNELS.values():
+        for channel in channels:
             all_channels_string += channel.get_liquidsoap_config()
             used_stations.update(channel.stations)
         
