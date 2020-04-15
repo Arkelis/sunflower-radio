@@ -182,12 +182,11 @@ class Channel(RedisMixin):
     def process(self, logger, **kwargs):
         """If needed, update metadata.
 
-        1. If current station is not a simple http stream, call station.process() method.
-        2. Check if metadata needs to be updated
-        3. Get metadata and card info with stations methods
-        4. Apply changements operated by handlers
-        5. Update metadata in Redis
-        6. If needed, send SSE and update card info in Redis.
+        - Check if metadata needs to be updated
+        - Get metadata and card info with stations methods
+        - Apply changements operated by handlers
+        - Update metadata in Redis
+        - If needed, send SSE and update card info in Redis.
 
         If card info changed and need to be updated in client, return True.
         Else return False.
@@ -251,7 +250,7 @@ class Channel(RedisMixin):
         string += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         string += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
         string += "# output\n"
-        string += "output.icecast(%vorbis(quality=0.6),\n"
+        string += "output.icecast(%opus(bitrate=128, complexity=10),\n"
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
         string += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
 
