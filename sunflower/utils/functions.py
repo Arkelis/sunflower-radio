@@ -3,19 +3,16 @@
 import functools
 import glob
 import json
+
 import random
-import telnetlib
 from collections import namedtuple
-from datetime import datetime
 
 import mutagen
-import redis
 import requests
 from flask import abort
 
 from sunflower import settings
 from sunflower.core.types import Song
-
 
 # Custom views
 
@@ -63,4 +60,3 @@ def fetch_cover_on_deezer(artist, track, backup_cover):
     track = data[0]
     cover_src = track["album"]["cover_big"]
     return cover_src
-
