@@ -347,8 +347,8 @@ class PycolorePlaylistStation(DynamicStation):
             self._end_of_use = datetime.now()
 
     def _get_next_song(self, max_length):
-        if not self._songs_to_play:
-            self._songs_to_play = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        if len(self._songs_to_play) <= 5:
+            self._songs_to_play += parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
         for (i, song) in enumerate(self._songs_to_play):
             if song.length < max_length:
                 return self._songs_to_play.pop(i)
@@ -357,12 +357,14 @@ class PycolorePlaylistStation(DynamicStation):
     @property
     def _artists(self):
         """Property returning artists of the 5 next-played songs."""
-        songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-        artists_set = set()
+        songs = self._songs_to_play
+        artists_list = [self._current_song.artist]
         for song in songs:
-            artists_set.add(song.artist)
-        self.__dict__["_artists"] = artists_set
-        return artists_set
+            if song.artist not in artists_list:
+                artists_list.append(song.artist)
+            if len(artists_list) == 5:
+                break
+        return artists_list
         
     def _play(self, delay, max_length):
         self._current_song = self._get_next_song(max_length)
