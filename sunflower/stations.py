@@ -15,7 +15,7 @@ from sunflower.utils.functions import parse_songs, fetch_cover_on_deezer
 class RTL2(URLStation):
     station_name = "RTL 2"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
-    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
+    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-48-192"
     _main_data_url = "https://timeline.rtl.fr/RTL2/items"
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
