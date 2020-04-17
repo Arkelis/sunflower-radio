@@ -2,15 +2,7 @@
 
 """Module containing radio metadata fetching related functions."""
 
-import json
-import random
-import telnetlib
-from datetime import datetime, time, timedelta
-
-from backports.datetime_fromisoformat import MonkeyPatch
-
-from sunflower import settings
-from sunflower.core.bases import CHANNELS, Channel
+from sunflower.core.bases import Channel
 from sunflower.handlers import AdsHandler
 from sunflower.stations import (RTL2, FranceCulture, FranceInfo, FranceInter,
                                 FranceMusique, PycolorePlaylistStation)
