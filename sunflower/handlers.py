@@ -12,8 +12,8 @@ class AdsHandler:
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
         self.backup_songs = self._parse_songs()
 
-    def _fetch_cover_on_deezer(self, artist, track):
-        return fetch_cover_on_deezer(artist, track, self.channel.current_station.station_thumbnail)
+    def _fetch_cover_on_deezer(self, artist, album, track):
+        return fetch_cover_on_deezer(self.channel.current_station.station_thumbnail, artist, album, track)
 
     def _parse_songs(self):
         return parse_songs(self.glob_pattern)
@@ -34,14 +34,12 @@ class AdsHandler:
             
             type_ = MetadataType.MUSIC
             station = metadata["station"]
-            artist = backup_song.artist
-            title = backup_song.title
-            thumbnail = self._fetch_cover_on_deezer(artist, title)
+            thumbnail = self._fetch_cover_on_deezer(backup_song.artist, backup_song.album, backup_song.title)
 
             # and update metadata
             metadata = {
-                "artist": artist,
-                "title": title,
+                "artist": backup_song.artist,
+                "title": backup_song.title,
                 "end": int(datetime.now().timestamp()) + backup_song.length,
                 "type": type_,
                 "station": station,

@@ -6,7 +6,7 @@ from enum import Enum
 
 # Custom datamodel
 
-Song = namedtuple("Song", ["path", "artist", "title", "length"])
+Song = namedtuple("Song", ["path", "artist", "album", "title", "length"])
 CardMetadata = namedtuple("CardMetadata", ["current_thumbnail",
                                            "current_station",
                                            "current_broadcast_title",

@@ -38,8 +38,9 @@ def parse_songs(glob_pattern):
         try:
             songs.append(Song(
                 path,
-                file["artist"][0],
-                file["title"][0],
+                file.get("artist", [None])[0],
+                file.get("album", [None])[0],
+                file.get("title", [None])[0],
                 int(file.info.length),
             ))
         except KeyError as err:
@@ -47,16 +48,29 @@ def parse_songs(glob_pattern):
     random.shuffle(songs)
     return songs
 
-def fetch_cover_on_deezer(artist, track, backup_cover):
+def fetch_cover_on_deezer(backup_cover, artist, album=None, track=None):
     """Get cover from Deezer API.
 
     Search for a track with given artist and track. 
     Take the cover of the album of the first found track.
     """
-    req = requests.get('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
+    if album is not None:
+        req = requests.get('https://api.deezer.com/search/album?q={} {}'.format(artist, album))
+    elif track is not None:
+        req = requests.get('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
+    else:
+        req = requests.get('https://api.deezer.com/search/artist?q={}'.format(artist))
+
     data = json.loads(req.content.decode())["data"]
     if not data:
         return backup_cover
-    track = data[0]
-    cover_src = track["album"]["cover_big"]
+    obj = data[0]
+
+    if album is not None:
+        cover_src = obj["cover_big"]
+    elif track is not None:
+        cover_src = obj["album"]["cover_big"]
+    else:
+        cover_src = obj["picture_big"]
+
     return cover_src
