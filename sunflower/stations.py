@@ -15,7 +15,7 @@ from sunflower.utils.functions import parse_songs, fetch_cover_on_deezer
 class RTL2(URLStation):
     station_name = "RTL 2"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
-    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-48-192"
+    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
     _main_data_url = "https://timeline.rtl.fr/RTL2/items"
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
@@ -357,12 +357,11 @@ class PycolorePlaylistStation(DynamicStation):
     @property
     def _artists(self):
         """Property returning artists of the 5 next-played songs."""
-        songs_to_play = self._songs_to_play
-        artists_set = {self._current_song.artist}
-        for song in songs_to_play:
+        songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        artists_set = set()
+        for song in songs:
             artists_set.add(song.artist)
-            if len(artists_set) == 5:
-                break
+        self.__dict__["_artists"] = artists_set
         return artists_set
         
     def _play(self, delay, max_length):
@@ -374,6 +373,7 @@ class PycolorePlaylistStation(DynamicStation):
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
+        session.write("exit\n")
         session.close()
 
     def get_metadata(self):
@@ -382,22 +382,25 @@ class PycolorePlaylistStation(DynamicStation):
                 "type": MetadataType.WAITING_FOLLOWING,
                 "end": self._current_song_end,
             }
+        artists_list = tuple(self._artists)
+        artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
         return {
             "type": MetadataType.MUSIC,
             "artist": self._current_song.artist,
             "title": self._current_song.title,
-            "thumbnail_src": fetch_cover_on_deezer(self._current_song.artist, self._current_song.title, self.station_thumbnail),
+            "thumbnail_src": fetch_cover_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title),
             "end": self._current_song_end,
+            "show": "La playlist Pycolore",
+            "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}.".format(artists_str)
         }
 
     def format_info(self, metadata):
-        artists_str = ", ".join(self._artists)
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
             current_station=self.station_name,
             current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
-            current_show_title="La playlist Pycolore",
-            current_broadcast_summary="Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}...".format(artists_str),
+            current_show_title=metadata["show"],
+            current_broadcast_summary=metadata["summary"],
         )
 
     def process(self, logger, channels_using, **kwargs):
