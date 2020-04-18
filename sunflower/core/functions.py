@@ -1,4 +1,4 @@
-# This is sunflower radio
+# This file is part of sunflower package. radio
 # This module contains core functions.
 
 

@@ -1,4 +1,4 @@
-# This is Sunflower Radio app.
+# This file is part of sunflower package. Radio app.
 
 """Module containing radio metadata fetching related functions."""
 
