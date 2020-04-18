@@ -19,6 +19,7 @@ mutagen = "^1.43"
 backports-datetime-fromisoformat = "^1.0.0"
 pytest = "^5.4.1"
 click = "^7.1.1"
+gunicorn = {extras = ["gevent"], version = "^20.0.4"}
 
 [tool.poetry.dev-dependencies]
 rope = "^0.16.0"
