@@ -1,4 +1,4 @@
-# This is sunflower radio
+# This file is part of sunflower package. radio
 
 import json
 from collections import namedtuple
@@ -22,15 +22,17 @@ class MetadataType(Enum):
     NONE = ""
     ADS = "Publicité"
     ERROR = "Erreur"
-    WAITING_FOLLOWING = "Transition"
+    WAITING_FOR_FOLLOWING = "Transition"
 
 class MetadataEncoder(json.JSONEncoder):
+    """Subclass of json.JSONEncoder supporting MetadataType serialization."""
     def default(self, obj):
         if isinstance(obj, MetadataType):
             return obj.value
         return json.JSONEncoder.default(self, obj)
 
 def as_metadata_type(mapping):
+    """object_hook for supporting MetadataType at json deserialization."""
     type_ = mapping.get("type")
     if type_ is None:
         return mapping

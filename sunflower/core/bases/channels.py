@@ -11,12 +11,18 @@ CHANNELS = dict()
 
 
 class Channel(RedisMixin):
+    """Base Channel.
+
+    Channel object contains and manage stations. It triggers station metadata updates
+    thanks to its timetable. Channel objects are called by server when a client fetches
+    metadata which this data is peristed in Redis.
+    """
+    
     def __init__(self, endpoint, timetable, handlers=[]):
         """Channel constructor.
 
         Parameters:
         - endpoint: string
-        - stations: list of Station subclasses
         - timetable: dict
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
@@ -141,13 +147,13 @@ class Channel(RedisMixin):
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
             current_station=self.current_station.station_name,
-            current_broadcast_title="Vous écoutez {}".format(self.current_station.station_name),
+            current_broadcast_title=self.current_station.station_slogan or "Vous écoutez {}".format(self.current_station.station_name),
             current_show_title="",
             current_broadcast_summary="",
         )
     
     @property
-    def waiting_following_card_metadata(self) -> CardMetadata:
+    def waiting_for_following_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
             current_station=self.current_station.station_name,
@@ -165,17 +171,22 @@ class Channel(RedisMixin):
         metadata_type = metadata["type"]
         if metadata_type in (MetadataType.NONE, MetadataType.ERROR):
             return self.neutral_card_metadata
-        if metadata_type == MetadataType.WAITING_FOLLOWING:
-            return self.waiting_following_card_metadata
+        if metadata_type == MetadataType.WAITING_FOR_FOLLOWING:
+            return self.waiting_for_following_card_metadata
         return self.current_station.format_info(metadata)
 
-    def get_current_broadcast_metadata(self):
+    def get_current_broadcast_metadata(self, current_metadata):
         """Get metadata of current broadcasted programm for current station.
 
+        Param: current_metadata: current metadata stored in Redis
+        
         This is for pure json data exposure. This method uses get_metadata() method
-        of currently broadcasted station.
+        of currently broadcasted station. Station can use current metadata for example
+        to do partial updates.
         """
-        metadata = self.current_station.get_metadata()
+        if current_metadata is None:
+            current_metadata = {}
+        metadata = self.current_station.get_metadata(current_metadata)
         metadata.update({"station": self.current_station.station_name})
         return metadata
 
@@ -192,16 +203,18 @@ class Channel(RedisMixin):
         Else return False.
         """
 
+        current_metadata = self.current_broadcast_metadata
+
         if (
-            self.current_broadcast_metadata is not None
-            and datetime.now().timestamp() < self.current_broadcast_metadata["end"]
-            and self.current_broadcast_metadata["station"] == self.current_station.station_name
+            current_metadata is not None
+            and datetime.now().timestamp() < current_metadata["end"]
+            and current_metadata["station"] == self.current_station.station_name
         ):
             self.publish_to_redis("unchanged")
             return False
 
 
-        metadata = self.get_current_broadcast_metadata()
+        metadata = self.get_current_broadcast_metadata(current_metadata)
         info = self.get_current_broadcast_info(metadata)
 
         for handler in self.handlers:
