@@ -123,12 +123,11 @@ class RTL2(URLStation):
 
         # next, update song info
         fetched_data = self._fetch_metadata()
-        thumbnail_src = fetched_data.get("cover") or self.station_thumbnail
         fetched_data_type = fetched_data.get("type")
 
         if fetched_data_type in (MetadataType.ADS, MetadataType.NONE):
             return {
-                "thumbnail_src": thumbnail_src,
+                "thumbnail_src": self.station_thumbnail,
                 "type": fetched_data_type,
                 "end": 0,
             }
@@ -137,12 +136,12 @@ class RTL2(URLStation):
         if now > end:
             if not show_metadata:
                 return {
-                    "thumbnail_src": thumbnail_src,
+                    "thumbnail_src": self.station_thumbnail,
                     "type": MetadataType.NONE,
                     "end": 0,
                 }
             metadata = {
-                "thumbnail_src": thumbnail_src,
+                "thumbnail_src": self.station_thumbnail,
                 "type": MetadataType.PROGRAMME,
                 "end": 0,
             }
@@ -152,7 +151,7 @@ class RTL2(URLStation):
                 "title": fetched_data["title"],
                 "end": end,
                 "type": MetadataType.MUSIC,
-                "thumbnail_src": thumbnail_src,
+                "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
 
         metadata.update(show_metadata)
