@@ -47,7 +47,7 @@ class PycolorePlaylistStation(DynamicStation):
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(formated_station_name, self._current_song.path).encode())
-        session.write("exit\n")
+        session.write("exit\n".encode())
         session.close()
 
     def get_metadata(self, current_metadata):

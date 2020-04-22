@@ -30,6 +30,7 @@ class AdsHandler:
             # tell liquidsoap to play backup song
             session = telnetlib.Telnet("localhost", 1234)
             session.write("{}_custom_songs.push {}\n".format(self.channel.endpoint, backup_song.path).encode())
+            session.write("exit\n".encode())
             session.close()
             
             type_ = MetadataType.MUSIC
