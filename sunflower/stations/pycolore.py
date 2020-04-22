@@ -37,11 +37,12 @@ class PycolorePlaylistStation(DynamicStation):
                 break
         return artists_list
         
-    def _play(self, delay, max_length):
+    def _play(self, delay, max_length, logger):
         self._current_song = self._get_next_song(max_length)
         if self._current_song is None:
             self._current_song_end = int(datetime.now().timestamp()) + max_length
             return
+        logger.debug("Playing {} - {} ({} songs remaining in current list).".format(self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
         self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()) + delay
         formated_station_name = self.station_name.lower().replace(" ", "")
         session = telnetlib.Telnet("localhost", 1234)
@@ -97,7 +98,7 @@ class PycolorePlaylistStation(DynamicStation):
         if self._current_song_end - 10 < int(now.timestamp()):
             delay = max(self._current_song_end - int(now.timestamp()), 0)
             max_length = (self._end_of_use - now).seconds - delay
-            self._play(delay, max_length)
+            self._play(delay, max_length, logger)
 
     @classmethod
     def get_liquidsoap_config(cls):
