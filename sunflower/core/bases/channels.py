@@ -1,7 +1,5 @@
 from datetime import datetime, time
 
-from backports.datetime_fromisoformat import MonkeyPatch
-
 from sunflower import settings
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
@@ -61,7 +59,6 @@ class Channel(RedisMixin):
         - end: datetime.time object
         - station_cls: Station class
         """
-        MonkeyPatch.patch_fromisoformat()
 
         # fisrt, select weekday
         week_day = datetime.now().weekday()

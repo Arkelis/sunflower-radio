@@ -44,14 +44,6 @@ tests = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.i
 
 [[package]]
 category = "main"
-description = "Backport of Python 3.7's datetime.fromisoformat"
-name = "backports-datetime-fromisoformat"
-optional = false
-python-versions = "*"
-version = "1.0.0"
-
-[[package]]
-category = "main"
 description = "Screen-scraping library"
 name = "beautifulsoup4"
 optional = false
@@ -580,7 +572,7 @@ python-versions = "*"
 version = "1.11.2"
 
 [metadata]
-content-hash = "236276a097848f736da435d9479b7afdb02b75e5f384de06c63345a530aec390"
+content-hash = "1e95b8afc4ea8b55b47669677fdc92272d2c04f23b70df4ddad10f9e6d928874"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -599,9 +591,6 @@ atomicwrites = [
 attrs = [
     {file = "attrs-19.3.0-py2.py3-none-any.whl", hash = "sha256:08a96c641c3a74e44eb59afb61a24f2cb9f4d7188748e76ba4bb5edfa3cb7d1c"},
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
-]
-backports-datetime-fromisoformat = [
-    {file = "backports-datetime-fromisoformat-1.0.0.tar.gz", hash = "sha256:9577a2a9486cd7383a5f58b23bb8e81cf0821dbbc0eb7c87d3fa198c1df40f5c"},
 ]
 beautifulsoup4 = [
     {file = "beautifulsoup4-4.9.0-py2-none-any.whl", hash = "sha256:a4bbe77fd30670455c5296242967a123ec28c37e9702a8a81bd2f20a4baf0368"},
