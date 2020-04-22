@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
 from sunflower.core.types import CardMetadata, MetadataType
-from sunflower.utils.functions import fetch_cover_on_deezer, parse_songs
+from sunflower.utils.functions import fetch_cover_on_deezer, parse_songs, prevent_consecutive_artists
 
 
 class PycolorePlaylistStation(DynamicStation):
@@ -20,6 +20,7 @@ class PycolorePlaylistStation(DynamicStation):
     def _get_next_song(self, max_length):
         if len(self._songs_to_play) <= 5:
             self._songs_to_play += parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+            self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
         for (i, song) in enumerate(self._songs_to_play):
             if song.length < max_length:
                 return self._songs_to_play.pop(i)

@@ -8,7 +8,7 @@ from sunflower.stations import (
 
 def test_instances_created():
     for station_cls in (RTL2, FranceInfo, FranceInter, FranceMusique, FranceCulture, PycolorePlaylistStation):
-        assert isinstance(station_cls(), station_cls), "Les instances doivent être créées automatiquement"
+        assert isinstance(station_cls(), station_cls), "Instances must be created automatically"
 
 def test_instances_unique():
     for (name, inst) in STATIONS_INSTANCES.items():
