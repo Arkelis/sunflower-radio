@@ -46,6 +46,17 @@ def parse_songs(glob_pattern):
         except KeyError as err:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
     random.shuffle(songs)
+    songs_length = len(songs)
+
+    for i in range(songs_length-1):
+        j = 0
+        while songs[i].artist == songs[i+1].artist:
+            if i+j >= songs_length:
+                j -= songs_length
+            if songs[i+2+j].artist == songs[i+2+j+1].artist == songs[i+2+j-1].artist:
+                continue
+            songs[i+1], songs[i+2+j] = songs[i+2+j], songs[i+1]
+
     return songs
 
 def fetch_cover_on_deezer(backup_cover, artist, album=None, track=None):
