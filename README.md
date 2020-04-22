@@ -1,5 +1,7 @@
 # Radio Tournesol
 
+![Python 3.8](https://img.shields.io/badge/Python-3.8-blue)
+
 ## Principe
 
 Une webradio est composé de divers éléments :
