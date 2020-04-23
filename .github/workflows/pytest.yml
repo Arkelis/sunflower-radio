@@ -25,4 +25,4 @@ jobs:
         $HOME/.poetry/bin/poetry install
     - name: Test with pytest
       run: |
-        pytest
+        $HOME/.poetry/bin/poetry run pytest
