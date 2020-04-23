@@ -136,7 +136,7 @@ class RadioFranceStation(URLStation):
             # il y a à la fois les infos de la diffusion et de l'émission
             else:
                 summary = diffusion["standFirst"]
-                if not summary or summary == ".":
+                if not summary or summary in (".", "*"):
                     summary = ""
                 podcast_link = diffusion["show"]["podcast"]["itunes"]
                 thumbnail_src = self._fetch_cover(podcast_link)
@@ -153,6 +153,8 @@ class RadioFranceStation(URLStation):
 
     def _fetch_cover(self, podcast_link):
         """Scrap cover url from provided Apple Podcast link."""
+        if not podcast_link:
+            return self.station_thumbnail
         req = requests.get(podcast_link)
         bs = BeautifulSoup(req.content.decode(), "html.parser")
         sources = bs.find_all("source")
