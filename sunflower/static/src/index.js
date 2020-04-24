@@ -1,3 +1,6 @@
+import { CookieConsentElement } from "./elements/cookieConsent/CookieConsent";
+
+
 const updateUrl = document.getElementById("info-update").attributes["data-update-url"].value
 const eventsUrl = document.getElementById("info-update").attributes["data-listen-url"].value
 
@@ -141,7 +144,7 @@ function updateCardBody() {
         })
 }
 
-es = new EventSource(eventsUrl)
+const es = new EventSource(eventsUrl)
 es.onmessage = function(event) {
     if (event.data === "updated") {
         updateCardBody()
@@ -238,7 +241,24 @@ document.querySelector("#current-thumbnail").onclick = () => {
 
 
 
+/* -------------------------------- C O O K I E   C O N S E N T -------------------------------- */
+
+
+let cookieConsent = localStorage.cookieConsent
+if (cookieConsent == undefined) {
+    askCookieConsent()
+}
+function askCookieConsent() {
+    document.querySelector("body").appendChild(new CookieConsentElement())
+}
 
 
 /* -------------------------------- R E M E M B E R   L A S T - V I S I T E D -------------------------------- */
+function persistLastVisited() {
+    if (cookieConsent === "true") {
+        document.cookie = "lastVisitedChannel=" + window.location + ";path=/"
+    }
+}
+
+persistLastVisited()
 
