@@ -12,7 +12,7 @@ from sunflower.channels import Channel
 from sunflower.core.types import MetadataEncoder
 from sunflower.utils.functions import get_channel_or_404
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="/static", static_folder="static/dist")
 app.json_encoder = MetadataEncoder
 # cors = CORS(app)
 

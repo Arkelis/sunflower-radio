@@ -5,11 +5,7 @@ const eventsUrl = document.getElementById("info-update").attributes["data-listen
  * Class for supporting FLIP animation.
  */
 class FlippedElement {
-    x
-    y
-    // h
-    // w
-    element
+
 
     get newY() {
         return this.element.getBoundingClientRect().y
@@ -239,3 +235,10 @@ document.querySelector("#current-thumbnail").onclick = () => {
         }, 1000 + 100*i + detailDivsToMove*100);
     }
 }
+
+
+
+
+
+/* -------------------------------- R E M E M B E R   L A S T - V I S I T E D -------------------------------- */
+
