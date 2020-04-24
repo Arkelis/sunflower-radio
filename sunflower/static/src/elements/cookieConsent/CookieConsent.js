@@ -1,7 +1,8 @@
-const template = `<div class="container">
-<p>Ce site web utilise un cookie afin de mémoriser la dernière chaîne visitée pour vous y rediriger automatiquement la prochaine fois que vous vous rendrez sur ${window.location.host}. Cliquez sur "Je refuse" pour annuler ce comportement. Votre choix est stocké sur votre navigateur et ne nous est pas communiqué.</p>
-<button class="accept">J'accepte</button>
-<button class="refuse">Je refuse</button>
+const template = `
+<div class="container">
+    <p>Ce site web peut mémoriser la dernière chaîne écoutée pour vous y rediriger automatiquement lors de votre prochaine visite sur ${window.location.host}. Cliquez sur "Je refuse" pour annuler ce comportement. Votre choix est stocké sur votre navigateur et ne nous est pas communiqué.</p>
+    <button class="accept">J'accepte</button>
+    <button class="refuse">Je refuse</button>
 </div>`
 
 export class CookieConsentElement extends HTMLElement {

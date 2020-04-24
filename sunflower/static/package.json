@@ -4,5 +4,9 @@
   },
   "devDependencies": {
     "sass": "^1.26.5"
+  },
+  "scripts": {
+    "deploy": "set -a; . ./.env; set +a; echo $DIST_DIR; rsync -auv dist/* $DIST_DIR",
+    "build": "parcel build --public-url /static/ src/index.*"
   }
 }
