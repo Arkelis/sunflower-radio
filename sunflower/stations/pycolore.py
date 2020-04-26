@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
 from sunflower.core.types import CardMetadata, MetadataType
-from sunflower.utils.functions import fetch_cover_on_deezer, parse_songs, prevent_consecutive_artists
+from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
 class PycolorePlaylistStation(DynamicStation):
@@ -54,26 +54,31 @@ class PycolorePlaylistStation(DynamicStation):
     def get_metadata(self, current_metadata):
         if self._current_song is None:
             return {
+                "station": self.station_name,
                 "type": MetadataType.WAITING_FOR_FOLLOWING,
                 "end": self._current_song_end,
             }
         artists_list = tuple(self._artists)
         artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
+        thumbnail_src, link = fetch_cover_and_link_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title)
         return {
+            "station": self.station_name,
             "type": MetadataType.MUSIC,
             "artist": self._current_song.artist,
             "title": self._current_song.title,
-            "thumbnail_src": fetch_cover_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title),
+            "thumbnail_src": thumbnail_src,
+            "link": link,
             "end": self._current_song_end,
             "show": "La playlist Pycolore",
             "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}.".format(artists_str)
         }
 
     def format_info(self, metadata):
+        current_broadcast_title = self._format_html_anchor_element(metadata.get("link"), "{} • {}".format(metadata["artist"], metadata["title"]))
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
-            current_station=self.station_name,
-            current_broadcast_title="{} • {}".format(metadata["artist"], metadata["title"]),
+            current_station=metadata["station"],
+            current_broadcast_title=current_broadcast_title,
             current_show_title=metadata["show"],
             current_broadcast_summary=metadata["summary"],
         )

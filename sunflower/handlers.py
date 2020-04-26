@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sunflower import settings
 from sunflower.core.types import CardMetadata, MetadataType
-from sunflower.utils.functions import fetch_cover_on_deezer, parse_songs
+from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs
 
 
 class AdsHandler:
@@ -13,7 +13,7 @@ class AdsHandler:
         self.backup_songs = self._parse_songs()
 
     def _fetch_cover_on_deezer(self, artist, album, track):
-        return fetch_cover_on_deezer(self.channel.current_station.station_thumbnail, artist, album, track)
+        return fetch_cover_and_link_on_deezer(self.channel.current_station.station_thumbnail, artist, album, track)
 
     def _parse_songs(self):
         return parse_songs(self.glob_pattern)

@@ -71,7 +71,7 @@ def parse_songs(glob_pattern):
     random.shuffle(songs)
     return songs
 
-def fetch_cover_on_deezer(backup_cover, artist, album=None, track=None):
+def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None):
     """Get cover from Deezer API.
 
     Search for a track with given artist and track. 
@@ -91,9 +91,12 @@ def fetch_cover_on_deezer(backup_cover, artist, album=None, track=None):
 
     if album is not None:
         cover_src = obj["cover_big"]
+        album_url = obj["link"]
     elif track is not None:
         cover_src = obj["album"]["cover_big"]
+        album_url = "https://www.deezer.com/album/" + obj["album"]["id"]
     else:
         cover_src = obj["picture_big"]
+        album_url = ""
 
-    return cover_src
+    return cover_src, album_url
