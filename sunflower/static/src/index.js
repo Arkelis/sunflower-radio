@@ -87,7 +87,7 @@ function updateCardInfos(divsToUpdate) {
     // update info
     audioPlayer.read()
     divsToUpdate.forEach((element, i) => {
-        element[0].innerText = element[1]
+        element[0].innerHTML = element[1]
     })
     audioPlayer.flip()
 
