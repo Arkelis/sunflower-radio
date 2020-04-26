@@ -86,7 +86,7 @@ def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None)
 
     data = json.loads(req.content.decode())["data"]
     if not data:
-        return backup_cover
+        return backup_cover, ""
     obj = data[0]
 
     if album is not None:
