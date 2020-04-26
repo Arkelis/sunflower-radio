@@ -1,6 +1,16 @@
 /* ------------- D E F A U L T   L A Y O U T   ( M O B I L E ) ------------- */
 
 
+a {
+    outline: 0;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 body {
     position: relative;
     font-family: "Fira Sans Condensed", sans-serif;
@@ -98,7 +108,6 @@ nav {
 
 #current-thumbnail-container {
     cursor: pointer;
-    z-index: 100;
     display: flex;
     justify-content: center;
     margin-bottom: 1em;
@@ -164,7 +173,7 @@ nav {
     }
 
     #current-thumbnail-container {
-        margin-top: 2em;
+        margin-top: 1em;
  
         img {
         width: 20em;
@@ -209,12 +218,17 @@ nav {
     }
 
     .big-cover {
+
+        nav {
+            max-height: 3em;
+        }
         
         #card-body {
             color: white;
 
             #current-thumbnail-container {
                 position: relative;
+                margin-top: 0;
             }
 
             #current-broadcast-info {
@@ -350,8 +364,11 @@ nav {
 
     .big-cover {
         nav {
-            transform: translateY(-100%);
+            opacity: 0;
         }
+        nav:hover, nav:hover #brand {
+            opacity: 1;
+        } 
         #current-broadcast-card #current-broadcast-info {
             padding-left: 0;
         }
