@@ -128,6 +128,7 @@ class RTL2(URLStation):
 
         if fetched_data_type in (MetadataType.ADS, MetadataType.NONE):
             return {
+                "station": self.station_name,
                 "thumbnail_src": self.station_thumbnail,
                 "type": fetched_data_type,
                 "end": 0,
@@ -137,6 +138,7 @@ class RTL2(URLStation):
         if now > end:
             if not show_metadata:
                 return {
+                    "station": self.station_name,
                     "thumbnail_src": self.station_thumbnail,
                     "type": MetadataType.NONE,
                     "end": 0,
@@ -154,6 +156,5 @@ class RTL2(URLStation):
                 "type": MetadataType.MUSIC,
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
-
-        metadata.update(show_metadata)
+        metadata.update(station=self.station_name, **show_metadata)
         return metadata
