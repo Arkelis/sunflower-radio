@@ -94,9 +94,8 @@ def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None)
         album_url = obj["link"]
     elif track is not None:
         cover_src = obj["album"]["cover_big"]
-        album_url = "https://www.deezer.com/album/" + obj["album"]["id"]
+        album_url = f"https://www.deezer.com/album/{obj['album']['id']}"
     else:
         cover_src = obj["picture_big"]
         album_url = ""
-
     return cover_src, album_url
