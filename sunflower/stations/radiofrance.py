@@ -28,9 +28,11 @@ class RadioFranceStation(URLStation):
             start
             end
             diffusion {{
+                url
                 title
                 standFirst
                 show {{
+                    url
                     podcast {{
                         itunes
                     }}
@@ -90,14 +92,14 @@ class RadioFranceStation(URLStation):
             current_broadcat_title = metadata["show_title"]
             current_show_title = ""
         else:
-            current_broadcat_title = metadata["diffusion_title"]
-            current_show_title = metadata["show_title"]
+            current_broadcat_title = self._format_html_anchor_element(metadata.get("diffusion_url"), metadata["diffusion_title"])
+            current_show_title = self._format_html_anchor_element(metadata.get("show_url"), metadata["show_title"])
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
-            current_station=self.station_name,
+            current_station=self.html_formated_station_name,
             current_broadcast_title=current_broadcat_title,
             current_show_title=current_show_title,
-            current_broadcast_summary=metadata["summary"],
+            current_broadcast_summary=metadata.get("diffusion_summary") or "",
         )
 
     def get_metadata(self, current_metadata):
@@ -112,17 +114,20 @@ class RadioFranceStation(URLStation):
             if first_show_in_grid["end"] < int(datetime.now().timestamp()):
                 next_show = fetched_data["data"]["grid"][1]
                 return {
+                    "station": self.station_name,
                     "type": MetadataType.NONE,
                     "end": int(next_show["start"]),
                 }
             if first_show_in_grid["start"] > int(datetime.now().timestamp()):
                 return {
+                    "station": self.station_name,
                     "type": MetadataType.NONE,
                     "end": int(first_show_in_grid["start"]),
                 }
             # sinon on traite les différentes formes d'émissions possibles
             diffusion = first_show_in_grid.get("diffusion")
             metadata = {
+                "station": self.station_name,
                 "type": MetadataType.PROGRAMME,
                 "end": int(first_show_in_grid["end"]),
             }
@@ -130,20 +135,21 @@ class RadioFranceStation(URLStation):
             if diffusion is None:
                 metadata.update({
                     "show_title": first_show_in_grid["title"],
-                    "summary": "",
                     "thumbnail_src": self.station_thumbnail,
                 })
             # il y a à la fois les infos de la diffusion et de l'émission
             else:
-                summary = diffusion["standFirst"]
-                if not summary or summary in (".", "*"):
-                    summary = ""
+                diffusion_summary = diffusion["standFirst"]
+                if not diffusion_summary or diffusion_summary in (".", "*"):
+                    diffusion_summary = ""
                 podcast_link = diffusion["show"]["podcast"]["itunes"]
                 thumbnail_src = self._fetch_cover(podcast_link)
                 metadata.update({
                     "show_title": diffusion["show"]["title"],
+                    "show_url": diffusion["show"]["url"] or "",
                     "diffusion_title": diffusion["title"],
-                    "summary": summary,
+                    "diffusion_url": diffusion["url"] or "",
+                    "diffusion_summary": diffusion_summary.strip(),
                     "thumbnail_src": thumbnail_src,
                 })
             return metadata
@@ -164,18 +170,6 @@ class RadioFranceStation(URLStation):
 
     def _fetch_metadata(self):
         """Fetch metadata from radiofrance open API."""
-        # radiofrance_requests_counter_path = "/tmp/radiofrance-requests.txt"
-        # api_rate_limit = 1000
-        # with open(radiofrance_requests_counter_path, "r") as f:
-        #     lines = f.read().split("\n")
-        # if lines[0] != datetime.now().date().isoformat():
-        #     write_mode = "w"
-        # else:
-        #     if len(lines) >= api_rate_limit:
-        #         return self.API_RATE_LIMIT_EXCEEDED
-        #     write_mode = "a"
-        # with open(radiofrance_requests_counter_path, write_mode) as f:
-        #     f.write("{}\n".format(datetime.now().date()))
         start = datetime.now()
         end = datetime.now() + timedelta(minutes=120)
         query = self._grid_template.format(
@@ -194,34 +188,40 @@ class RadioFranceStation(URLStation):
         data = json.loads(rep.content.decode())
         return data
 
+    
+
 
 class FranceInter(RadioFranceStation):
     station_name = "France Inter"
-    station_slogan = "InterVenez"
+    station_website_url = "https://www.franceinter.fr"
+    station_slogan = "Inter-Venez"
     _station_api_name = "FRANCEINTER"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-inter-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/franceinter-midfi.mp3"
+    station_url = "http://icecast.radiofrance.fr/franceinter-hifi.aac"
 
 
 class FranceInfo(RadioFranceStation):
-    station_slogan = "Et tout est plus clair"
     station_name = "France Info"
+    station_website_url = "https://www.francetvinfo.fr"
+    station_slogan = "Et tout est plus clair"
     _station_api_name = "FRANCEINFO"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
-    station_url = "http://icecast.radiofrance.fr/franceinfo-midfi.mp3"
+    station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
 
 
 class FranceMusique(RadioFranceStation):
-    station_slogan = "Vous allez LA DO RÉ !"
     station_name = "France Musique"
+    station_website_url = "https://www.francemusique.fr"
+    station_slogan = "Vous allez LA DO RÉ !"
     _station_api_name = "FRANCEMUSIQUE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-musique-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/francemusique-midfi.mp3"
+    station_url = "http://icecast.radiofrance.fr/francemusique-hifi.aac"
 
 
 class FranceCulture(RadioFranceStation):
     station_name = "France Culture"
+    station_website_url = "https://www.franceculture.fr"
     station_slogan = "L'esprit d'ouverture"
     _station_api_name = "FRANCECULTURE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"
-    station_url = "http://icecast.radiofrance.fr/franceculture-midfi.mp3"
+    station_url = "http://icecast.radiofrance.fr/franceculture-hifi.aac"

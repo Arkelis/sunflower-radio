@@ -12,6 +12,7 @@ from sunflower.core.bases import URLStation
 class RTL2(URLStation):
     station_name = "RTL 2"
     station_slogan = "Le son Pop-Rock"
+    station_website_url = "https://www.rtl2.fr"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
     station_url = "http://streaming.radio.rtl2.fr/rtl2-1-48-192"
     _main_data_url = "https://timeline.rtl.fr/RTL2/items"
@@ -49,7 +50,7 @@ class RTL2(URLStation):
             current_thumbnail=metadata["thumbnail_src"],
             current_show_title=metadata.get("show_title", ""),
             current_broadcast_summary=metadata.get("show_summary", ""),
-            current_station=self.station_name,
+            current_station=self.html_formated_station_name,
             current_broadcast_title=current_broadcast_title,
         )
 

@@ -143,7 +143,7 @@ class Channel(RedisMixin):
     def neutral_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
-            current_station=self.current_station.station_name,
+            current_station=self.current_station.html_formated_station_name,
             current_broadcast_title=self.current_station.station_slogan or "Vous écoutez {}".format(self.current_station.station_name),
             current_show_title="",
             current_broadcast_summary="",
@@ -153,7 +153,7 @@ class Channel(RedisMixin):
     def waiting_for_following_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
-            current_station=self.current_station.station_name,
+            current_station=self.current_station.html_formated_station_name,
             current_broadcast_title="Dans un instant : {}".format(self.following_station.station_name),
             current_show_title="",
             current_broadcast_summary="",
@@ -183,9 +183,7 @@ class Channel(RedisMixin):
         """
         if current_metadata is None:
             current_metadata = {}
-        metadata = self.current_station.get_metadata(current_metadata)
-        metadata.update({"station": self.current_station.station_name})
-        return metadata
+        return self.current_station.get_metadata(current_metadata)
 
     def process(self, logger, **kwargs):
         """If needed, update metadata.

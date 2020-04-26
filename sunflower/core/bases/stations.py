@@ -32,6 +32,13 @@ class Station:
 
     station_name = str()
     station_thumbnail = str()
+    station_website_url = str()
+
+    @property
+    def html_formated_station_name(self):
+        if self.station_website_url:
+            return self._format_html_anchor_element(self.station_website_url, self.station_name)
+        return self.station_name
 
     def __setup__(self):
         """Equivalent of __init__() but it is called at first instanciation only.
@@ -47,6 +54,7 @@ class Station:
         - seconds: error duration
         """
         return {
+            "station": self.station_name,
             "type": MetadataType.ERROR,
             "message": message,
             "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
@@ -63,14 +71,11 @@ class Station:
         Returned data is data meant to be exposed as json and used by format_info() method.
         
         Mandatory fields in returned mapping:
-        - type: element of MetadataType enum (see sunflower.core.types module)
+        - type: element of MetadataType enum (see sunflower.core.types module);
         - end: timestamp (int) telling Channel object when to call this method for updating
-        metadata.
+        metadata;
         
-        and other metadata fields required by format_info()
-
-        Returned mapping should not contains station_name. This fields is handled
-        by Channel object.
+        and other metadata fields required by format_info().
         """
 
     def format_info(self, metadata) -> CardMetadata:
@@ -84,11 +89,27 @@ class Station:
         Don't support MetadataType.NONE and MetadataType.WAITNIG_FOR_FOLLOWING cases
         as it is done in Channel class.
         """
-    
+
     @classmethod
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
-    
+
+    @staticmethod
+    def _format_html_anchor_element(href, text, classes=[]):
+        """Generate html code for anchor tag.
+
+        Parameters:
+        - href (str)
+        - text of the link (str)
+        - a list of classes for this element (list(str))
+
+        If no href is provided, return text only
+        """
+        if href is None:
+            return text
+        classes_str = " ".join(classes)
+        return f'<a target="_blank" class="{classes_str}" href="{href}">{text}</a>'
+
 
 class DynamicStation(Station):
     """Base class for internally managed stations.
