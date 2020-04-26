@@ -17,11 +17,11 @@ CardMetadata = namedtuple("CardMetadata", ["current_thumbnail",
 # Available metadata types
 
 class MetadataType(Enum):
-    MUSIC = "Musique"
-    PROGRAMME = "Emission"
+    MUSIC = "Track"
+    PROGRAMME = "Programme"
     NONE = ""
-    ADS = "Publicité"
-    ERROR = "Erreur"
+    ADS = "Ads"
+    ERROR = "Error"
     WAITING_FOR_FOLLOWING = "Transition"
 
 class MetadataEncoder(json.JSONEncoder):
