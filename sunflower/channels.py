@@ -53,7 +53,27 @@ tournesol = Channel(
 )
 
 music = Channel("music", handlers=(AdsHandler,),
-                timetable={(0, 1, 2, 3, 4, 5, 6,): [
+                timetable={(0, 1, 2, 3,): [
+                    ("00:00", "09:00", RTL2),
+                    ("09:00", "12:00", PycolorePlaylistStation),
+                    ("12:00", "22:00", RTL2),
+                    ("22:00", "00:00", PycolorePlaylistStation),
+                ],
+                (4,): [
+                    ("00:00", "09:00", RTL2),
+                    ("09:00", "12:00", PycolorePlaylistStation),
+                    ("12:00", "22:00", RTL2),
+                    ("22:00", "01:00", PycolorePlaylistStation),
+                ],
+                (5,): [
+                    ("00:00", "01:00", PycolorePlaylistStation),
+                    ("01:00", "09:00", RTL2),
+                    ("09:00", "12:00", PycolorePlaylistStation),
+                    ("12:00", "22:00", RTL2),
+                    ("22:00", "01:00", PycolorePlaylistStation),
+                ],
+                (6,): [
+                    ("00:00", "01:00", PycolorePlaylistStation),
                     ("00:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
                     ("12:00", "22:00", RTL2),

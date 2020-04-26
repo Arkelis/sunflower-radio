@@ -258,7 +258,7 @@ class Channel(RedisMixin):
         string += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         string += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
         string += "# output\n"
-        string += "output.icecast(%opus(bitrate=128, complexity=10),\n"
+        string += "output.icecast(%vorbis(quality=0.6),\n"
         string += '    host="localhost", port=3333, password="Arkelis77",\n'
         string += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
 
