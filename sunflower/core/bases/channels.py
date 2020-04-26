@@ -226,9 +226,6 @@ class Channel(RedisMixin):
     def get_liquidsoap_config(self):
         """Renvoie une chaîne de caractères à écrire dans le fichier de configuration liquidsoap."""
 
-        # indication nom de la chaîne
-        string = "##### " + str(self.endpoint) + " channel #####\n\n"
-
         # définition des horaires des radios
         if len(self.stations) > 1:
             timetable_to_write = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
@@ -250,16 +247,13 @@ class Channel(RedisMixin):
         else:
             timetable_to_write = ""
         
-        # écriture de l'emploi du temps
-        string += timetable_to_write
-        
         # output
         fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
-        string += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
-        string += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
-        string += "# output\n"
-        string += "output.icecast(%vorbis(quality=0.6),\n"
-        string += '    host="localhost", port=3333, password="Arkelis77",\n'
-        string += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
+        timetable_to_write += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
+        timetable_to_write += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
 
-        return string
+        output_to_write = "output.icecast(%vorbis(quality=0.6),\n"
+        output_to_write += '    host="localhost", port=3333, password="Arkelis77",\n'
+        output_to_write += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
+
+        return timetable_to_write, output_to_write

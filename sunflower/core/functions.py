@@ -1,6 +1,7 @@
 # This file is part of sunflower package. radio
 # This module contains core functions.
 
+from sunflower.core.bases import URLStation
 
 def write_liquidsoap_config(*channels, filename):
     """Write complete liquidsoap config file."""
@@ -17,17 +18,27 @@ def write_liquidsoap_config(*channels, filename):
 
         # configuration des chaînes
         # initialisation
-        all_channels_string = ""
         used_stations = set()
 
         # on récupère les infos de chaque chaîne
+        timetables = []
+        outputs = []
         for channel in channels:
-            all_channels_string += channel.get_liquidsoap_config()
+            timetable, output = channel.get_liquidsoap_config()
+            timetables.append(timetable)
+            outputs.append(output)
             used_stations.update(channel.stations)
 
         # on commence par énumérer toutes les stations utilisées
         for station in used_stations:
             f.write(station.get_liquidsoap_config())
+            if URLStation in station.__mro__:
+                outputs.append("output.dummy({})".format(station.station_name.lower().replace(" ", "")))
 
-        # puis on écrit les output
-        f.write("\n" + all_channels_string)
+        # puis on écrit les timetables
+        timetables_string = "\n".join(timetables)
+        f.write("\n" + timetables_string)
+
+        # et les output
+        outputs_string = "\n".join(outputs)
+        f.write("\n" + outputs_string)
