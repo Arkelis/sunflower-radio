@@ -4,10 +4,11 @@
 from datetime import datetime, timedelta
 
 from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.mixins import HTMLMixin
 
 STATIONS_INSTANCES = dict()
 
-class Station:
+class Station(HTMLMixin):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -36,9 +37,7 @@ class Station:
 
     @property
     def html_formated_station_name(self):
-        if self.station_website_url:
-            return self._format_html_anchor_element(self.station_website_url, self.station_name)
-        return self.station_name
+        return self._format_html_anchor_element(self.station_website_url, self.station_name)
 
     def __setup__(self):
         """Equivalent of __init__() but it is called at first instanciation only.
@@ -94,22 +93,6 @@ class Station:
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
 
-    @staticmethod
-    def _format_html_anchor_element(href, text, classes=[]):
-        """Generate html code for anchor tag.
-
-        Parameters:
-        - href (str)
-        - text of the link (str)
-        - a list of classes for this element (list(str))
-
-        If no href is provided, return text only
-        """
-        if href is None:
-            return text
-        classes_str = " ".join(classes)
-        return f'<a target="_blank" class="{classes_str}" href="{href}">{text}</a>'
-
 
 class DynamicStation(Station):
     """Base class for internally managed stations.
@@ -123,8 +106,8 @@ class DynamicStation(Station):
 class URLStation(Station):
     """Base class for external stations (basically relayed stream).
     
-    URLStation object must have station_url str class attribute.
-    URLSTation object can have station_slogan attribute that can be
+    URLStation object must have station_url str class attribute (audio stream url).
+    URLStation object can have station_slogan attribute that can be
     used when no metadata is provided at a given time.
     """
     station_url = str()

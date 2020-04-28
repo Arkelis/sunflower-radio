@@ -4,26 +4,26 @@ from datetime import datetime
 from sunflower import settings
 from sunflower.core.types import CardMetadata, MetadataType
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs
+from sunflower.core.mixins import HTMLMixin
 
-
-class AdsHandler:
+class AdsHandler(HTMLMixin):
     def __init__(self, channel):
         self.channel = channel
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
         self.backup_songs = self._parse_songs()
 
-    def _fetch_cover_on_deezer(self, artist, album, track):
+    def _fetch_cover_and_link_on_deezer(self, artist, album, track):
         return fetch_cover_and_link_on_deezer(self.channel.current_station.station_thumbnail, artist, album, track)
 
     def _parse_songs(self):
         return parse_songs(self.glob_pattern)
 
-    def process(self, metadata, info, logger) -> (dict(), CardMetadata):
+    def process(self, metadata, info, logger) -> (dict, CardMetadata):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == MetadataType.ADS:
-            self.channel.logger.info("Ads detected.")
+            logger.info("Ads detected.")
             if not self.backup_songs:
-                self.channel.logger.info("Backup songs list must be generated.")
+                logger.info("Backup songs list must be generated.")
                 self.backup_songs = self._parse_songs()
             backup_song = self.backup_songs.pop(0)
 
@@ -33,24 +33,23 @@ class AdsHandler:
             session.write("exit\n".encode())
             session.close()
             
-            type_ = MetadataType.MUSIC
             station = metadata["station"]
-            thumbnail = self._fetch_cover_on_deezer(backup_song.artist, backup_song.album, backup_song.title)
+            thumbnail, url = self._fetch_cover_and_link_on_deezer(backup_song.artist, backup_song.album, backup_song.title)
 
             # and update metadata
             metadata = {
                 "artist": backup_song.artist,
                 "title": backup_song.title,
                 "end": int(datetime.now().timestamp()) + backup_song.length,
-                "type": type_,
+                "type": MetadataType.MUSIC,
                 "station": station,
                 "thumbnail_src": thumbnail,
             }
             info = CardMetadata(
                 current_thumbnail=thumbnail,
-                current_station=station,
-                current_broadcast_title=backup_song.artist + " • " + backup_song.title,
-                current_show_title=type_,
+                current_station=self.channel.current_station.html_formated_station_name,
+                current_broadcast_title=self._format_html_anchor_element(url, backup_song.artist + " • " + backup_song.title),
+                current_show_title="Musique",
                 current_broadcast_summary="Publicité en cours sur {}. Dans un instant, retour sur la station.".format(station),
             )
         return metadata, info
