@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from sunflower import settings
 from sunflower.core.mixins import RedisMixin
@@ -31,6 +31,15 @@ class Channel(RedisMixin):
         self.endpoint = endpoint
         self.timetable = timetable
         self.handlers = [Handler(self) for Handler in handlers]
+        
+        if len(self.stations) == 1:
+            self._current_station_instance = self.stations[0]()
+            self._following_station_instance = None
+        else:
+            self.current_station_start = datetime.now()
+            self.current_station_end = datetime.now()
+            self._current_station_instance = None
+            self._following_station_instance = None
 
         self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:" + self.endpoint + ":info"
@@ -47,21 +56,24 @@ class Channel(RedisMixin):
         stations = self.__dict__["stations"] = tuple(stations)
         return stations
 
-    def get_station_info(self, time_, following=False):
+    def get_station_info(self, datetime_obj, following=False):
         """Get info of station playing at given time.
 
         Parameters:
-        - time_ must be datetime.time instance.
+        - date_time must be datetime.datetime instance.
         - if following=True, return next station and not current station.
 
         Return (start, end, station_cls):
         - start: datetime.time object
         - end: datetime.time object
         - station_cls: Station class
+        - following_station_cls: Station class
         """
 
+        asked_time = datetime_obj.time()
+
         # fisrt, select weekday
-        week_day = datetime.now().weekday()
+        week_day = datetime_obj.weekday()
         for t in self.timetable:
             if week_day in t:
                 key = t
@@ -69,43 +81,81 @@ class Channel(RedisMixin):
         else:
             raise RuntimeError("Jour de la semaine non supporté.")
         
-        station_cls = self.timetable[key][0][2]
-        for t in self.timetable[key][::-1]:
+        getting_following = False
+        asked_station_cls = None
+        following_station_cls = None
+
+        for t in self.timetable[key]:
             # on parcourt la table en partant de la fin
             start, end = map(time.fromisoformat, t[:2])
 
-            # tant qu'on est avant le démarrage de la plage courante, on continue
-            # tout en gardant en mémoire la station
-            if time_ < start:
-                station_cls = t[2]
+            # tant que l'horaire demandé est situé après la fin de la plage,
+            # on va à la plage suivante
+            if asked_time > end:
                 continue
-
-            # si on veut la station courante on la sélectionne
-            if not following:
-                station_cls = t[2]
-            # sinon on renvoie celle encore en mémoire (la suivante puisqu'on parcourt
-            # la table à l'envers)
             
-            return start, end, station_cls
-        else:
+            # cas où end > asked_time, càd on se situe dans la bonne plage
+            # on sélectionne la plage courante
+            if not getting_following:
+                # dans le cas où on cherche la station courante, on enregistre les infos voulues
+                asked_station_cls = t[2]
+                asked_station_start = datetime.combine(datetime_obj.date(), start)
+                asked_station_end = datetime.combine(datetime_obj.date(), end)
+                if asked_station_end < asked_station_start: # cas de minuit
+                    asked_station_end += timedelta(hours=24)
+                getting_following = True
+            else:
+                # si on cherche la suivante, on enregistre uniquement la classe
+                following_station_cls = t[2]
+        
+        # si après avoir parcouru le bon jour on n'a rien trouvé : on lève une erreur
+        if asked_station_cls is None:
             raise RuntimeError("Aucune station programmée à cet horaire.")
 
-    def _get_station_instance(self, time_, following):
+        # dans le cas où la station courante était le dernier créneau de la journée,
+        # on cherche la station suivante dans le premier créneau de la journée suivante.
+        if following_station_cls is None:
+            week_day = (datetime_obj + timedelta(hours=24)).weekday()
+            for t in self.timetable:
+                if week_day in t:
+                    following_station_cls = self.timetable[t][0][2]
+                    break
+            else:
+                raise RuntimeError("Jour de la semaine non supporté pour la station suivante : {}. Jours dispos : {}".format(week_day, self.timetable.keys()))
+            
+        return asked_station_start, asked_station_end, asked_station_cls, following_station_cls
+
+    def _update_station_instances(self):
+        """Update current-station-related attributes.
+
+        - current_station_end
+        - current_station_start
+        - _current_station_instance (hidden, use 'current_station' property instead to acces it)
+        - _following_station_instance (hidden, use 'ollowing_station' property instead to acces it)
+        """
+
         if len(self.stations) == 1:
-            return self.stations[0]()
+            # If only one station, skip.
+            return
         
-        CurrentStationClass = self.get_station_info(time_, following)[2]
-        return CurrentStationClass()
+        if datetime.now() > self.current_station_end or self._current_station_instance is None:
+            new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now(), following=True)
+            self.current_station_end = new_end
+            self.current_station_start = new_start
+            self._current_station_instance = CurrentStationClass()
+            self._following_station_instance = FollowingStationClass()
 
     @property
     def current_station(self):
         """Return Station object currently on air."""
-        return self._get_station_instance(datetime.now().time(), following=False)
+        self._update_station_instances()
+        return self._current_station_instance
     
     @property
     def following_station(self):
         """Return next Station object to be on air."""
-        return self._get_station_instance(datetime.now().time(), following=True)
+        self._update_station_instances()
+        return self._following_station_instance
 
     def get_from_redis(self, key, object_hook=as_metadata_type):
         return super().get_from_redis(key, object_hook)
