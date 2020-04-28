@@ -94,10 +94,7 @@ class PycolorePlaylistStation(DynamicStation):
 
         # compute end of use
         for channel in channels_using_self:
-            end_of_current_station_time = channel.get_station_info(now.time())[1]
-            end_of_current_station = datetime.combine(date.today(), end_of_current_station_time)
-            if end_of_current_station_time == time(0, 0, 0):
-                end_of_current_station += timedelta(hours=24)
+            end_of_current_station = channel.get_station_info(now)[1]
             if self._end_of_use < end_of_current_station:
                 self._end_of_use = end_of_current_station
 
