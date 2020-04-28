@@ -85,13 +85,15 @@ class Channel(RedisMixin):
         asked_station_cls = None
         following_station_cls = None
 
+        index_of_last_element = len(self.timetable[key]) - 1
         for (i, t) in enumerate(self.timetable[key]):
             # on parcourt la table en partant de la fin
             start, end = map(time.fromisoformat, t[:2])
 
             # tant que l'horaire demandé est situé après la fin de la plage,
-            # on va à la plage suivante
-            if asked_time > end and i != len(self.timetable[key]) - 1:
+            # on va à la plage suivante ; si on est sur le dernier élément
+            # on le prend
+            if asked_time > end and i != index_of_last_element:
                 continue
             
             # cas où end > asked_time, càd on se situe dans la bonne plage
