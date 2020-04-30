@@ -101,7 +101,7 @@ class RadioFranceStation(URLStation):
             current_show_title = parent_title or ""
         else:
             show_title = metadata["show_title"]
-            if show_title.lower() != parent_title.lower():
+            if parent_title is not None and show_title.lower() != parent_title.lower():
                 show_title += " • " + parent_title
             current_broadcast_title = self._format_html_anchor_element(metadata.get("diffusion_url"), metadata["diffusion_title"])
             current_show_title = self._format_html_anchor_element(metadata.get("show_url"), show_title)
@@ -222,8 +222,10 @@ class RadioFranceStation(URLStation):
         start = datetime.now()
         end = datetime.now() + timedelta(minutes=120)
         query = self._grid_template.format(
-            start=int(start.timestamp()),
-            end=int(end.timestamp()),
+            # start=int(start.timestamp()),
+            start = 1588197618,
+            # end=int(end.timestamp()),
+            end = 1588207618,
             station=self._station_api_name
         )
         try:
