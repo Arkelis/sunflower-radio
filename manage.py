@@ -32,14 +32,14 @@ def start_or_restart_component(component, restart=False):
 @sunflower.command()
 @click.argument("component")
 def start(component):
-    """Start Panoramix. Il sait faire plein de choses, surtout des potions."""
+    """Start sunflower component(s). Possible components: watcher / radio / all (bot)."""
     start_or_restart_component(component)
 
 
 @sunflower.command()
 @click.argument("component")
 def restart(component):
-    """Restart sunflower component(s)."""
+    """Restart sunflower component(s). Possible components: watcher / radio / all (both)."""
     start_or_restart_component(component, restart=True)
 
 
