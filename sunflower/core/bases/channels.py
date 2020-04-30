@@ -273,6 +273,7 @@ class Channel(RedisMixin):
             return False
         self.current_broadcast_info = info
         self.publish_to_redis("updated")
+        logger.debug(f"channel={self.endpoint} station={self.current_station.station_name} Metadata was updated.")
         return True
     
     def get_liquidsoap_config(self):
