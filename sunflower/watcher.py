@@ -26,11 +26,11 @@ def launch_watcher():
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    logger.debug("Starting watcher.")
+    logger.info("Starting watcher.")
     
     watcher = Watcher([music, tournesol], logger)
     
-    logger.debug("Watcher instanciated")
+    logger.info("Watcher instanciated")
     
     watcher.run()
     
