@@ -274,7 +274,7 @@ class RadioFranceStation(URLStation):
             # on sait qu'on est potentiellement dans le programme courant.
             # Il faut vérifier que l'on est encore dedans en vérifiant :
             if child["end"] > now:
-                return child, child["end"]
+                return child, int(child["end"])
 
             # sinon, on est dans un "trou" : on utilise donc le parent
             # et le début de l'enfant suivant. Cas particulier : si on est
