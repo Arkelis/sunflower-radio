@@ -219,13 +219,12 @@ class RadioFranceStation(URLStation):
 
     def _fetch_metadata(self):
         """Fetch metadata from radiofrance open API."""
-        start = datetime.now()
-        end = datetime.now() + timedelta(minutes=120)
+        now = datetime.now()
+        start = now
+        end = now + timedelta(minutes=120)
         query = self._grid_template.format(
-            # start=int(start.timestamp()),
-            start = 1588197618,
-            # end=int(end.timestamp()),
-            end = 1588207618,
+            start=int(start.timestamp()),
+            end=int(end.timestamp()),
             station=self._station_api_name
         )
         try:
