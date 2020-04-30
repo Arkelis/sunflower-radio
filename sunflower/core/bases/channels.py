@@ -4,6 +4,7 @@ from sunflower import settings
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
                                   as_metadata_type)
+from sunflower.core.decorators import cached_property
 
 CHANNELS = dict()
 
@@ -46,15 +47,14 @@ class Channel(RedisMixin):
 
         CHANNELS[self.endpoint] = self
 
-    @property
+    @cached_property
     def stations(self) -> set:
         """Cached property returning list of stations used by channel."""
         stations = set()
         for l in self.timetable.values():
             for t in l:
                 stations.add(t[2])
-        stations = self.__dict__["stations"] = tuple(stations)
-        return stations
+        return tuple(stations)
 
     def get_station_info(self, datetime_obj, following=False):
         """Get info of station playing at given time.
@@ -293,15 +293,14 @@ class Channel(RedisMixin):
                         raise RuntimeError("Time format must be HH:MM.")
                     formated_start = start.replace(":", "h")
                     formated_end = end.replace(":", "h")
-                    formated_name = station.station_name.lower().replace(" ", "")
-                    line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, formated_name)
+                    line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, station.formated_station_name)
                     timetable_to_write += line
             timetable_to_write += "])\n\n"
         else:
             timetable_to_write = ""
         
         # output
-        fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].station_name.lower().replace(" ", "")
+        fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].formated_station_name
         timetable_to_write += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         timetable_to_write += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
 

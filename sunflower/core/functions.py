@@ -33,7 +33,7 @@ def write_liquidsoap_config(*channels, filename):
         for station in used_stations:
             f.write(station.get_liquidsoap_config())
             if URLStation in station.mro():
-                outputs.append("output.dummy({})".format(station.station_name.lower().replace(" ", "")))
+                outputs.append("output.dummy({})".format(station.formated_station_name))
 
         # puis on écrit les timetables
         timetables_string = "\n".join(timetables)

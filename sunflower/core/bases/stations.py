@@ -36,6 +36,10 @@ class Station(HTMLMixin):
     station_website_url = str()
 
     @property
+    def formated_station_name(self):
+        return self.station_name.lower().replace(" ", "")
+
+    @property
     def html_formated_station_name(self):
         return self._format_html_anchor_element(self.station_website_url, self.station_name)
 
