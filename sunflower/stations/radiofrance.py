@@ -153,31 +153,40 @@ class RadioFranceStation(URLStation):
 
             # on teste si children n'est pas None et n'est pas vide
             if children:
-                # si c'est le cas, on récupère l'enfant en cours et sa fin
+                # on récupère l'enfant en cours et sa fin
                 current_show, current_show_end = self._find_current_child_show(children, first_show_in_grid)
                 # ici, on réupère le titre du parent pour l'ajouter dans les métadonnées
                 parent = first_show_in_grid
-                if parent.get("diffusion") is not None:
-                    parent_title = parent["diffusion"]["show"]["title"]
-                else:
+                 # ajout de parent title s'il est différent du titre du current show
+                if parent.get("diffusion") is None:
                     parent_title = parent["title"]
-                metadata["parent_title"] = parent_title
+                else:
+                    parent_title = parent["diffusion"]["title"]
             else:
                 # sinon on garde le premier élément de la grille récupérée
                 current_show, current_show_end = first_show_in_grid, int(first_show_in_grid["end"])
+                # et le parent est vide
+                parent = {}
+                parent_title = ""
 
             # on peut maintenant ajouter la fin aux métadonnées
             metadata["end"] = current_show_end
 
             # on récupère le sous-objet diffusion s'il existe
             diffusion = current_show.get("diffusion")
+            # on récupère celui du parent s'il existe si diffusion est nul
+            if diffusion is None:
+                parent_diffusion = parent.get("diffusion")
+            else:
+                parent_diffusion = None
 
             # si l'émission (l'objet Step pour l'api Radiofrance) ne possède
             # pas de sous-objet diffusion, il s'agit d'un format "simple" :
             # un simple titre.
-            if diffusion is None:
+            if diffusion is None and parent_diffusion is None:
+                show_title = current_show["title"]
                 metadata.update({
-                    "show_title": current_show["title"],
+                    "show_title": show_title,
                     "thumbnail_src": self.station_thumbnail,
                 })
 
@@ -186,24 +195,36 @@ class RadioFranceStation(URLStation):
             # = un "numéro" de l'émission), éventuellement un résumé et une miniature
             # spéciale (on la récupère en parsant la page de podcast)
             else:
+                # cas où seul parent_diffusion n'est pas nul
+                if diffusion is None:
+                    # on garde le titre du step comme titre de diffusion
+                    diffusion_title = current_show["title"]
+                    # et le reste des infos proviennent du parent
+                    diffusion = parent_diffusion
+                else:
+                    diffusion_title = diffusion["title"]
                 diffusion_summary = diffusion["standFirst"]
                 if not diffusion_summary or diffusion_summary in (".", "*"):
                     diffusion_summary = ""
                 podcast_link = diffusion["show"]["podcast"]["itunes"]
                 thumbnail_src = self._fetch_cover(podcast_link)
+                show_title = diffusion["show"]["title"]
                 metadata.update({
-                    "show_title": diffusion["show"]["title"],
+                    "show_title": show_title,
                     "show_url": diffusion["show"]["url"] or "",
-                    "diffusion_title": diffusion["title"],
+                    "diffusion_title": diffusion_title,
                     "diffusion_url": diffusion["url"] or "",
                     "diffusion_summary": diffusion_summary.strip(),
                     "thumbnail_src": thumbnail_src,
                 })
 
+            if parent_title.lower().strip() != show_title.lower().strip():
+                metadata.update({"parent_title": parent_title})
+
             # on RENVOIE alors les métadonnées
             return metadata
         except KeyError as err:
-            raise RuntimeError("Impossible de décoder la réponse de l'API radiofrance : {}".format(fetched_data)) from err
+            return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
     
 
     def _fetch_cover(self, podcast_link):
@@ -253,6 +274,19 @@ class RadioFranceStation(URLStation):
         - dict representing a step
         - end timestamp
         """
+        # cas d'un unique enfant
+        if len(children) == 1:
+            child = children[0]
+            # dans le cas où l'enfant a un sous-objet diffusion
+            if child.get("diffusion") is not None:
+                return child, parent["end"]
+            # sinon on prend le sous-objet diffusion du parent
+            elif parent.get("diffusion") is not None:
+                return parent, parent["end"]
+            # si aucun n'a de sous-objet diffusion on envoie tout de même l'enfant
+            else:
+                return child, parent["end"]
+
         now = int(datetime.now().timestamp())
 
         # on initialise l'enfant suivant (par défaut le dernier)
