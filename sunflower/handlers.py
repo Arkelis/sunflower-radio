@@ -21,7 +21,7 @@ class AdsHandler(HTMLMixin):
     def process(self, metadata, info, logger) -> (dict, CardMetadata):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == MetadataType.ADS:
-            logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.station_name} Ads detected.")
+            logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.formated_station_name} Ads detected.")
             if not self.backup_songs:
                 logger.debug(f"channel={self.channel.endpoint} Backup songs list must be generated.")
                 self.backup_songs = self._parse_songs()

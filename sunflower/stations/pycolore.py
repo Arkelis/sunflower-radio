@@ -43,7 +43,7 @@ class PycolorePlaylistStation(DynamicStation):
         if self._current_song is None:
             self._current_song_end = int(datetime.now().timestamp()) + max_length
             return
-        logger.debug("Playing {} - {} ({} songs remaining in current list).".format(self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
+        logger.debug("station={} Playing {} - {} ({} songs remaining in current list).".format(self.formated_station_name, self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
         self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()) + delay
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(self.formated_station_name, self._current_song.path).encode())
