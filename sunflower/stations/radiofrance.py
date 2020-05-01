@@ -218,7 +218,7 @@ class RadioFranceStation(URLStation):
                     "thumbnail_src": thumbnail_src,
                 })
 
-            if parent_title.lower().strip() != show_title.lower().strip():
+            if parent_title and parent_title.lower().strip() != show_title.lower().strip():
                 metadata.update({"parent_title": parent_title})
 
             # on RENVOIE alors les métadonnées
