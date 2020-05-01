@@ -158,7 +158,7 @@ class RadioFranceStation(URLStation):
                 # ici, on réupère le titre du parent pour l'ajouter dans les métadonnées
                 parent = first_show_in_grid
                 if parent.get("diffusion") is not None:
-                    parent_title = parent["show"]["title"]
+                    parent_title = parent["diffusion"]["show"]["title"]
                 else:
                     parent_title = parent["title"]
                 metadata["parent_title"] = parent_title
