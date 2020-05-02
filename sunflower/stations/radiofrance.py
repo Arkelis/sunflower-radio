@@ -281,19 +281,6 @@ class RadioFranceStation(URLStation):
         - dict representing a step
         - end timestamp
         """
-        # cas d'un unique enfant
-        if len(children) == 1:
-            child = children[0]
-            # dans le cas où l'enfant a un sous-objet diffusion
-            if child.get("diffusion") is not None:
-                return child, parent["end"]
-            # sinon on prend le sous-objet diffusion du parent
-            elif parent.get("diffusion") is not None:
-                return parent, parent["end"]
-            # si aucun n'a de sous-objet diffusion on envoie tout de même l'enfant
-            else:
-                return child, parent["end"]
-
         now = int(datetime.now().timestamp())
 
         # on initialise l'enfant suivant (par défaut le dernier)
