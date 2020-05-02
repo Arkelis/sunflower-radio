@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from datetime import datetime, timedelta
 
 import requests
@@ -32,9 +33,11 @@ RADIO_FRANCE_GRID_TEMPLATE = """
                     start
                     end
                     diffusion {{
+                        url
                         title
                         standFirst
                         show {{
+                            url
                             podcast {{
                                 itunes
                             }}
@@ -58,9 +61,11 @@ RADIO_FRANCE_GRID_TEMPLATE = """
                     start
                     end
                     diffusion {{
+                        url
                         title
                         standFirst
                         show {{
+                            url
                             podcast {{
                                 itunes
                             }}
@@ -93,7 +98,7 @@ class RadioFranceStation(URLStation):
                 raise RuntimeError("No token for Radio France API found.")
         return os.getenv("TOKEN")
 
-    def format_info(self, metadata) -> CardMetadata:
+    def format_info(self, metadata, logger) -> CardMetadata:
         assert metadata["type"] == MetadataType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
         parent_title = metadata.get("parent_title")
         if metadata.get("diffusion_title") is None:
@@ -113,7 +118,7 @@ class RadioFranceStation(URLStation):
             current_broadcast_summary=metadata.get("diffusion_summary") or "",
         )
 
-    def get_metadata(self, current_metadata):
+    def get_metadata(self, current_metadata, logger):
         fetched_data = self._fetch_metadata()
         if "API Timeout" in fetched_data.values():
             return self._get_error_metadata("API Timeout", 90) 
@@ -161,7 +166,7 @@ class RadioFranceStation(URLStation):
                 if parent.get("diffusion") is None:
                     parent_title = parent["title"]
                 else:
-                    parent_title = parent["diffusion"]["title"]
+                    parent_title = parent["diffusion"]["show"]["title"]
             else:
                 # sinon on garde le premier élément de la grille récupérée
                 current_show, current_show_end = first_show_in_grid, int(first_show_in_grid["end"])
@@ -224,6 +229,8 @@ class RadioFranceStation(URLStation):
             # on RENVOIE alors les métadonnées
             return metadata
         except KeyError as err:
+            logger.error(traceback.format_exc())
+            logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
     
 

@@ -53,7 +53,8 @@ class Watcher(RedisMixin):
                     channels_using_station.append(channel)
             channels_using[station] = channels_using_station
         return {
-            "channels_using": channels_using
+            "channels_using": channels_using,
+            "now": datetime.now(),
         }
 
     def run(self):

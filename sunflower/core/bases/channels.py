@@ -211,7 +211,7 @@ class Channel(RedisMixin):
             current_broadcast_summary="",
         )
 
-    def get_current_broadcast_info(self, metadata) -> CardMetadata:
+    def get_current_broadcast_info(self, metadata, logger) -> CardMetadata:
         """Return data for displaying broadcast info in player.
 
         This is for data display in player client. This method uses format_info()
@@ -222,9 +222,9 @@ class Channel(RedisMixin):
             return self.neutral_card_metadata
         if metadata_type == MetadataType.WAITING_FOR_FOLLOWING:
             return self.waiting_for_following_card_metadata
-        return self.current_station.format_info(metadata)
+        return self.current_station.format_info(metadata, logger)
 
-    def get_current_broadcast_metadata(self, current_metadata):
+    def get_current_broadcast_metadata(self, current_metadata, logger):
         """Get metadata of current broadcasted programm for current station.
 
         Param: current_metadata: current metadata stored in Redis
@@ -235,7 +235,7 @@ class Channel(RedisMixin):
         """
         if current_metadata is None:
             current_metadata = {}
-        return self.current_station.get_metadata(current_metadata)
+        return self.current_station.get_metadata(current_metadata, logger)
 
     def process(self, logger, **kwargs):
         """If needed, update metadata.
@@ -261,8 +261,8 @@ class Channel(RedisMixin):
             return False
 
 
-        metadata = self.get_current_broadcast_metadata(current_metadata)
-        info = self.get_current_broadcast_info(metadata)
+        metadata = self.get_current_broadcast_metadata(current_metadata, logger)
+        info = self.get_current_broadcast_info(metadata, logger)
 
         for handler in self.handlers:
             metadata, info = handler.process(metadata, info, logger)

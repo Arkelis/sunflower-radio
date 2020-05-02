@@ -40,7 +40,7 @@ class RTL2(URLStation):
             "show_end": end_of_show_timestamp,
         }
 
-    def format_info(self, metadata) -> CardMetadata:
+    def format_info(self, metadata, logger) -> CardMetadata:
         current_broadcast_title = {
             MetadataType.ADS: "Publicité",
             MetadataType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
@@ -96,7 +96,7 @@ class RTL2(URLStation):
         else:
             return self._fetch_song_metadata()
 
-    def get_metadata(self, current_metadata):
+    def get_metadata(self, current_metadata, logger):
         """Returns mapping containing info about current song.
 
         If music: {"type": MetadataType.MUSIC, "artist": artist, "title": title}

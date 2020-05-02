@@ -64,7 +64,7 @@ class Station(HTMLMixin):
             "thumbnail_src": self.station_thumbnail,
         }
 
-    def get_metadata(self, current_metadata):
+    def get_metadata(self, current_metadata, logger):
         """Return mapping containing new metadata about current broadcast.
         
         current_metadata is metadata stored in Redis and known by
@@ -81,7 +81,7 @@ class Station(HTMLMixin):
         and other metadata fields required by format_info().
         """
 
-    def format_info(self, metadata) -> CardMetadata:
+    def format_info(self, metadata, logger) -> CardMetadata:
         """Format metadata for displaying in the card.
 
         Return a CardMetadata namedtuple (see sunflower.core.types).

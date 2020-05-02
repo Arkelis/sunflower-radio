@@ -50,7 +50,7 @@ class PycolorePlaylistStation(DynamicStation):
         session.write("exit\n".encode())
         session.close()
 
-    def get_metadata(self, current_metadata):
+    def get_metadata(self, current_metadata, logger):
         if self._current_song is None:
             return {
                 "station": self.station_name,
@@ -72,7 +72,7 @@ class PycolorePlaylistStation(DynamicStation):
             "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}.".format(artists_str)
         }
 
-    def format_info(self, metadata):
+    def format_info(self, metadata, logger):
         current_broadcast_title = self._format_html_anchor_element(metadata.get("link"), "{} • {}".format(metadata["artist"], metadata["title"]))
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
