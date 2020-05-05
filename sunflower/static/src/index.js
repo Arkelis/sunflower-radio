@@ -139,6 +139,7 @@ function updateCardBody() {
             // update divs to update and thumbnail src
             setTimeout(() => {
                 document.getElementById("current-thumbnail").attributes.src.value = data.current_thumbnail
+                toggleCenterShowTitle()
                 updateCardInfos(divsToUpdate)
             }, divsToUpdate.length*100 + 200)
         })
@@ -221,6 +222,7 @@ document.querySelector("#current-thumbnail").onclick = () => {
     
     setTimeout(() => {
         document.querySelector("body").classList.toggle("big-cover");
+        toggleCenterShowTitle()
         thumbnailContainer.flip()
     }, (window.innerWidth > 480 ? 400 : 0) + detailDivsToMove*100);
     
@@ -239,6 +241,24 @@ document.querySelector("#current-thumbnail").onclick = () => {
     }
 }
 
+/**
+ * If big cover is enabled, check if show title has to be centered.
+ * If so, add a class `text-center` to it. Else, remove it.
+ * 
+ * If big cover is disabled, remove `text-center` class.
+ */
+function toggleCenterShowTitle() {
+    if (!document.querySelector("body").classList.contains("big-cover")) {
+        document.querySelector("#current-show-title").classList.remove("text-center")
+        return
+    }
+
+    if (document.querySelector("#current-broadcast-summary").innerHTML == "") {
+        document.querySelector("#current-show-title").classList.add("text-center")
+    } else {
+        document.querySelector("#current-show-title").classList.remove("text-center")
+    }
+}
 
 
 /* -------------------------------- C O O K I E   C O N S E N T -------------------------------- */
