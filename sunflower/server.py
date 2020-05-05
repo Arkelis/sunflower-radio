@@ -20,17 +20,12 @@ app.json_encoder = MetadataEncoder
 
 @app.route("/")
 def index():
-    print(request.cookies)
     last_visited_channel = request.cookies.get("lastVisitedChannel")
-    print(last_visited_channel)
-    if last_visited_channel is not None:
-        return redirect(last_visited_channel)
-    return redirect(url_for("channel", channel="tournesol"))
+    return redirect(last_visited_channel or url_for("channel", channel="tournesol"))
 
 @app.route("/<string:channel>/")
 @get_channel_or_404
 def channel(channel):
-    print(request.cookies)
     context = {
         "card_info": channel.current_broadcast_info,
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
