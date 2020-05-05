@@ -2,11 +2,21 @@
 # bases.py contains base classes
 
 from datetime import datetime, timedelta
+from logging import Logger
+from typing import Dict
 
-from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
 from sunflower.core.mixins import HTMLMixin
+from sunflower.core.decorators import classproperty
 
 STATIONS_INSTANCES = dict()
+
+
+# class StationMeta(type):
+#     @cached_property
+#     def formated_station_name(cls) -> str:
+#         return cls.station_name.lower().replace(" ", "")
+
 
 class Station(HTMLMixin):
     """Base station.
@@ -17,6 +27,21 @@ class Station(HTMLMixin):
 
     Station classes are singletons.
     """
+
+    station_name: str
+    station_thumbnail: str
+    station_website_url: str
+
+    @classproperty
+    def formated_station_name(cls) -> str:
+        """Return formated station name.
+
+        Formated name means name in lower case and with all spaces removed.
+        Example : "France Inter" becomes "franceinter".
+
+        The parameter `cls` refers to the class and not to the instance.
+        """
+        return cls.station_name.lower().replace(" ", "")
 
     def __new__(cls):
         """Create new instance or return previously created one.
@@ -30,14 +55,6 @@ class Station(HTMLMixin):
             instance_of_dict = STATIONS_INSTANCES[cls.__name__] = super().__new__(cls)
             instance_of_dict.__setup__()
         return instance_of_dict
-
-    station_name = str()
-    station_thumbnail = str()
-    station_website_url = str()
-
-    @property
-    def formated_station_name(self):
-        return self.station_name.lower().replace(" ", "")
 
     @property
     def html_formated_station_name(self):
@@ -64,7 +81,7 @@ class Station(HTMLMixin):
             "thumbnail_src": self.station_thumbnail,
         }
 
-    def get_metadata(self, current_metadata, logger):
+    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         """Return mapping containing new metadata about current broadcast.
         
         current_metadata is metadata stored in Redis and known by
@@ -103,6 +120,7 @@ class DynamicStation(Station):
     
     Must implement process() method.
     """
+    endpoint: str # for api
 
     def process(self, logger, channels_using, **kwargs):
         raise NotImplementedError("process() must be implemented")
@@ -114,8 +132,8 @@ class URLStation(Station):
     URLStation object can have station_slogan attribute that can be
     used when no metadata is provided at a given time.
     """
-    station_url = str()
-    station_slogan = str()
+    station_url: str
+    station_slogan: str
 
     def __setup__(self):
         if self.station_url == "":
@@ -123,5 +141,5 @@ class URLStation(Station):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        formated_name = cls.station_name.lower().replace(" ", "")
+        formated_name = cls.formated_station_name
         return '{} = mksafe(input.http("{}"))\n'.format(formated_name, cls.station_url)

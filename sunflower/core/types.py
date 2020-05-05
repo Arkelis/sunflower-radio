@@ -3,6 +3,12 @@
 import json
 from collections import namedtuple
 from enum import Enum
+from typing import TypeVar, Dict
+
+# Types
+
+T = TypeVar("T")
+MetadataDict = Dict[str, str]
 
 # Custom datamodel
 

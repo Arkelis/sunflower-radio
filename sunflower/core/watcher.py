@@ -4,9 +4,11 @@
 import traceback
 from datetime import datetime
 from time import sleep
+from typing import Dict, List
 
 from sunflower.core.mixins import RedisMixin
-from sunflower.core.bases import DynamicStation
+from sunflower.core.bases import DynamicStation, Station, Channel
+from sunflower.core.types import T
 
 class Watcher(RedisMixin):
 
@@ -37,21 +39,19 @@ class Watcher(RedisMixin):
 
 
     @property
-    def context(self):
+    def context(self) -> Dict[str, T]:
         """return context dict containing data needed for channels and station to process.
         
         Current defined keys:
-        - channels_using: a dict containing key=station, value=channel object where station is currently
-                          on air on this channel. This key allows station to know on which channels they
-                          are currently used.
+        - channels_using (Dict[Station, List[Channel]]): 
+            a dict containing key=station, value=list of channels objects where station is currently
+            on air on these channels. This key allows station to know on which channels they
+            are currently used.
         """
-        channels_using = {}
-        for station in self.stations:
-            channels_using_station = []
-            for channel in self.channels:
-                if channel.current_station is station:
-                    channels_using_station.append(channel)
-            channels_using[station] = channels_using_station
+        channels_using: Dict[Station, List[Channel]] = {
+            station: [channel for channel in self.channels if channel.current_station is station]
+            for station in self.stations
+        }
         return {
             "channels_using": channels_using,
             "now": datetime.now(),

@@ -2,13 +2,15 @@ import json
 import os
 import traceback
 from datetime import datetime, timedelta
+from logging import Logger
+from typing import Dict
 
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
-from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
@@ -87,7 +89,7 @@ RADIO_FRANCE_GRID_TEMPLATE = """
 
 class RadioFranceStation(URLStation):
     API_RATE_LIMIT_EXCEEDED = 1
-    _station_api_name = str()
+    _station_api_name: str
     _grid_template = RADIO_FRANCE_GRID_TEMPLATE
 
     @property
@@ -118,7 +120,7 @@ class RadioFranceStation(URLStation):
             current_broadcast_summary=metadata.get("diffusion_summary") or "",
         )
 
-    def get_metadata(self, current_metadata, logger):
+    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         fetched_data = self._fetch_metadata()
         if "API Timeout" in fetched_data.values():
             return self._get_error_metadata("API Timeout", 90) 

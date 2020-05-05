@@ -10,7 +10,8 @@ from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_song
 class PycolorePlaylistStation(DynamicStation):
     station_name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
-    
+    endpoint = "pycolore"
+
     def __setup__(self):
         self._songs_to_play = []
         self._current_song = None
@@ -104,6 +105,5 @@ class PycolorePlaylistStation(DynamicStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        formated_name = cls.station_name.lower().replace(" ", "")
-        string = '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(formated_name)
+        string = '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formated_station_name)
         return string
