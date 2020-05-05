@@ -40,11 +40,13 @@ def channel(channel):
 @app.route("/api/")
 def api_root():
     return jsonify({
-        "available channels": {endpoint: url_for("get_channel_links", channel=endpoint, _external=True) 
-                               for endpoint in settings.CHANNELS}
+        "channels": {endpoint: url_for("get_channel_links", channel=endpoint, _external=True) 
+                     for endpoint in settings.CHANNELS},
+        "stations": {endpoint: url_for("get_station_links", station=endpoint, _external=True)
+                     for endpoint in settings.STATIONS},
     })
 
-@app.route("/api/<string:channel>/")
+@app.route("/api/channels/<string:channel>/")
 @get_channel_or_404
 def get_channel_links(channel):
     return jsonify({
@@ -52,6 +54,15 @@ def get_channel_links(channel):
         "card_formated_metadata": url_for("update_broadcast_info", channel=channel.endpoint, _external=True),
         "metadata_update_events": url_for("update_broadcast_info_stream", channel=channel.endpoint, _external=True),
         "raw_metadata": url_for("get_channel_info", channel=channel.endpoint, _external=True),
+    })
+
+@app.route("/api/stations/<string:station>/")
+def get_station_links(station):
+    print(station)
+    if station != "pycolore":
+        abort(status=404)
+    return jsonify({
+        "playlist": "Rien pour l'instant"
     })
 
 @app.route("/api/<string:channel>/metadata/")
