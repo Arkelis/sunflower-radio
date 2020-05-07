@@ -8,7 +8,6 @@ from flask import (Flask, Response, abort, jsonify, redirect, render_template,
 from flask_cors import CORS, cross_origin
 
 from sunflower import settings
-from sunflower.channels import Channel
 from sunflower.core.types import MetadataEncoder
 from sunflower.utils.functions import get_channel_or_404
 
@@ -27,7 +26,6 @@ def index():
 @get_channel_or_404
 def channel(channel):
     context = {
-        "card_info": channel.current_broadcast_info,
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
         "update_url": url_for("update_broadcast_info", channel=channel.endpoint),
         "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
@@ -68,12 +66,12 @@ def get_station_links(station):
 @app.route("/api/<string:channel>/metadata/")
 @get_channel_or_404
 def get_channel_info(channel):
-    return jsonify(channel.current_broadcast_metadata)
+    return jsonify(channel.metadata)
 
 @app.route("/api/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
-    return jsonify(channel.current_broadcast_info._asdict())
+    return jsonify(channel.info)
 
 @app.route("/api/<string:channel>/events/")
 @get_channel_or_404
