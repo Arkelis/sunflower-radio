@@ -4,11 +4,10 @@
 import traceback
 from datetime import datetime
 from time import sleep
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.bases import DynamicStation, Station, Channel
-from sunflower.core.types import T
 
 class Watcher(RedisMixin):
 
@@ -39,7 +38,7 @@ class Watcher(RedisMixin):
 
 
     @property
-    def context(self) -> Dict[str, T]:
+    def context(self) -> Dict[str, Any]:
         """return context dict containing data needed for channels and station to process.
         
         Current defined keys:

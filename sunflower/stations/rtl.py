@@ -96,7 +96,7 @@ class RTL2(URLStation):
         else:
             return self._fetch_song_metadata()
 
-    def get_metadata(self, current_metadata, logger):
+    def get_metadata(self, current_metadata, logger, dt):
         """Returns mapping containing info about current song.
 
         If music: {"type": MetadataType.MUSIC, "artist": artist, "title": title}

@@ -18,3 +18,9 @@ node_modules
 sunflower/static/dist/index.*
 .parcel-cache
 .cache
+
+# mypy
+.mypy_cache
+
+# tests
+.pytest_cache
