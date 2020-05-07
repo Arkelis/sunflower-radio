@@ -202,6 +202,7 @@ class RadioFranceStation(URLStation):
             # = un "numéro" de l'émission), éventuellement un résumé et une miniature
             # spéciale (on la récupère en parsant la page de podcast)
             else:
+                # métadonnées de diffusion
                 # cas où seul parent_diffusion n'est pas nul
                 if diffusion is None:
                     # on garde le titre du step comme titre de diffusion
@@ -213,14 +214,20 @@ class RadioFranceStation(URLStation):
                 diffusion_summary = diffusion["standFirst"]
                 if not diffusion_summary or diffusion_summary in (".", "*"):
                     diffusion_summary = ""
-                podcast_link = diffusion["show"]["podcast"]["itunes"]
+                
+                # métadonnées d'émission (show)
+                show = diffusion.get("show", parent_diffusion.get("show", {}))
+                podcast_link = show.get("podcast", {}).get("itunes")
                 thumbnail_src = self._fetch_cover(podcast_link)
-                show_title = diffusion["show"]["title"]
+                show_title = show.get("title", "")
+                show_url = show.get("url", "")
+
+                # update metadata dict
                 metadata.update({
                     "show_title": show_title,
-                    "show_url": diffusion["show"]["url"] or "",
+                    "show_url": show_url,
                     "diffusion_title": diffusion_title,
-                    "diffusion_url": diffusion["url"] or "",
+                    "diffusion_url": diffusion.get("url", ""),
                     "diffusion_summary": diffusion_summary.strip(),
                     "thumbnail_src": thumbnail_src,
                 })
