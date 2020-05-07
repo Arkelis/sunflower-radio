@@ -60,20 +60,20 @@ def get_station_links(station):
     if station != "pycolore":
         abort(status=404)
     return jsonify({
-        "playlist": "Rien pour l'instant"
+        "playlist": "Soon available"
     })
 
-@app.route("/api/<string:channel>/metadata/")
+@app.route("/api/channels/<string:channel>/metadata/")
 @get_channel_or_404
 def get_channel_info(channel):
     return jsonify(channel.metadata)
 
-@app.route("/api/<string:channel>/update/")
+@app.route("/api/channels/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
     return jsonify(channel.info)
 
-@app.route("/api/<string:channel>/events/")
+@app.route("/api/channels/<string:channel>/events/")
 @get_channel_or_404
 def update_broadcast_info_stream(channel):
     def updates_generator():
