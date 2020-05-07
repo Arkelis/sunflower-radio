@@ -15,13 +15,20 @@ class RedisMixin:
     to access.
     """
 
-    REDIS_KEYS = [
+    # channels keys and stations keys
+    REDIS_KEYS = [ 
         item 
-        for name in settings.CHANNELS 
-        for item in ("sunflower:{}:metadata".format(name), "sunflower:{}:info".format(name))
+        for name in settings.CHANNELS
+        for item in (f"sunflower:channel:{name}:metadata", f"sunflower:channel:{name}:info")
+    ] + [
+        f"sunflower:station:{name}:data"
+        for name in settings.STATIONS
     ]
     
-    REDIS_CHANNELS = {name: "sunflower:" + name for name in settings.CHANNELS}
+    # keep a dict containing name of Redis channels for pubsub
+    REDIS_CHANNELS = {name: "sunflower:channel:" + name for name in settings.CHANNELS}
+
+    __slots__ = ("_redis",)
 
     def __init__(self, *args, **kwargs):
         self._redis = redis.Redis()

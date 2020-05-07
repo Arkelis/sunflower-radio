@@ -80,7 +80,7 @@ def update_broadcast_info(channel):
 def update_broadcast_info_stream(channel):
     def updates_generator():
         pubsub = redis.Redis().pubsub()
-        pubsub.subscribe("sunflower:" + channel.endpoint)
+        pubsub.subscribe("sunflower:channel:" + channel.endpoint)
         for message in pubsub.listen():
             data = message.get("data")
             if not isinstance(data, type(b"")):

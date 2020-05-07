@@ -1,10 +1,12 @@
 from datetime import datetime, time, timedelta
+from logging import Logger
 
 from sunflower import settings
+from sunflower.core.bases.stations import Station
+from sunflower.core.decorators import cached_property
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
                                   as_metadata_type)
-from sunflower.core.decorators import cached_property
 
 CHANNELS = dict()
 
@@ -42,13 +44,13 @@ class Channel(RedisMixin):
             self._current_station_instance = None
             self._following_station_instance = None
 
-        self.redis_metadata_key = "sunflower:" + self.endpoint + ":metadata"
-        self.redis_info_key = "sunflower:" + self.endpoint + ":info"
+        self.redis_metadata_key = "sunflower:channel:" + self.endpoint + ":metadata"
+        self.redis_info_key = "sunflower:channel:" + self.endpoint + ":info"
 
         CHANNELS[self.endpoint] = self
 
     @cached_property
-    def stations(self) -> set:
+    def stations(self) -> tuple:
         """Cached property returning list of stations used by channel."""
         stations = set()
         for l in self.timetable.values():
@@ -148,13 +150,13 @@ class Channel(RedisMixin):
             self._following_station_instance = FollowingStationClass()
 
     @property
-    def current_station(self):
+    def current_station(self) -> Station:
         """Return Station object currently on air."""
         self._update_station_instances()
         return self._current_station_instance
     
     @property
-    def following_station(self):
+    def following_station(self) -> Station:
         """Return next Station object to be on air."""
         self._update_station_instances()
         return self._following_station_instance
@@ -224,7 +226,7 @@ class Channel(RedisMixin):
             return self.waiting_for_following_card_metadata
         return self.current_station.format_info(metadata, logger)
 
-    def get_current_broadcast_metadata(self, current_metadata, logger):
+    def get_current_broadcast_metadata(self, current_metadata, logger: Logger, dt: datetime):
         """Get metadata of current broadcasted programm for current station.
 
         Param: current_metadata: current metadata stored in Redis
@@ -235,9 +237,9 @@ class Channel(RedisMixin):
         """
         if current_metadata is None:
             current_metadata = {}
-        return self.current_station.get_metadata(current_metadata, logger)
+        return self.current_station.get_metadata(current_metadata, logger, dt)
 
-    def process(self, logger, **kwargs):
+    def process(self, logger, now, **kwargs):
         """If needed, update metadata.
 
         - Check if metadata needs to be updated
@@ -261,7 +263,7 @@ class Channel(RedisMixin):
             return False
 
 
-        metadata = self.get_current_broadcast_metadata(current_metadata, logger)
+        metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
         info = self.get_current_broadcast_info(metadata, logger)
 
         for handler in self.handlers:

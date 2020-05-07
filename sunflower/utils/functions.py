@@ -3,6 +3,7 @@
 import functools
 import glob
 import json
+from typing import List
 
 import random
 from collections import namedtuple
@@ -10,30 +11,34 @@ from collections import namedtuple
 import mutagen
 import requests
 from flask import abort
+import redis
 
 from sunflower import settings
 from sunflower.core.types import Song
+from sunflower.core.types import ChannelView
 
 # Custom views
 
+r = redis.Redis()
+
 def get_channel_or_404(view_function):
     @functools.wraps(view_function)
-    def wrapper(channel):
+    def wrapper(channel: str):
         if channel not in settings.CHANNELS:
             abort(404)
-        from sunflower.core.bases.channels import CHANNELS
-        return view_function(channel=CHANNELS[channel])
+        channel_view = ChannelView(channel)
+        return view_function(channel_view)
     return wrapper
 
 # utils functions
 
-def prevent_consecutive_artists(songs_list):
+def prevent_consecutive_artists(songs_list: List[Song]) -> List[Song]:
     """Make sure two consecutive songs never have the same artist.
     
     Parameter: songs_list, a list of sunflower.core.types.Song objects.
     Return: a new list (this function doesnt mutate input list, it creates a copy)
     """
-    songs = list(songs_list)
+    songs: List[Song] = list(songs_list)
     number_of_songs = len(songs_list)
     for i in range(number_of_songs-1):
         j = 2
@@ -50,12 +55,12 @@ def prevent_consecutive_artists(songs_list):
             n, j = n + 1, j + 1
     return songs
 
-def parse_songs(glob_pattern):
+def parse_songs(glob_pattern: str) -> List[Song]:
     """Parse songs matching glob_pattern and return a list of Song objects.
     
     Song object is a namedtuple defined in sunflower.core.types module.
     """
-    songs = []
+    songs: List[Song] = []
     for path in glob.iglob(glob_pattern):
         file = mutagen.File(path)
         try:

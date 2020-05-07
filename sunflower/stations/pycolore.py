@@ -51,7 +51,7 @@ class PycolorePlaylistStation(DynamicStation):
         session.write("exit\n".encode())
         session.close()
 
-    def get_metadata(self, current_metadata, logger):
+    def get_metadata(self, current_metadata, logger, dt):
         if self._current_song is None:
             return {
                 "station": self.station_name,
