@@ -77,7 +77,7 @@ class RTL2(URLStation):
                 diffusion_type = soup.find_all("tr")[2].find_all("td")[1].text
             except IndexError:
                 previous_url = (
-                    "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[6].attrs["href"]
+                    "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[8].attrs["href"]
                 )
                 rep = requests.get(previous_url, timeout=1)
                 soup = BeautifulSoup(rep.content.decode(), "html.parser")
