@@ -29,7 +29,6 @@ def channel(channel):
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
         "update_url": url_for("update_broadcast_info", channel=channel.endpoint),
         "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
-        "infos_url": url_for("get_channel_info", channel=channel.endpoint),
     }
     return render_template("radio.html", **context)
 
