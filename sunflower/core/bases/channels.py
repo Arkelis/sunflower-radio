@@ -8,9 +8,6 @@ from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
                                   as_metadata_type)
 
-CHANNELS = dict()
-
-
 class Channel(RedisMixin):
     """Base Channel.
 
@@ -46,8 +43,6 @@ class Channel(RedisMixin):
 
         self.redis_metadata_key = "sunflower:channel:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:channel:" + self.endpoint + ":info"
-
-        CHANNELS[self.endpoint] = self
 
     @cached_property
     def stations(self) -> tuple:
