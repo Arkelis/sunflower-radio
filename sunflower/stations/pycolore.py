@@ -21,7 +21,11 @@ class PycolorePlaylistStation(DynamicStation):
     
     @playlist.setter
     def playlist(self, songs: List[Song]):
-        self.set_to_redis("sunflower:station:pycolore:data", {"playlist": [song._asdict() for song in songs]})
+        playlist = [
+            {"artist": song.artist, "title": song.title, "album": song.album}
+            for song in songs
+        ]
+        self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist})
 
     def __setup__(self):
         self._songs_to_play: List[Song] = []
