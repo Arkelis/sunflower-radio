@@ -72,17 +72,17 @@ def start_liquidsoap(restart=False):
         )
 
 
-def start_watcher(restart=False):
+def start_scheduler(restart=False):
     if restart:
-        stop_watcher()
-    click.secho("Starting watcher", bold=True, fg="cyan")
-    os.system("python sunflower/watcher.py")
-    success_cli("Watcher started.")
+        stop_scheduler()
+    click.secho("Starting scheduler", bold=True, fg="cyan")
+    os.system("python sunflower/scheduler.py")
+    success_cli("Scheduler started.")
 
 
-def stop_watcher():
-    click.secho("Killing current watcher", bold=True, fg="cyan")
-    os.system("kill $(cat /tmp/sunflower-radio-watcher.pid)")
+def stop_scheduler():
+    click.secho("Killing current scheduler", bold=True, fg="cyan")
+    os.system("kill $(cat /tmp/sunflower-radio-scheduler.pid)")
 
 
 def stop_liquidsoap():

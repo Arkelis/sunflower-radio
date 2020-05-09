@@ -12,7 +12,7 @@ Une webradio est composé de divers éléments :
 
 Radio Tournesol s'insère dans deux de ces éléments :
 
-- l'encodage : le programme génère, à partir d'un planning, la configuration pour liquidsoap qui changer de chaîne en fonction des horaires. De plus un *watcher* surveille les publicités et demande à liquidsoap de jouer de la musique à la place de la station s'il en détecte ;
+- l'encodage : le programme génère, à partir d'un planning, la configuration pour liquidsoap qui changer de chaîne en fonction des horaires. De plus un *scheduler* surveille les publicités et demande à liquidsoap de jouer de la musique à la place de la station s'il en détecte ;
 - le client de lecture : Radio Tournesol propose sa propre interface web ainsi qu'une API exposant des données.
 
 ## Fonctionnement de Radio Tournesol
@@ -74,9 +74,9 @@ tournesol = Channel(
 
 Une station représente une station jouée sur une plage horaire. Elle doit implémenter deux méthodes (`get_metadata()` et `format_info()`) pour alimenter la radio et le serveur Flask.
 
-### Watcher
+### Scheduler
 
-Les métadonnées sont stockées sur le serveur dans la mémoire grâce à Redis. Elles sont récupérées par un watcher lancé en démon grâce à Daemonize.
+Les métadonnées sont stockées sur le serveur dans la mémoire grâce à Redis. Elles sont récupérées par un scheduler lancé en démon grâce à Daemonize.
 
 ## Installation
 

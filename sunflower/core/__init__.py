@@ -6,4 +6,4 @@
 - Core functions.
 - Mixin.
 - Custom types (for example named tuples).
-- Watcher class used by sunflower for managing updating operations."""
+- Scheduler class used by sunflower for managing updating operations."""

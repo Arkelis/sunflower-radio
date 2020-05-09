@@ -5,8 +5,8 @@ from sunflower.utils.cli import (
     abort_cli,
     success_cli,
     install_liquidsoap_service,
-    start_watcher,
-    stop_watcher,
+    start_scheduler,
+    stop_scheduler,
     stop_liquidsoap,
 )
 from sunflower.core.functions import write_liquidsoap_config
@@ -24,22 +24,22 @@ def sunflower():
 def start_or_restart_component(component, restart=False):
     if component in ("radio", "all"):
         start_liquidsoap(restart)
-    if component in ("watcher", "all"):
-        start_watcher(restart)
+    if component in ("scheduler", "all"):
+        start_scheduler(restart)
     success_cli()
 
 
 @sunflower.command()
 @click.argument("component")
 def start(component):
-    """Start sunflower component(s). Possible components: watcher / radio / all (bot)."""
+    """Start sunflower component(s). Possible components: scheduler / radio / all (bot)."""
     start_or_restart_component(component)
 
 
 @sunflower.command()
 @click.argument("component")
 def restart(component):
-    """Restart sunflower component(s). Possible components: watcher / radio / all (both)."""
+    """Restart sunflower component(s). Possible components: scheduler / radio / all (both)."""
     start_or_restart_component(component, restart=True)
 
 
@@ -48,8 +48,8 @@ def restart(component):
 def stop(component):
     if component in ("radio", "all"):
         stop_liquidsoap()
-    if component in ("watcher", "all"):
-        stop_watcher()
+    if component in ("scheduler", "all"):
+        stop_scheduler()
     success_cli()
 
 

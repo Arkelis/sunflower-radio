@@ -1,5 +1,5 @@
 # This file is part of sunflower package. radio
-# This module contains Watcher class.
+# This module contains Scheduler class.
 
 import traceback
 from datetime import datetime

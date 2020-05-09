@@ -13,7 +13,7 @@ from sunflower import settings
 from sunflower.channels import tournesol, music
 
 
-def launch_watcher():
+def launch_scheduler():
     # instanciate logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
@@ -22,11 +22,11 @@ def launch_watcher():
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
     
     # rotate
-    file_handler = logging.handlers.RotatingFileHandler("/tmp/watcher.log", "a", 1000000, 1)
+    file_handler = logging.handlers.RotatingFileHandler("/tmp/scheduler.log", "a", 1000000, 1)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    logger.info("Starting watcher.")
+    logger.info("Starting scheduler.")
     
     scheduler = Scheduler([music, tournesol], logger)
     
@@ -35,6 +35,6 @@ def launch_watcher():
     scheduler.run()
     
 if __name__ == "__main__":
-    pid = "/tmp/sunflower-radio-watcher.pid"
-    daemon = Daemonize(app="sunflower-radio-watcher", pid=pid, action=launch_watcher)
+    pid = "/tmp/sunflower-radio-scheduler.pid"
+    daemon = Daemonize(app="sunflower-radio-scheduler", pid=pid, action=launch_scheduler)
     daemon.start()
