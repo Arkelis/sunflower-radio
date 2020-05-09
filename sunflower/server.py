@@ -9,7 +9,7 @@ from flask_cors import CORS, cross_origin
 
 from sunflower import settings
 from sunflower.core.types import MetadataEncoder
-from sunflower.utils.functions import get_channel_or_404
+from sunflower.utils.functions import get_channel_or_404, get_station_or_404
 
 app = Flask(__name__, static_url_path="/static", static_folder="static/dist")
 app.json_encoder = MetadataEncoder
@@ -54,13 +54,9 @@ def get_channel_links(channel):
     })
 
 @app.route("/api/stations/<string:station>/")
+@get_station_or_404
 def get_station_links(station):
-    print(station)
-    if station != "pycolore":
-        abort(status=404)
-    return jsonify({
-        "playlist": "Soon available"
-    })
+    return jsonify(station.data)
 
 @app.route("/api/channels/<string:channel>/metadata/")
 @get_channel_or_404

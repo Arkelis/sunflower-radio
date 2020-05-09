@@ -14,11 +14,9 @@ import redis
 
 from sunflower import settings
 from sunflower.core.types import Song
-from sunflower.core.types import ChannelView
+from sunflower.core.types import ChannelView, StationView
 
-# Custom views
-
-r = redis.Redis()
+# flask views decorator
 
 def get_channel_or_404(view_function):
     @functools.wraps(view_function)
@@ -27,6 +25,15 @@ def get_channel_or_404(view_function):
             abort(404)
         channel_view = ChannelView(channel)
         return view_function(channel_view)
+    return wrapper
+
+def get_station_or_404(view_function):
+    @functools.wraps(view_function)
+    def wrapper(station: str):
+        if station not in settings.STATIONS:
+            abort(404)
+        station_view = StationView(station)
+        return view_function(station_view)
     return wrapper
 
 # utils functions
