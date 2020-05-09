@@ -45,11 +45,10 @@ class PycolorePlaylistStation(DynamicStation):
         return None
 
     @property
-    def _artists(self):
+    def _artists(self) -> List[str]:
         """Property returning artists of the 5 next-played songs."""
-        songs = self._songs_to_play
-        artists_list = [self._current_song.artist]
-        for song in songs:
+        artists_list = []
+        for song in self._songs_to_play:
             if song.artist not in artists_list:
                 artists_list.append(song.artist)
             if len(artists_list) == 5:
