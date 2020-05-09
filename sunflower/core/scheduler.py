@@ -6,10 +6,9 @@ from datetime import datetime
 from time import sleep
 from typing import Dict, List, Any
 
-from sunflower.core.mixins import RedisMixin
 from sunflower.core.bases import DynamicStation, Station, Channel
 
-class Watcher(RedisMixin):
+class Scheduler:
 
     def __init__(self, channels, logger):
         self.channels = channels

@@ -1,10 +1,12 @@
 import telnetlib
 from datetime import datetime
+from typing import Tuple, Dict
 
 from sunflower import settings
-from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs
 from sunflower.core.mixins import HTMLMixin
+
 
 class AdsHandler(HTMLMixin):
     def __init__(self, channel):
@@ -18,7 +20,7 @@ class AdsHandler(HTMLMixin):
     def _parse_songs(self):
         return parse_songs(self.glob_pattern)
 
-    def process(self, metadata, info, logger) -> (dict, CardMetadata):
+    def process(self, metadata, info, logger) -> Tuple[MetadataDict, CardMetadata]:
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == MetadataType.ADS:
             logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.formated_station_name} Ads detected.")

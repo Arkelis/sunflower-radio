@@ -9,7 +9,6 @@ from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
 from sunflower.core.mixins import HTMLMixin
 from sunflower.core.decorators import classproperty
 
-STATIONS_INSTANCES = dict()
 
 
 class Station(HTMLMixin):
@@ -25,6 +24,7 @@ class Station(HTMLMixin):
     station_name: str
     station_thumbnail: str
     station_website_url: str = ""
+    station_slogan: str = ''
 
     @classproperty
     def formated_station_name(cls) -> str:
@@ -107,6 +107,9 @@ class Station(HTMLMixin):
     @classmethod
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
+
+
+STATIONS_INSTANCES: Dict[str, Station] = {}
 
 
 class DynamicStation(Station):

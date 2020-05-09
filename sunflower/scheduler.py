@@ -8,7 +8,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from daemonize import Daemonize
-from sunflower.core.watcher import Watcher
+from sunflower.core.scheduler import Scheduler
 from sunflower import settings
 from sunflower.channels import tournesol, music
 
@@ -28,11 +28,11 @@ def launch_watcher():
     logger.addHandler(file_handler)
     logger.info("Starting watcher.")
     
-    watcher = Watcher([music, tournesol], logger)
+    scheduler = Scheduler([music, tournesol], logger)
     
-    logger.info("Watcher instanciated")
+    logger.info("Scheduler instanciated")
     
-    watcher.run()
+    scheduler.run()
     
 if __name__ == "__main__":
     pid = "/tmp/sunflower-radio-watcher.pid"
