@@ -70,7 +70,7 @@ class PycolorePlaylistStation(DynamicStation):
             "link": link,
             "end": self._current_song_end,
             "show": "La playlist Pycolore",
-            "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. Au menu : {}.".format(artists_str)
+            "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : {}.".format(artists_str)
         }
 
     def format_info(self, metadata, logger):
