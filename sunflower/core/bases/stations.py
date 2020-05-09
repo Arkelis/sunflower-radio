@@ -12,12 +12,6 @@ from sunflower.core.decorators import classproperty
 STATIONS_INSTANCES = dict()
 
 
-# class StationMeta(type):
-#     @cached_property
-#     def formated_station_name(cls) -> str:
-#         return cls.station_name.lower().replace(" ", "")
-
-
 class Station(HTMLMixin):
     """Base station.
 
@@ -30,7 +24,7 @@ class Station(HTMLMixin):
 
     station_name: str
     station_thumbnail: str
-    station_website_url: str
+    station_website_url: str = ""
 
     @classproperty
     def formated_station_name(cls) -> str:
@@ -124,6 +118,7 @@ class DynamicStation(Station):
 
     def process(self, logger, channels_using, **kwargs):
         raise NotImplementedError("process() must be implemented")
+
 
 class URLStation(Station):
     """Base class for external stations (basically relayed stream).
