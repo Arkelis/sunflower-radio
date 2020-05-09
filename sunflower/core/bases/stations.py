@@ -5,10 +5,9 @@ from datetime import datetime, timedelta
 from logging import Logger
 from typing import Dict
 
-from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
-from sunflower.core.mixins import HTMLMixin
 from sunflower.core.decorators import classproperty
-
+from sunflower.core.mixins import HTMLMixin, RedisMixin
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
 
 
 class Station(HTMLMixin):
@@ -112,7 +111,7 @@ class Station(HTMLMixin):
 STATIONS_INSTANCES: Dict[str, Station] = {}
 
 
-class DynamicStation(Station):
+class DynamicStation(Station, RedisMixin):
     """Base class for internally managed stations.
     
     Must implement process() method.

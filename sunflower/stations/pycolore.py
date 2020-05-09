@@ -1,9 +1,11 @@
 import telnetlib
 from datetime import date, datetime, time, timedelta
+from typing import Iterable, Optional, List, Dict, Any
+import random
 
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
-from sunflower.core.types import CardMetadata, MetadataType
+from sunflower.core.types import CardMetadata, MetadataType, Song
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
@@ -12,15 +14,25 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
 
+    @property
+    def playlist(self) -> List[Song]:
+        songs: List[Dict[str, Any]] = self.get_from_redis("sunflower:stations:pycolore:data")["playlist"]
+        return [Song(**mapping) for mapping in songs]
+    
+    @playlist.setter
+    def playlist(self, songs: List[Song]):
+        self.set_to_redis("sunflower:stations:pycolore:data", {"playlist": [song._asdict() for song in songs]})
+
     def __setup__(self):
-        self._songs_to_play = []
-        self._current_song = None
-        self._current_song_end = 0
-        self._end_of_use = datetime.now()
+        self._songs_to_play: List[Song] = []
+        self._current_song: Optional[Song] = None
+        self._current_song_end: int = 0
+        self._end_of_use: datetime = datetime.now()
 
     def _get_next_song(self, max_length):
         if len(self._songs_to_play) <= 5:
-            self._songs_to_play += parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+            self.playlist = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+            self._songs_to_play += random.sample(self.playlist, len(self.playlist))
             self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
         for (i, song) in enumerate(self._songs_to_play):
             if song.length < max_length:

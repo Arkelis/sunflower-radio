@@ -97,7 +97,7 @@ class StationView(BaseView):
 
     def __getattr__(self, name):
         if name in self.fields:
-            return self.get_from_redis(f"sunflower:station:{self.endpoint}:{name}", object_hook=as_metadata_type)
+            return self.get_from_redis(f"sunflower:station:{self.endpoint}:{name}")
         return super().__getattr__(name)
 
 
