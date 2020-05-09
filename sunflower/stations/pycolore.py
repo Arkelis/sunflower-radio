@@ -35,8 +35,9 @@ class PycolorePlaylistStation(DynamicStation):
 
     def _get_next_song(self, max_length):
         if len(self._songs_to_play) <= 5:
-            self.playlist = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-            self._songs_to_play += random.sample(self.playlist, len(self.playlist))
+            new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+            self.playlist = new_songs
+            self._songs_to_play += random.sample(new_songs, len(new_songs))
             self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
         for (i, song) in enumerate(self._songs_to_play):
             if song.length < max_length:
