@@ -1,0 +1,33 @@
+#playlist-wrapper {
+    color: white;
+    overflow-x: auto;
+    margin: 5em;
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        text-align: left;
+        
+        td, th {
+            padding: .5em 1.5em 0.5em 0.5em;
+        }
+        
+        :not(thead) tr:hover :not(th) {
+            background-color: #444;
+        }
+
+        th {
+            text-transform: uppercase;
+        }
+
+        td, th {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            border-bottom: solid 1px #666;
+            border-top: solid 1px #666;
+
+        }
+    }
+
+}

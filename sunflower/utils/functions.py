@@ -79,7 +79,7 @@ def parse_songs(glob_pattern: str) -> List[Song]:
             ))
         except KeyError as err:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
-    return sorted(songs, key=lambda song: song.artist + song.title)
+    return sorted(songs, key=lambda song: (song.artist + song.title).lower())
 
 def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None):
     """Get cover from Deezer API.

@@ -95,7 +95,7 @@ class PycolorePlaylistStation(DynamicStation):
             current_thumbnail=metadata["thumbnail_src"],
             current_station=metadata["station"],
             current_broadcast_title=current_broadcast_title,
-            current_show_title=metadata["show"],
+            current_show_title=self._format_html_anchor_element("/playlist/pycolore", metadata["show"]),
             current_broadcast_summary=metadata["summary"],
         )
 

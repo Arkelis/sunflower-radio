@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+from collections import Counter
 
 import redis
 from flask import (Flask, Response, abort, jsonify, redirect, render_template,
@@ -8,7 +9,7 @@ from flask import (Flask, Response, abort, jsonify, redirect, render_template,
 from flask_cors import CORS, cross_origin
 
 from sunflower import settings
-from sunflower.core.types import MetadataEncoder
+from sunflower.core.types import ChannelView, MetadataEncoder, StationView
 from sunflower.utils.functions import get_channel_or_404, get_station_or_404
 
 app = Flask(__name__, static_url_path="/static", static_folder="static/dist")
@@ -24,13 +25,30 @@ def index():
 
 @app.route("/<string:channel>/")
 @get_channel_or_404
-def channel(channel):
+def channel(channel: ChannelView):
     context = {
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
         "update_url": url_for("update_broadcast_info", channel=channel.endpoint),
         "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
     }
     return render_template("radio.html", **context)
+
+@app.route("/playlist/<string:station>")
+@get_station_or_404
+def station_playlist(station: StationView):
+    playlist = station.data["playlist"]
+    artists = Counter([song["artist"] for song in playlist])
+    playlist_dict = {
+        artist: [song for song in playlist if song["artist"] == artist]
+        for artist in artists.keys()
+    }
+    context = {
+        "playlist": playlist_dict,
+        "artists": artists.items(),
+        "name": station.endpoint,
+    }
+    return render_template("playlist.html", **context)
+
 
 # API views
 
