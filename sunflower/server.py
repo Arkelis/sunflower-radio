@@ -27,6 +27,7 @@ def index():
 @get_channel_or_404
 def channel(channel: ChannelView):
     context = {
+        "title": f"Chaîne {channel.endpoint.capitalize()} | {settings.RADIO_NAME}",
         "flux_url": settings.ICECAST_SERVER_URL + channel.endpoint,
         "update_url": url_for("update_broadcast_info", channel=channel.endpoint),
         "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
@@ -43,6 +44,7 @@ def station_playlist(station: StationView):
         for artist in artists.keys()
     }
     context = {
+        "radio_name": settings.RADIO_NAME,
         "playlist": playlist_dict,
         "artists": artists.items(),
         "name": station.endpoint,

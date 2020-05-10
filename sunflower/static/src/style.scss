@@ -15,7 +15,11 @@ body {
     position: relative;
     font-family: "Fira Sans Condensed", sans-serif;
     margin: 0;
-    transition: all .4s ease-in-out;
+}
+
+.body--dark {
+    background-color: #333;;
+    color: white;
 }
 
 nav {

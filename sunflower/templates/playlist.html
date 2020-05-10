@@ -4,29 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Radio Tournesol</title>
+    <title>Playlist de la station {{ name.capitalize() }} | {{ radio_name }}</title>
     <link href="https://fonts.googleapis.com/css?family=Fira+Sans+Condensed:600,400,300|Fira+Sans:200&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" href='{{ url_for("static", filename="index.css", v=1.2) }}'>
 </head>
-<body>
+<body class="body--dark">
     <nav>
         <div id="brand">
-            Radio Pycolore
-        </div>
-        <div class="channels-list-container">
-            <div class="channels-list-head">
-                Changer de chaîne
-            </div>
-            <ul class="channels-list">
-                <li class="hide-channels-list"><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="chevron-down" class="svg-inline--fa fa-chevron-down fa-w-14" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M207.029 381.476L12.686 187.132c-9.373-9.373-9.373-24.569 0-33.941l22.667-22.667c9.357-9.357 24.522-9.375 33.901-.04L224 284.505l154.745-154.021c9.379-9.335 24.544-9.317 33.901.04l22.667 22.667c9.373 9.373 9.373 24.569 0 33.941L240.971 381.476c-9.373 9.372-24.569 9.372-33.942 0z"></path></svg></li>
-                <li><a href="{{ url_for('channel', channel='tournesol') }}">Chaîne Tournesol</a></li>
-                <li><a href="{{ url_for('channel', channel='music') }}">Chaîne Musique</a></li>
-            </ul>
+            <a href="/">Radio Pycolore</a>
         </div>
     </nav>
     <div id="playlist-wrapper">
         <h1>Playlist de la station {{ name.capitalize() }}</h1>
         <table>
+            <colgroup>
+                <col span='1' id="artist-col">
+                <col span='1' id="title-col">
+                <col span='1' id="album-col">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Artiste</th>
@@ -36,8 +31,12 @@
             </thead>
             <tbody>
                 {% for artist, n in artists %}
+                <tr class="artist-row">
+                    <td></td>
+                    <td span="2" class="artist-cell {% if loop.index == 1 %}first-artist{% endif %}">{{ artist }}<td>
+                </tr>
                 <tr>
-                    <th rowspan="{{ n }}" scope="rowgroup">{{ artist }}</th>
+                    <th class="artist-th" rowspan="{{ n }}" scope="rowgroup">{{ artist }}</th>
                     <td>{{ playlist[artist][0].title }}</td>
                     <td>{{ playlist[artist][0].album or "" }}</td>
                 </tr>
