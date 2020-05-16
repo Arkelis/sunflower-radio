@@ -5,7 +5,7 @@ import random
 
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
-from sunflower.core.types import CardMetadata, MetadataType, Song
+from sunflower.core.types import CardMetadata, MetadataType, Song, MetadataDict
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
@@ -14,13 +14,17 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
 
-    @property
-    def playlist(self) -> List[Song]:
-        songs: List[Dict[str, Any]] = self.get_from_redis("sunflower:station:pycolore:data")["playlist"]
-        return [Song(**mapping) for mapping in songs]
+
+    # UNUSED:
+    # for the moment playlist getter is never used, implement it later if needed.
+    # @property
+    # def playlist(self) -> List[Song]:
+    #     songs: List[Dict[str, Any]] = self.get_from_redis("sunflower:station:pycolore:data")["playlist"]
+    #     return [Song(**mapping) for mapping in songs]
     
-    @playlist.setter
-    def playlist(self, songs: List[Song]):
+    # former playlist.setter
+    def persist_playlist(self, songs: List[Song]):
+        """Persist public fields of song objects in current  playlist in redis."""
         playlist = [
             {"artist": song.artist, "title": song.title, "album": song.album}
             for song in songs
@@ -33,10 +37,15 @@ class PycolorePlaylistStation(DynamicStation):
         self._current_song_end: int = 0
         self._end_of_use: datetime = datetime.now()
 
-    def _get_next_song(self, max_length):
+    def _get_next_song(self, max_length: int):
+        """Get next song in current playlist.
+
+        Check if its length is not greater than remaining time befor end of use
+        of this station.
+        """
         if len(self._songs_to_play) <= 5:
             new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-            self.playlist = new_songs
+            self.persist_playlist(new_songs)
             self._songs_to_play += random.sample(new_songs, len(new_songs))
             self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
         for (i, song) in enumerate(self._songs_to_play):
@@ -56,6 +65,11 @@ class PycolorePlaylistStation(DynamicStation):
         return artists_list
         
     def _play(self, delay, max_length, logger):
+        """Play next song in playlist.
+        
+        Call _get_next_song() for getting next song to play.
+        Send a request to liquidsoap telnet server telling it to play the song.
+        """
         self._current_song = self._get_next_song(max_length)
         if self._current_song is None:
             self._current_song_end = int(datetime.now().timestamp()) + max_length
@@ -67,7 +81,7 @@ class PycolorePlaylistStation(DynamicStation):
         session.write("exit\n".encode())
         session.close()
 
-    def get_metadata(self, current_metadata, logger, dt):
+    def get_metadata(self, current_metadata: MetadataDict, logger, dt: datetime):
         if self._current_song is None:
             return {
                 "station": self.station_name,
@@ -100,7 +114,13 @@ class PycolorePlaylistStation(DynamicStation):
         )
 
     def process(self, logger, channels_using, **kwargs):
-        """Play new song if needed."""
+        """Play new song if needed.
+        
+        Compute end of use time of this station.
+        If current song is about to end, prepare and play next song.
+
+        Call _play() to trigger next song.
+        """
         now = datetime.now()
 
         # if station is not used, return
