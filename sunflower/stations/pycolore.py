@@ -25,7 +25,7 @@ class PycolorePlaylistStation(DynamicStation):
             {"artist": song.artist, "title": song.title, "album": song.album}
             for song in songs
         ]
-        self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist})
+        self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist}, expiration_delay=172800) # expiration delay = 48h
 
     def __setup__(self):
         self._songs_to_play: List[Song] = []

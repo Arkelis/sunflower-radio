@@ -2,11 +2,11 @@
 # Mixins
 
 import json
+from typing import Any, Type, Optional
 
 import redis
 
 from sunflower import settings
-
 
 class RedisMixin:
     """Provide a method to access data from redis database.
@@ -45,14 +45,14 @@ class RedisMixin:
             return None
         return json.loads(raw_data.decode(), object_hook=object_hook)
     
-    def set_to_redis(self, key, value, json_encoder_cls=None):
+    def set_to_redis(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None, expiration_delay: int = 86400):
         """Set new value for given key in Redis.
         
         value is dumped as json with given json_encoder_cls.
         """
         assert key in self.REDIS_KEYS, "Only {} keys are used by this application.".format(self.REDIS_KEYS)
         json_data = json.dumps(value, cls=json_encoder_cls)
-        return self._redis.set(key, json_data, ex=86400)
+        return self._redis.set(key, json_data, ex=expiration_delay)
 
     def publish_to_redis(self, channel, data):
         """publish a message to a redis channel.
