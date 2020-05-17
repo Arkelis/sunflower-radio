@@ -139,8 +139,12 @@ function updateCardBody() {
             // update divs to update and thumbnail src
             setTimeout(() => {
                 document.getElementById("current-thumbnail").attributes.src.value = data.current_thumbnail
-                toggleCenterShowTitle()
                 updateCardInfos(divsToUpdate)
+                if (document.getElementById(element).innerText == "") {
+                    document.querySelector("body").classList.add("empty-summary")
+                } else {
+                    document.querySelector("body").classList.remove("empty-summary")
+                }
             }, divsToUpdate.length*100 + 200)
         })
 }
@@ -222,7 +226,6 @@ document.querySelector("#current-thumbnail").onclick = () => {
     
     setTimeout(() => {
         document.querySelector("body").classList.toggle("big-cover");
-        toggleCenterShowTitle()
         thumbnailContainer.flip()
     }, (window.innerWidth > 480 ? 400 : 0) + detailDivsToMove*100);
     
@@ -238,25 +241,6 @@ document.querySelector("#current-thumbnail").onclick = () => {
             detailsChildren[i].classList.remove("fade-out")
             detailsChildren[i].classList.add("fade-in")
         }, 1000 + 100*i + detailDivsToMove*100);
-    }
-}
-
-/**
- * If big cover is enabled, check if show title has to be centered.
- * If so, add a class `text-center` to it. Else, remove it.
- * 
- * If big cover is disabled, remove `text-center` class.
- */
-function toggleCenterShowTitle() {
-    if (!document.querySelector("body").classList.contains("big-cover")) {
-        document.querySelector("#current-show-title").classList.remove("text-center")
-        return
-    }
-
-    if (document.querySelector("#current-broadcast-summary").innerHTML == "") {
-        document.querySelector("#current-show-title").classList.add("text-center")
-    } else {
-        document.querySelector("#current-show-title").classList.remove("text-center")
     }
 }
 
