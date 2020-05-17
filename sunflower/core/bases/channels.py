@@ -260,7 +260,7 @@ class Channel(RedisMixin):
         current_info = self.current_broadcast_info
 
         metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
-        info = self.get_current_broadcast_info(current_info, metadata, logger, now)
+        info = self.get_current_broadcast_info(current_info, metadata, logger)
 
         for handler in self.handlers:
             metadata, info = handler.process(metadata, info, logger)

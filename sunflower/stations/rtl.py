@@ -118,7 +118,7 @@ class RTL2(URLStation):
         # first, update show info if needed
         show_metadata_keys = ("show_end", "show_title", "show_summary")
         if current_metadata.get("show_end") is None or current_metadata.get("show_end") < dt_timestamp:
-            show_metadata = self._fetch_show_metadata()
+            show_metadata = self._fetch_show_metadata(dt)
         else:
             show_metadata = {k: v for k, v in current_metadata.items() if k in show_metadata_keys}
 
