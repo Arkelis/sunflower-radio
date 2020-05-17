@@ -1,5 +1,6 @@
 import telnetlib
 from datetime import date, datetime, time, timedelta
+from logging import Logger
 from typing import Iterable, Optional, List, Dict, Any
 import random
 
@@ -64,7 +65,7 @@ class PycolorePlaylistStation(DynamicStation):
                 break
         return artists_list
         
-    def _play(self, delay, max_length, logger):
+    def _play(self, delay: int, max_length: int, logger: Logger, now: datetime):
         """Play next song in playlist.
         
         Call _get_next_song() for getting next song to play.
@@ -72,16 +73,16 @@ class PycolorePlaylistStation(DynamicStation):
         """
         self._current_song = self._get_next_song(max_length)
         if self._current_song is None:
-            self._current_song_end = int(datetime.now().timestamp()) + max_length
+            self._current_song_end = int(now.timestamp()) + max_length
             return
         logger.debug("station={} Playing {} - {} ({} songs remaining in current list).".format(self.formated_station_name, self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
-        self._current_song_end = int((datetime.now() + timedelta(seconds=self._current_song.length)).timestamp()) + delay
+        self._current_song_end = int((now + timedelta(seconds=self._current_song.length)).timestamp()) + delay
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(self.formated_station_name, self._current_song.path).encode())
         session.write("exit\n".encode())
         session.close()
 
-    def get_metadata(self, current_metadata: MetadataDict, logger, dt: datetime):
+    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         if self._current_song is None:
             return {
                 "station": self.station_name,
@@ -103,7 +104,7 @@ class PycolorePlaylistStation(DynamicStation):
             "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : {}.".format(artists_str)
         }
 
-    def format_info(self, metadata, logger):
+    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         current_broadcast_title = self._format_html_anchor_element(metadata.get("link"), "{} • {}".format(metadata["artist"], metadata["title"]))
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
@@ -113,7 +114,7 @@ class PycolorePlaylistStation(DynamicStation):
             current_broadcast_summary=metadata["summary"],
         )
 
-    def process(self, logger, channels_using, **kwargs):
+    def process(self, logger: Logger, channels_using: Dict, now: datetime, **kwargs):
         """Play new song if needed.
         
         Compute end of use time of this station.
@@ -121,7 +122,6 @@ class PycolorePlaylistStation(DynamicStation):
 
         Call _play() to trigger next song.
         """
-        now = datetime.now()
 
         # if station is not used, return
         channels_using_self = channels_using[self]
@@ -137,7 +137,7 @@ class PycolorePlaylistStation(DynamicStation):
         if self._current_song_end - 10 < int(now.timestamp()):
             delay = max(self._current_song_end - int(now.timestamp()), 0)
             max_length = (self._end_of_use - now).seconds - delay
-            self._play(delay, max_length, logger)
+            self._play(delay, max_length, logger, now)
 
     @classmethod
     def get_liquidsoap_config(cls):

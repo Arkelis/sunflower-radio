@@ -38,13 +38,15 @@ class Scheduler:
 
     @property
     def context(self) -> Dict[str, Any]:
-        """return context dict containing data needed for channels and station to process.
+        """Return context dict containing data needed for channels and station to process.
         
         Current defined keys:
-        - channels_using (Dict[Station, List[Channel]]): 
+        
+        - `channels_using` (Dict[Station, List[Channel]]): 
             a dict containing key=station, value=list of channels objects where station is currently
             on air on these channels. This key allows station to know on which channels they
             are currently used.
+        - `now`: datetime object representing current timestamp.
         """
         channels_using: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels if channel.current_station is station]

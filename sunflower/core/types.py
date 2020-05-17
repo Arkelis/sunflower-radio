@@ -3,13 +3,21 @@
 import json
 from typing import NamedTuple
 from enum import Enum
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional, Union
 from sunflower.core.mixins import RedisMixin
 from dataclasses import dataclass
 
 # Types
 
-MetadataDict = Dict[str, str]
+class MetadataType(Enum):
+    MUSIC = "Track"
+    PROGRAMME = "Programme"
+    NONE = ""
+    ADS = "Ads"
+    ERROR = "Error"
+    WAITING_FOR_FOLLOWING = "Transition"
+
+MetadataDict = Dict[str, Union[str, MetadataType]]
 
 # Custom named tuples
 
@@ -101,15 +109,7 @@ class StationView(BaseView):
         return super().__getattr__(name)
 
 
-# Available metadata types
-
-class MetadataType(Enum):
-    MUSIC = "Track"
-    PROGRAMME = "Programme"
-    NONE = ""
-    ADS = "Ads"
-    ERROR = "Error"
-    WAITING_FOR_FOLLOWING = "Transition"
+# MetadataType utils for json (de)serialization
 
 class MetadataEncoder(json.JSONEncoder):
     """Subclass of json.JSONEncoder supporting MetadataType serialization."""

@@ -91,7 +91,7 @@ class Station(HTMLMixin):
         and other metadata fields required by format_info().
         """
 
-    def format_info(self, metadata, logger) -> CardMetadata:
+    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         """Format metadata for displaying in the card.
 
         Return a CardMetadata namedtuple (see sunflower.core.types).
@@ -118,7 +118,7 @@ class DynamicStation(Station, RedisMixin):
     """
     endpoint: str # for api
 
-    def process(self, logger, channels_using, **kwargs):
+    def process(self, logger, channels_using, now, **kwargs):
         raise NotImplementedError("process() must be implemented")
 
 

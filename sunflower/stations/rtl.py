@@ -1,12 +1,13 @@
-import requests
-from datetime import datetime, date, time, timedelta
-
-from bs4 import BeautifulSoup
 import json
+from datetime import date, datetime, time, timedelta
+from logging import Logger
+
+import requests
+from bs4 import BeautifulSoup
 
 from sunflower import settings
-from sunflower.core.types import CardMetadata, MetadataType
 from sunflower.core.bases import URLStation
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
 
 
 class RTL2(URLStation):
@@ -19,13 +20,12 @@ class RTL2(URLStation):
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
 
     @staticmethod
-    def _fetch_show_metadata():
-        now = datetime.now()
-        now_str = now.isoformat(sep=" ", timespec="seconds")
-        end_str = (now + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
+    def _fetch_show_metadata(dt: datetime):
+        start_str = dt.isoformat(sep=" ", timespec="seconds")
+        end_str = (dt + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
         req = requests.get(
             "https://pc.middleware.6play.fr/6play/v2/platforms/m6group_web/services/m6replay/guidetv?channel=rtl2&from={}&to={}&limit=1&offset=0&with=realdiffusiondates".format(
-                now_str, end_str
+                start_str, end_str
             )
         )
         data = json.loads(req.content.decode()).get("rtl2")
@@ -40,7 +40,7 @@ class RTL2(URLStation):
             "show_end": end_of_show_timestamp,
         }
 
-    def format_info(self, metadata, logger) -> CardMetadata:
+    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         current_broadcast_title = {
             MetadataType.ADS: "Publicité",
             MetadataType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
@@ -96,7 +96,7 @@ class RTL2(URLStation):
         else:
             return self._fetch_song_metadata()
 
-    def get_metadata(self, current_metadata, logger, dt):
+    def get_metadata(self, current_metadata, logger, dt: datetime):
         """Returns mapping containing info about current song.
 
         If music: {"type": MetadataType.MUSIC, "artist": artist, "title": title}
@@ -113,11 +113,11 @@ class RTL2(URLStation):
         - title: str (optionnal)
         - thumbnail_src: url to thumbnail
         """
-        now = int(datetime.now().timestamp())
+        dt_timestamp = dt.timestamp()
 
         # first, update show info if needed
         show_metadata_keys = ("show_end", "show_title", "show_summary")
-        if current_metadata.get("show_end") is None or current_metadata.get("show_end") < now:
+        if current_metadata.get("show_end") is None or current_metadata.get("show_end") < dt_timestamp:
             show_metadata = self._fetch_show_metadata()
         else:
             show_metadata = {k: v for k, v in current_metadata.items() if k in show_metadata_keys}
@@ -135,7 +135,7 @@ class RTL2(URLStation):
             }
 
         end = int(fetched_data["end"] / 1000)
-        if now > end:
+        if dt_timestamp > end:
             if not show_metadata:
                 return {
                     "station": self.station_name,

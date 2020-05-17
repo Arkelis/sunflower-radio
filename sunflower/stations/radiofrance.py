@@ -3,7 +3,7 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Dict
+from typing import Dict, Any, List
 
 import requests
 from bs4 import BeautifulSoup
@@ -100,7 +100,7 @@ class RadioFranceStation(URLStation):
                 raise RuntimeError("No token for Radio France API found.")
         return os.getenv("TOKEN")
 
-    def format_info(self, metadata, logger) -> CardMetadata:
+    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         assert metadata["type"] == MetadataType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
         parent_title = metadata.get("parent_title")
         if metadata.get("diffusion_title") is None:
@@ -121,7 +121,7 @@ class RadioFranceStation(URLStation):
         )
 
     def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
-        fetched_data = self._fetch_metadata()
+        fetched_data = self._fetch_metadata(dt)
         if "API Timeout" in fetched_data.values():
             return self._get_error_metadata("API Timeout", 90) 
         if "API rate limit exceeded" in fetched_data.values():
@@ -133,7 +133,7 @@ class RadioFranceStation(URLStation):
             # si celle-ci est terminée et la suivante n'a pas encore démarrée
             # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
             # suivante
-            if first_show_in_grid["end"] < int(datetime.now().timestamp()):
+            if first_show_in_grid["end"] < int(dt.timestamp()):
                 next_show = fetched_data["data"]["grid"][1]
                 return {
                     "station": self.station_name,
@@ -143,7 +143,7 @@ class RadioFranceStation(URLStation):
             
             # si l'émission n'est pas encore démarrée, on RENVOIE une métaonnée neutre
             # jusqu'au démarrage de celle-ci
-            if first_show_in_grid["start"] > int(datetime.now().timestamp()):
+            if first_show_in_grid["start"] > int(dt.timestamp()):
                 return {
                     "station": self.station_name,
                     "type": MetadataType.NONE,
@@ -161,7 +161,7 @@ class RadioFranceStation(URLStation):
             # on teste si children n'est pas None et n'est pas vide
             if children:
                 # on récupère l'enfant en cours et sa fin
-                current_show, current_show_end = self._find_current_child_show(children, first_show_in_grid)
+                current_show, current_show_end = self._find_current_child_show(children, first_show_in_grid, dt)
                 # ici, on réupère le titre du parent pour l'ajouter dans les métadonnées
                 parent = first_show_in_grid
                  # ajout de parent title s'il est différent du titre du current show
@@ -254,11 +254,10 @@ class RadioFranceStation(URLStation):
         return cover_url
 
 
-    def _fetch_metadata(self):
+    def _fetch_metadata(self, dt: datetime):
         """Fetch metadata from radiofrance open API."""
-        now = datetime.now()
-        start = now
-        end = now + timedelta(minutes=120)
+        start = dt
+        end = start + timedelta(minutes=120)
         query = self._grid_template.format(
             start=int(start.timestamp()),
             end=int(end.timestamp()),
@@ -276,7 +275,7 @@ class RadioFranceStation(URLStation):
         return data
     
     @staticmethod
-    def _find_current_child_show(children, parent):
+    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime):
         """Return current show among children and its end timestamp.
 
         Sometimes, current timestamp is between 2 children. In this case,
@@ -290,7 +289,6 @@ class RadioFranceStation(URLStation):
         - dict representing a step
         - end timestamp
         """
-        now = int(datetime.now().timestamp())
 
         # on initialise l'enfant suivant (par défaut le dernier)
         next_child = children[-1]
@@ -303,14 +301,14 @@ class RadioFranceStation(URLStation):
                 continue
 
             # si le début du programme est à venir, on passe au précédent
-            if child["start"] > now:
+            if child["start"] > dt:
                 next_child = child
                 continue
             
             # au premier programme dont le début est avant la date courante
             # on sait qu'on est potentiellement dans le programme courant.
             # Il faut vérifier que l'on est encore dedans en vérifiant :
-            if child["end"] > now:
+            if child["end"] > dt:
                 return child, int(child["end"])
 
             # sinon, on est dans un "trou" : on utilise donc le parent

@@ -6,14 +6,15 @@ from sunflower.core.bases.stations import Station
 from sunflower.core.decorators import cached_property
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
-                                  as_metadata_type)
+                                  as_metadata_type, MetadataDict)
 
 class Channel(RedisMixin):
-    """Base Channel.
+    """Channel.
 
-    Channel object contains and manage stations. It triggers station metadata updates
-    thanks to its timetable. Channel objects are called by server when a client fetches
-    metadata which this data is peristed in Redis.
+    Channel object contains and manages stations. It triggers station metadata updates
+    thanks to its timetable and its process() method. The latter is called by Scheduler
+    object (see scheduler module). Data is persisted to Redis and retrieved by web server
+    thanks to view object (see ChannelView in types module).
     """
     
     def __init__(self, endpoint, timetable, handlers=[]):
@@ -84,7 +85,6 @@ class Channel(RedisMixin):
 
         index_of_last_element = len(self.timetable[key]) - 1
         for (i, t) in enumerate(self.timetable[key]):
-            # on parcourt la table en partant de la fin
             start, end = map(time.fromisoformat, t[:2])
 
             # tant que l'horaire demandé est situé après la fin de la plage,
@@ -208,7 +208,7 @@ class Channel(RedisMixin):
             current_broadcast_summary="",
         )
 
-    def get_current_broadcast_info(self, metadata, logger) -> CardMetadata:
+    def get_current_broadcast_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         """Return data for displaying broadcast info in player.
 
         This is for data display in player client. This method uses format_info()
@@ -219,7 +219,7 @@ class Channel(RedisMixin):
             return self.neutral_card_metadata
         if metadata_type == MetadataType.WAITING_FOR_FOLLOWING:
             return self.waiting_for_following_card_metadata
-        return self.current_station.format_info(metadata, logger)
+        return self.current_station.format_info(current_info, metadata, logger)
 
     def get_current_broadcast_metadata(self, current_metadata, logger: Logger, dt: datetime):
         """Get metadata of current broadcasted programm for current station.
@@ -234,7 +234,7 @@ class Channel(RedisMixin):
             current_metadata = {}
         return self.current_station.get_metadata(current_metadata, logger, dt)
 
-    def process(self, logger, now, **kwargs):
+    def process(self, logger: Logger, now: datetime, **kwargs):
         """If needed, update metadata.
 
         - Check if metadata needs to be updated
@@ -257,9 +257,10 @@ class Channel(RedisMixin):
             self.publish_to_redis("unchanged")
             return False
 
+        current_info = self.current_broadcast_info
 
         metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
-        info = self.get_current_broadcast_info(metadata, logger)
+        info = self.get_current_broadcast_info(current_info, metadata, logger, now)
 
         for handler in self.handlers:
             metadata, info = handler.process(metadata, info, logger)
