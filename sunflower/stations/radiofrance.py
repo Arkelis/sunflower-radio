@@ -284,11 +284,14 @@ class RadioFranceStation(URLStation):
         Parameters:
         - children: list of dict representing radiofrance steps
         - parent: dict representing radiofrance step
+        - dt: datetime object representing asked timestamp
 
         Return a tuple containing:
         - dict representing a step
         - end timestamp
         """
+        
+        dt_timestamp = int(dt.timestamp())
 
         # on initialise l'enfant suivant (par défaut le dernier)
         next_child = children[-1]
@@ -301,14 +304,14 @@ class RadioFranceStation(URLStation):
                 continue
 
             # si le début du programme est à venir, on passe au précédent
-            if child["start"] > dt:
+            if child["start"] > dt_timestamp:
                 next_child = child
                 continue
             
             # au premier programme dont le début est avant la date courante
             # on sait qu'on est potentiellement dans le programme courant.
             # Il faut vérifier que l'on est encore dedans en vérifiant :
-            if child["end"] > dt:
+            if child["end"] > dt_timestamp:
                 return child, int(child["end"])
 
             # sinon, on est dans un "trou" : on utilise donc le parent
