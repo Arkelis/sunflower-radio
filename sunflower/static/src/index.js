@@ -140,7 +140,7 @@ function updateCardBody() {
             setTimeout(() => {
                 document.getElementById("current-thumbnail").attributes.src.value = data.current_thumbnail
                 updateCardInfos(divsToUpdate)
-                if (document.getElementById(element).innerText == "") {
+                if (document.getElementById("current-broadcast-summary").innerText == "") {
                     document.querySelector("body").classList.add("empty-summary")
                 } else {
                     document.querySelector("body").classList.remove("empty-summary")
