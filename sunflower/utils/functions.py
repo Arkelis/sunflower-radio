@@ -88,7 +88,11 @@ def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None)
     Take the cover of the album of the first found track.
     """
     if album is not None:
-        req = requests.get('https://api.deezer.com/search/album?q={} {}'.format(artist, album))
+        req = requests.get("https://api.deezer.com/search/album?q=artist:'{}' album:'{}'".format(artist, album))
+        data = json.loads(req.content.decode())["data"]
+        if not data:
+            req = requests.get("https://api.deezer.com/search/album?q={} {}".format(artist, album))
+            data = json.loads(req.content.decode())["data"]
     elif track is not None:
         req = requests.get('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
     else:
@@ -97,7 +101,11 @@ def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None)
     data = json.loads(req.content.decode())["data"]
     if not data:
         return backup_cover, ""
-    obj = data[0]
+
+    for item in data:
+        if artist != item["artist"]["name"]:
+            continue
+        obj = item
 
     if album is not None:
         cover_src = obj["cover_big"]
