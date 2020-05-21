@@ -20,7 +20,7 @@ class AdsHandler(HTMLMixin):
     def _parse_songs(self):
         return parse_songs(self.glob_pattern)
 
-    def process(self, metadata, info, logger) -> Tuple[MetadataDict, CardMetadata]:
+    def process(self, metadata, info, logger, dt: datetime) -> Tuple[MetadataDict, CardMetadata]:
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == MetadataType.ADS:
             logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.formated_station_name} Ads detected.")
@@ -42,7 +42,7 @@ class AdsHandler(HTMLMixin):
             metadata = {
                 "artist": backup_song.artist,
                 "title": backup_song.title,
-                "end": int(datetime.now().timestamp()) + backup_song.length,
+                "end": int(dt.timestamp() + backup_song.length),
                 "type": MetadataType.MUSIC,
                 "station": station,
                 "thumbnail_src": thumbnail,

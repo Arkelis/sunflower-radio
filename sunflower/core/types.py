@@ -26,7 +26,7 @@ class Song(NamedTuple):
     artist: str
     album: str
     title: str
-    length: int
+    length: float
 
 class CardMetadata(NamedTuple):
     current_thumbnail: str

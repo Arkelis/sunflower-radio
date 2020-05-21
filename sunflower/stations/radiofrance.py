@@ -133,7 +133,7 @@ class RadioFranceStation(URLStation):
             # si celle-ci est terminée et la suivante n'a pas encore démarrée
             # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
             # suivante
-            if first_show_in_grid["end"] < int(dt.timestamp()):
+            if first_show_in_grid["end"] < dt.timestamp():
                 next_show = fetched_data["data"]["grid"][1]
                 return {
                     "station": self.station_name,
@@ -143,7 +143,7 @@ class RadioFranceStation(URLStation):
             
             # si l'émission n'est pas encore démarrée, on RENVOIE une métaonnée neutre
             # jusqu'au démarrage de celle-ci
-            if first_show_in_grid["start"] > int(dt.timestamp()):
+            if first_show_in_grid["start"] > dt.timestamp():
                 return {
                     "station": self.station_name,
                     "type": MetadataType.NONE,
@@ -291,7 +291,7 @@ class RadioFranceStation(URLStation):
         - end timestamp
         """
         
-        dt_timestamp = int(dt.timestamp())
+        dt_timestamp = dt.timestamp()
 
         # on initialise l'enfant suivant (par défaut le dernier)
         next_child = children[-1]

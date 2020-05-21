@@ -35,10 +35,10 @@ class PycolorePlaylistStation(DynamicStation):
     def __setup__(self):
         self._songs_to_play: List[Song] = []
         self._current_song: Optional[Song] = None
-        self._current_song_end: int = 0
+        self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
 
-    def _get_next_song(self, max_length: int):
+    def _get_next_song(self, max_length: float):
         """Get next song in current playlist.
 
         Check if its length is not greater than remaining time befor end of use
@@ -65,7 +65,7 @@ class PycolorePlaylistStation(DynamicStation):
                 break
         return artists_list
         
-    def _play(self, delay: int, max_length: int, logger: Logger, now: datetime):
+    def _play(self, delay: float, max_length: float, logger: Logger, now: datetime):
         """Play next song in playlist.
         
         Call _get_next_song() for getting next song to play.
@@ -73,10 +73,10 @@ class PycolorePlaylistStation(DynamicStation):
         """
         self._current_song = self._get_next_song(max_length)
         if self._current_song is None:
-            self._current_song_end = int(now.timestamp()) + max_length
+            self._current_song_end = now.timestamp() + max_length
             return
         logger.debug("station={} Playing {} - {} ({} songs remaining in current list).".format(self.formated_station_name, self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
-        self._current_song_end = int((now + timedelta(seconds=self._current_song.length)).timestamp()) + delay
+        self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
         session = telnetlib.Telnet("localhost", 1234)
         session.write("{}_station_queue.push {}\n".format(self.formated_station_name, self._current_song.path).encode())
         session.write("exit\n".encode())
@@ -99,7 +99,7 @@ class PycolorePlaylistStation(DynamicStation):
             "title": self._current_song.title,
             "thumbnail_src": thumbnail_src,
             "link": link,
-            "end": self._current_song_end,
+            "end": int(self._current_song_end),
             "show": "La playlist Pycolore",
             "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : {}.".format(artists_str)
         }
@@ -134,8 +134,8 @@ class PycolorePlaylistStation(DynamicStation):
             if self._end_of_use < end_of_current_station:
                 self._end_of_use = end_of_current_station
 
-        if self._current_song_end - 10 < int(now.timestamp()):
-            delay = max(self._current_song_end - int(now.timestamp()), 0)
+        if self._current_song_end - 10 < now.timestamp():
+            delay = max(self._current_song_end - now.timestamp(), 0)
             max_length = (self._end_of_use - now).seconds - delay
             self._play(delay, max_length, logger, now)
 

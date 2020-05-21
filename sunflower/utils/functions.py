@@ -75,7 +75,7 @@ def parse_songs(glob_pattern: str) -> List[Song]:
                 file.get("artist", [None])[0],
                 file.get("album", [None])[0],
                 file.get("title", [None])[0],
-                int(file.info.length),
+                file.info.length,
             ))
         except KeyError as err:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err

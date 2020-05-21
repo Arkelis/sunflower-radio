@@ -8,6 +8,7 @@ from sunflower.core.mixins import RedisMixin
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
                                   as_metadata_type, MetadataDict)
 
+
 class Channel(RedisMixin):
     """Channel.
 
@@ -251,7 +252,7 @@ class Channel(RedisMixin):
 
         if (
             current_metadata is not None
-            and datetime.now().timestamp() < current_metadata["end"]
+            and now.timestamp() < current_metadata["end"]
             and current_metadata["station"] == self.current_station.station_name
         ):
             self.publish_to_redis("unchanged")
@@ -263,7 +264,7 @@ class Channel(RedisMixin):
         info = self.get_current_broadcast_info(current_info, metadata, logger)
 
         for handler in self.handlers:
-            metadata, info = handler.process(metadata, info, logger)
+            metadata, info = handler.process(metadata, info, logger, now)
         
         self.current_broadcast_metadata = metadata
         if info == self.current_broadcast_info:
