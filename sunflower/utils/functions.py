@@ -3,7 +3,7 @@
 import functools
 import glob
 import json
-from typing import List
+from typing import List, Dict, Any
 
 from collections import namedtuple
 
@@ -81,6 +81,19 @@ def parse_songs(glob_pattern: str) -> List[Song]:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
     return sorted(songs, key=lambda song: (song.artist + song.title).lower())
 
+
+def _get_data_from_deezer_url(*urls) -> Dict[Any, Any]:
+    """Get json from given urls and return first non-empty data json as dict.
+    
+    If all json are empty, return empty dict.
+    """
+    for url in urls:
+        rep = requests.get(url)
+        json_data = rep.json().get("data")
+        if json_data:
+            return json_data
+    return {}
+
 def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None):
     """Get cover from Deezer API.
 
@@ -88,24 +101,19 @@ def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None)
     Take the cover of the album of the first found track.
     """
     if album is not None:
-        req = requests.get("https://api.deezer.com/search/album?q=artist:'{}' album:'{}'".format(artist, album))
-        data = json.loads(req.content.decode())["data"]
-        if not data:
-            req = requests.get("https://api.deezer.com/search/album?q={} {}".format(artist, album))
-            data = json.loads(req.content.decode())["data"]
+        data = _get_data_from_deezer_url(
+            "https://api.deezer.com/search/album?q=artist:'{}' album:'{}'".format(artist, album),
+            "https://api.deezer.com/search/album?q={} {}".format(artist, album),
+        )
     elif track is not None:
-        req = requests.get('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
+        data = _get_data_from_deezer_url('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
     else:
-        req = requests.get('https://api.deezer.com/search/artist?q={}'.format(artist))
+        data = _get_data_from_deezer_url('https://api.deezer.com/search/artist?q={}'.format(artist))
 
-    data = json.loads(req.content.decode())["data"]
     if not data:
         return backup_cover, ""
-
-    for item in data:
-        if artist != item["artist"]["name"]:
-            continue
-        obj = item
+    
+    obj = data[0]
 
     if album is not None:
         cover_src = obj["cover_big"]
