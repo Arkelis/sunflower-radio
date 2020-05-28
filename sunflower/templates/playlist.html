@@ -33,7 +33,7 @@
                 {% for artist, n in artists %}
                 <tr class="artist-row">
                     <td></td>
-                    <td colspan="2" class="artist-cell {% if loop.index == 1 %}first-artist{% endif %}">{{ artist }}<td>
+                    <td colspan="2" class="artist-cell {% if loop.index == 1 %}first-artist{% endif %}">{{ artist }}</td>
                 </tr>
                 <tr>
                     <th class="artist-th" rowspan="{{ n }}" scope="rowgroup">{{ artist }}</th>
