@@ -37,6 +37,16 @@ class PycolorePlaylistStation(DynamicStation):
         self._current_song: Optional[Song] = None
         self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
+    
+    def __init__(self):
+        super().__init__()
+        self._populate_songs_to_play()
+    
+    def _populate_songs_to_play(self):
+        new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        self.persist_playlist(new_songs)
+        self._songs_to_play += random.sample(new_songs, len(new_songs))
+        self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
 
     def _get_next_song(self, max_length: float):
         """Get next song in current playlist.
@@ -45,10 +55,7 @@ class PycolorePlaylistStation(DynamicStation):
         of this station.
         """
         if len(self._songs_to_play) <= 5:
-            new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-            self.persist_playlist(new_songs)
-            self._songs_to_play += random.sample(new_songs, len(new_songs))
-            self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
+            self._populate_songs_to_play()
         for (i, song) in enumerate(self._songs_to_play):
             if song.length < max_length:
                 return self._songs_to_play.pop(i)
