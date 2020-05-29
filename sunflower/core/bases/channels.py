@@ -19,6 +19,7 @@ class Channel(RedisMixin):
     thanks to view object (see ChannelView in types module).
     """
 
+    data_type = "channel"
     
     def __init__(self, endpoint, timetable, handlers=[]):
         """Channel constructor.
