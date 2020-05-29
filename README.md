@@ -1,6 +1,6 @@
 # Radio Tournesol
 
-![Python 3.8](https://img.shields.io/badge/Python-3.8-blue) ![Tests](https://github.com/Arkelis/sunflower-radio/workflows/Tests/badge.svg?branch=master)
+[![Python 3.8](https://img.shields.io/badge/Python-3.8-blue)](https://python.org) [![Tests](https://github.com/Arkelis/sunflower-radio/workflows/Tests/badge.svg?branch=master)](https://github.com/Arkelis/sunflower-radio/actions?query=workflow%3ATests)
 
 ## Principe
 
