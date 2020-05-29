@@ -1,9 +1,9 @@
 from datetime import datetime, time, timedelta
+import functools
 from logging import Logger
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
-from sunflower.core.decorators import cached_property
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
@@ -49,7 +49,7 @@ class Channel(RedisMixin):
         self.redis_metadata_key = "sunflower:channel:" + self.endpoint + ":metadata"
         self.redis_info_key = "sunflower:channel:" + self.endpoint + ":info"
 
-    @cached_property
+    @functools.cached_property
     def stations(self) -> tuple:
         """Cached property returning list of stations used by channel."""
         stations = set()
