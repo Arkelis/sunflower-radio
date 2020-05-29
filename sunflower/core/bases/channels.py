@@ -161,7 +161,7 @@ class Channel(RedisMixin):
         return self._following_station_instance
 
     current_broadcast_metadata = PersistentAttribute("metadata", MetadataEncoder, as_metadata_type)
-    current_broadcast_info = PersistentAttribute("info") # private as it is wrapped by current_broadcast_info property
+    current_broadcast_info = PersistentAttribute("info")
 
     def publish_to_redis(self, metadata):
         return super().publish_to_redis(self.endpoint, metadata)

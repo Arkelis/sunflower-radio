@@ -39,11 +39,6 @@ class PersistentAttribute(RedisMixin):
                  json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
                  expiration_delay: int = None, doc: str = "",
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
-        """Initializer.
-        
-        pre_set_hook and post_get_hook can be added with decorators,
-        see pre_set_hook() and post_get_hook() methods.
-        """
         super().__init__()
         self.__doc__ = doc
         self.json_encoder_cls = json_encoder_cls
@@ -54,14 +49,7 @@ class PersistentAttribute(RedisMixin):
         self.post_get_hook_func = post_get_hook
 
     def __set_name__(self, owner, name):
-        """Called at descriptor assignment.
-        
-        Check if owner is subclass of relevant types.
-        Assign name.
-        """
-
-        self.name = name
-        
+        self.name = name        
         if not self.__doc__:
             self.__doc__ = f"{self.name} persistent attribute."
         
