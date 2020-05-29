@@ -11,7 +11,7 @@ from daemonize import Daemonize
 from sunflower.core.scheduler import Scheduler
 from sunflower import settings
 from sunflower.channels import tournesol, music
-
+from sunflower.core.functions import check_obj_integrity
 
 def launch_scheduler():
     # instanciate logger
@@ -26,11 +26,27 @@ def launch_scheduler():
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+    
+    logger.info(f"Checking objects integrity.")
+
+    scheduled_channels = [music, tournesol]
+    check_errors = {}
+    for channel in scheduled_channels:
+        if (errors := check_obj_integrity(channel)):
+            check_errors[str(channel)] = errors
+        for station in channel.stations:
+            if (errors := check_obj_integrity(station)):
+                check_errors[str(station)] = errors
+
+    if check_errors:
+        for obj, errors in check_errors.items():
+            logger.error(f"Errors for object {obj}:"+ "\n" + "\n".join(f"- {err}" for err in errors))
+        logger.info("Programme stopped.")
+        raise RuntimeError("Integrity errors found.")
+
     logger.info("Starting scheduler.")
-    
-    scheduler = Scheduler([music, tournesol], logger)
-    
-    logger.info("Scheduler instanciated")
+    scheduler = Scheduler(scheduled_channels, logger)
+    logger.info("Scheduler instanciated.")
     
     scheduler.run()
     
