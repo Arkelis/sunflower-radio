@@ -8,6 +8,7 @@ from typing import Dict, List, Any
 
 from sunflower.core.bases import DynamicStation, Station, Channel
 
+
 class Scheduler:
 
     def __init__(self, channels, logger):

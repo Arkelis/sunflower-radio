@@ -5,6 +5,7 @@ from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.decorators import cached_property
 from sunflower.core.mixins import RedisMixin
+from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
                                   as_metadata_type, MetadataDict)
 
@@ -17,6 +18,7 @@ class Channel(RedisMixin):
     object (see scheduler module). Data is persisted to Redis and retrieved by web server
     thanks to view object (see ChannelView in types module).
     """
+
     
     def __init__(self, endpoint, timetable, handlers=[]):
         """Channel constructor.
@@ -157,37 +159,23 @@ class Channel(RedisMixin):
         self._update_station_instances()
         return self._following_station_instance
 
-    def get_from_redis(self, key, object_hook=as_metadata_type):
-        return super().get_from_redis(key, object_hook)
-
-    def set_to_redis(self, key, value, json_encoder_cls=MetadataEncoder):
-        super().set_to_redis(key, value, json_encoder_cls)
+    current_broadcast_metadata = PersistentAttribute("metadata", MetadataEncoder, as_metadata_type)
+    current_broadcast_info = PersistentAttribute("info") # private as it is wrapped by current_broadcast_info property
 
     def publish_to_redis(self, metadata):
         return super().publish_to_redis(self.endpoint, metadata)
 
-    @property
-    def current_broadcast_metadata(self):
-        """Retrieve metadata stored in Redis as a dict."""
-        return self.get_from_redis(self.redis_metadata_key)
-
-    @current_broadcast_metadata.setter
-    def current_broadcast_metadata(self, metadata):
-        """Store metadata in Redis."""
-        self.set_to_redis(self.redis_metadata_key, metadata)
-
-    @property
-    def current_broadcast_info(self) -> CardMetadata:
+    @current_broadcast_info.post_get_hook
+    def current_broadcast_info(self, redis_data) -> CardMetadata:
         """Retrieve card info stored in Redis as a dict."""
-        redis_data = self.get_from_redis(self.redis_info_key)
         if redis_data is None:
             return CardMetadata("", "", "", "", "")
         return CardMetadata(**redis_data)
 
-    @current_broadcast_info.setter
+    @current_broadcast_info.pre_set_hook
     def current_broadcast_info(self, info: CardMetadata):
         """Store card info in Redis."""
-        self.set_to_redis(self.redis_info_key, info._asdict())
+        return info._asdict()
     
     @property
     def neutral_card_metadata(self) -> CardMetadata:

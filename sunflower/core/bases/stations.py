@@ -20,6 +20,7 @@ class Station(HTMLMixin):
     Station classes are singletons.
     """
 
+    data_type = "station"
     station_name: str
     station_thumbnail: str
     station_website_url: str = ""

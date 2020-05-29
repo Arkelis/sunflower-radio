@@ -14,16 +14,6 @@ class RedisMixin:
     Define REDIS_KEYS containing keys the application has right 
     to access.
     """
-
-    # channels keys and stations keys
-    REDIS_KEYS = [ 
-        item 
-        for name in settings.CHANNELS
-        for item in (f"sunflower:channel:{name}:metadata", f"sunflower:channel:{name}:info")
-    ] + [
-        f"sunflower:station:{name}:data"
-        for name in settings.STATIONS
-    ]
     
     # keep a dict containing name of Redis channels for pubsub
     REDIS_CHANNELS = {name: "sunflower:channel:" + name for name in settings.CHANNELS}
@@ -39,7 +29,6 @@ class RedisMixin:
         Data got from Redis is loaded from json with given object_hook.
         If no data is found, return None.
         """
-        assert key in self.REDIS_KEYS, "Only {} keys are used by this application.".format(self.REDIS_KEYS)
         raw_data = self._redis.get(key)
         if raw_data is None:
             return None
@@ -50,7 +39,6 @@ class RedisMixin:
         
         value is dumped as json with given json_encoder_cls.
         """
-        assert key in self.REDIS_KEYS, "Only {} keys are used by this application.".format(self.REDIS_KEYS)
         json_data = json.dumps(value, cls=json_encoder_cls)
         return self._redis.set(key, json_data, ex=expiration_delay)
 
