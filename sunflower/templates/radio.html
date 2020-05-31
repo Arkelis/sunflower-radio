@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css?family=Fira+Sans+Condensed:600,400,300|Fira+Sans:200&display=swap" rel="stylesheet"> 
     <link rel="stylesheet" href='{{ url_for("static", filename="index.css", v=1.2) }}'>
 </head>
-<body>
+<body class="light-mode">
     <nav>
         <div id="brand">
             Radio Pycolore
@@ -23,6 +23,7 @@
                 <li><a href="{{ url_for('channel', channel='music') }}">Chaîne Musique</a></li>
             </ul>
         </div>
+        <img class="theme-switcher" src='{{ url_for("static", filename="moon.svg") }}' alt="theme toggler"/>
     </nav>
     <div id="wrapper">
         <div id="timeline">

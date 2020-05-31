@@ -1,0 +1,37 @@
+@mixin dark-mode {
+    background-color: #333;
+
+    #details, #head-info {
+        color: white;
+    }
+
+    nav {
+        color: white;
+    }
+
+    #current-broadcast-card {
+        box-shadow: none !important;
+        background-color: inherit !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body:not(.light-mode) {
+        @include dark-mode;
+    }
+}
+
+body.dark-mode {
+   @include dark-mode;
+}
+
+.change-theme {
+    display: inline-block;
+}
+
+.theme-switcher {
+    height: 22px;
+    width: 22px;
+    min-width: 22px;
+    margin-bottom: 0;
+}
