@@ -269,7 +269,7 @@ persistLastVisited()
 /* -------------------------------- D A R K   M O D E    -------------------------------- */
 
 const themeSwitcher = document.querySelector(".theme-switcher");
-const userTheme = getCookie("theme");
+const userTheme = localStorage.theme;
 
 if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches &&  userTheme !== "light" ||
     userTheme === "dark") {
@@ -291,22 +291,6 @@ function toggleDarkLight() {
 
 function persistTheme(currentClass) {
     if (localStorage.cookieConsent === "true") {
-        document.cookie = "theme=" + (currentClass === "dark-mode" ? "light" : "dark") + ";path=/"
+        localStorage.theme = currentClass === "dark-mode" ? "light" : "dark"
     }
-}
-
-function getCookie(cname) {
-    let name = cname + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for(let i = 0; i <ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
 }

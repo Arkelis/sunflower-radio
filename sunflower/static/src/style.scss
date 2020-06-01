@@ -32,6 +32,10 @@ nav {
         position: absolute;
         top: 18px;
         right: 15px;
+
+        &:hover {
+            cursor: pointer;
+        }
     }
 
     // brand
@@ -180,6 +184,10 @@ nav {
         
         #brand {
             opacity: 0;
+        }
+
+        .theme-switcher {
+            display: none;
         }
 
         .channels-list-head {
