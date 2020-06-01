@@ -27,14 +27,24 @@ nav {
     text-align: center;
     max-height: 3em;
     transition: all .4s ease-in-out;
-    
+
+    .theme-switcher {
+        position: absolute;
+        top: 18px;
+        right: 15px;
+
+        &:hover {
+            cursor: pointer;
+        }
+    }
+
     // brand
     #brand {
         color: white;
         display: inline-block;
         margin: 1em 0 0 0;
         padding: 0.5em;
-        background-color: #333;;
+        background-color: #333;
         font-weight: 600;
         transition: all .4s ease-in-out;
     }
@@ -176,6 +186,10 @@ nav {
             opacity: 0;
         }
 
+        .theme-switcher {
+            display: none;
+        }
+
         .channels-list-head {
             color: white;
         }
@@ -259,6 +273,15 @@ nav {
 /* -------------  B I G   W I D T H   A N D   S M A L L   H E I G H T ------------- */
 
 @media screen and (min-width: 720px) {
+
+    nav {
+        .theme-switcher {
+            position: absolute;
+            top: 18px;
+            right: 15px;
+        }
+    }
+
     #current-broadcast-card {
         margin: auto;
         width: 40em;
@@ -295,7 +318,15 @@ nav {
 /* -------------  B I G   H E I G H T ------------- */
 
 @media screen and (min-height: 35em) and (min-width: 480px) {
-    
+
+    nav {
+        .theme-switcher {
+            position: relative;
+            top: 18px;
+            right: 20px;
+        }
+    }
+
     body {
         background-color: #333;
         position: initial;
