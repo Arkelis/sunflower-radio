@@ -274,7 +274,7 @@ const userTheme = localStorage.theme;
 if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches &&  userTheme !== "light" ||
     userTheme === "dark") {
     document.body.className = "dark-mode";
-    themeSwitcher.src = "/static/sun.svg";
+    themeSwitcher.src = "/static/moon.svg";
 }
 
 themeSwitcher.onclick = () => {
@@ -284,7 +284,7 @@ themeSwitcher.onclick = () => {
 function toggleDarkLight() {
     let currentClass = document.body.className;
     document.body.className = currentClass === "dark-mode" ? "light-mode" : "dark-mode";
-    themeSwitcher.src = currentClass === "dark-mode" ? "/static/moon.svg" : "/static/sun.svg";
+    themeSwitcher.src = currentClass === "dark-mode" ? "/static/sun.svg" : "/static/moon.svg";
 
     persistTheme(currentClass);
 }

@@ -325,6 +325,14 @@ nav {
             top: 18px;
             right: 20px;
         }
+
+        .menu {
+            display: flex;
+        
+            & > * {
+              margin-left: 1.5rem;  
+            }
+        }
     }
 
     body {
