@@ -1,5 +1,6 @@
 import telnetlib
 from datetime import datetime
+import random
 from typing import Tuple, Dict
 
 from sunflower import settings
@@ -14,11 +15,9 @@ class AdsHandler(HTMLMixin):
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
         self.backup_songs = self._parse_songs()
 
-    def _fetch_cover_and_link_on_deezer(self, artist, album, track):
-        return fetch_cover_and_link_on_deezer(self.channel.current_station.station_thumbnail, artist, album, track)
-
     def _parse_songs(self):
-        return parse_songs(self.glob_pattern)
+        new_songs = parse_songs(self.glob_pattern)
+        return random.sample(new_songs, len(new_songs))
 
     def process(self, metadata, info, logger, dt: datetime) -> Tuple[MetadataDict, CardMetadata]:
         """Play backup songs if advertising is detected on currently broadcasted station."""
@@ -36,7 +35,9 @@ class AdsHandler(HTMLMixin):
             session.close()
             
             station = metadata["station"]
-            thumbnail, url = self._fetch_cover_and_link_on_deezer(backup_song.artist, backup_song.album, backup_song.title)
+            thumbnail, url = fetch_cover_and_link_on_deezer(
+                self.channel.current_station.station_thumbnail, backup_song.artist, backup_song.album, backup_song.title
+            )
 
             # and update metadata
             metadata = {
