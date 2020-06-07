@@ -35,6 +35,10 @@ class CardMetadata(NamedTuple):
     current_show_title: str
     current_broadcast_summary: str
 
+class StreamMetadata(NamedTuple):
+    title: str
+    artist: str
+    
 # Views objects (not in web meaning but more in dict_view meaning)
 
 class BaseView(RedisMixin):

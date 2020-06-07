@@ -3,13 +3,14 @@ import functools
 from logging import Logger
 
 from typing import Type
+import telnetlib
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.mixins import RedisMixin
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
-                                  as_metadata_type, MetadataDict)
+                                  as_metadata_type, MetadataDict, StreamMetadata)
 
 
 class Channel(RedisMixin):
@@ -229,6 +230,16 @@ class Channel(RedisMixin):
         if current_metadata is None:
             current_metadata = {}
         return self.current_station.get_metadata(current_metadata, logger, dt)
+    
+    def update_stream_metadata(self, metadata: MetadataDict):
+        """Send stream metadata to liquidsoap."""
+        new_stream_metadata = self.current_station.format_stream_metadata(metadata)
+        if new_stream_metadata is None:
+            return
+        session = telnetlib.Telnet("localhost", 1234)
+        session.write(f'{self.endpoint}.insert title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"\n'.encode())
+        session.write("exit\n".encode())
+        session.close()
 
     def process(self, logger: Logger, now: datetime, **kwargs):
         """If needed, update metadata.
@@ -267,6 +278,7 @@ class Channel(RedisMixin):
             return False
         self.current_broadcast_info = info
         self.publish_to_redis("updated")
+        self.update_stream_metadata(metadata)
         logger.debug(f"channel={self.endpoint} station={self.current_station.formated_station_name} Metadata was updated.")
         return True
     
@@ -296,7 +308,8 @@ class Channel(RedisMixin):
         # output
         fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].formated_station_name
         timetable_to_write += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
-        timetable_to_write += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n\n'
+        timetable_to_write += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
+        timetable_to_write += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
 
         output_to_write = "output.icecast(%vorbis(quality=0.6),\n"
         output_to_write += '    host="localhost", port=3333, password="Arkelis77",\n'

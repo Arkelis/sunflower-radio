@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
-from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
+from sunflower.core.types import CardMetadata, MetadataType, MetadataDict, StreamMetadata
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
@@ -243,6 +243,9 @@ class RadioFranceStation(URLStation):
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
     
+
+    def format_stream_metadata(self, metadata):
+        return StreamMetadata(metadata.get("show_title", self.station_slogan), self.station_name)
 
     def _fetch_cover(self, podcast_link):
         """Scrap cover url from provided Apple Podcast link."""

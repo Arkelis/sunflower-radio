@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from sunflower import settings
 from sunflower.core.bases import URLStation
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 
 class RTL2(URLStation):
@@ -158,3 +158,11 @@ class RTL2(URLStation):
             }
         metadata.update(station=self.station_name, **show_metadata)
         return metadata
+    
+    def format_stream_metadata(self, metadata) -> StreamMetadata:
+        title = (
+            " • ".join(track_metadata) 
+            if all(track_metadata := (metadata.get("title"), metadata.get("artist")))
+            else self.station_slogan
+        )
+        return StreamMetadata(title, self.station_name)

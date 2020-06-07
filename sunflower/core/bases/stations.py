@@ -3,11 +3,11 @@
 
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Dict
+from typing import Dict, Optional
 
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin, RedisMixin
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 
 class Station(HTMLMixin):
@@ -103,6 +103,17 @@ class Station(HTMLMixin):
         Don't support MetadataType.NONE and MetadataType.WAITNIG_FOR_FOLLOWING cases
         as it is done in Channel class.
         """
+    
+    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
+        """For sending data to liquidsoap server.
+
+        These metadata will be attached to stream file and can be readen by
+        music software reading icecast stream directly.
+        
+        By default, return None (no data is sent)
+        Otherwise return a StreamMetadata object.
+        """
+        return None
 
     @classmethod
     def get_liquidsoap_config(cls):
