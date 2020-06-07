@@ -238,7 +238,7 @@ class RadioFranceStation(URLStation):
 
             # on RENVOIE alors les métadonnées
             return metadata
-        except KeyError as err:
+        except Exception as err:
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
