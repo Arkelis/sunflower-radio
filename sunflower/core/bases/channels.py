@@ -231,15 +231,18 @@ class Channel(RedisMixin):
             current_metadata = {}
         return self.current_station.get_metadata(current_metadata, logger, dt)
     
-    def update_stream_metadata(self, metadata: MetadataDict):
+    def update_stream_metadata(self, metadata: MetadataDict, logger: Logger):
         """Send stream metadata to liquidsoap."""
         new_stream_metadata = self.current_station.format_stream_metadata(metadata)
         if new_stream_metadata is None:
+            logger.debug(f"channel={self.endpoint} StreamMetadata is empty")
             return
         session = telnetlib.Telnet("localhost", 1234)
         session.write(f'{self.endpoint}.insert title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"\n'.encode())
         session.write("exit\n".encode())
         session.close()
+        logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
+
 
     def process(self, logger: Logger, now: datetime, **kwargs):
         """If needed, update metadata.
@@ -266,19 +269,21 @@ class Channel(RedisMixin):
 
         current_info = self.current_broadcast_info
 
-        metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
-        info = self.get_current_broadcast_info(current_info, metadata, logger)
+        new_metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
+        new_info = self.get_current_broadcast_info(current_info, new_metadata, logger)
 
         for handler in self.handlers:
-            metadata, info = handler.process(metadata, info, logger, now)
+            new_metadata, new_info = handler.process(new_metadata, new_info, logger, now)
         
-        self.current_broadcast_metadata = metadata
-        if info == self.current_broadcast_info:
+        self.current_broadcast_metadata = new_metadata
+
+        if new_info == current_info:
             self.publish_to_redis("unchanged")
             return False
-        self.current_broadcast_info = info
+        
+        self.current_broadcast_info = new_info
         self.publish_to_redis("updated")
-        self.update_stream_metadata(metadata)
+        self.update_stream_metadata(new_metadata, logger)
         logger.debug(f"channel={self.endpoint} station={self.current_station.formated_station_name} Metadata was updated.")
         return True
     
@@ -287,7 +292,7 @@ class Channel(RedisMixin):
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            timetable_to_write = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
+            source_str = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
             for days, timetable in self.timetable.items():
                 formated_weekday = (
                     ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
@@ -300,19 +305,19 @@ class Channel(RedisMixin):
                     formated_start = start.replace(":", "h")
                     formated_end = end.replace(":", "h")
                     line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, station.formated_station_name)
-                    timetable_to_write += line
-            timetable_to_write += "])\n\n"
+                    source_str += line
+            source_str += "])\n\n"
         else:
-            timetable_to_write = ""
+            source_str = ""
         
         # output
-        fallback = str(self.endpoint) + "_timetable" if timetable_to_write else self.stations[0].formated_station_name
-        timetable_to_write += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
-        timetable_to_write += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
-        timetable_to_write += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
+        fallback = str(self.endpoint) + "_timetable" if source_str else self.stations[0].formated_station_name
+        source_str += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
+        source_str += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
+        source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
 
-        output_to_write = "output.icecast(%vorbis(quality=0.6),\n"
-        output_to_write += '    host="localhost", port=3333, password="Arkelis77",\n'
-        output_to_write += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
+        output_str = "output.icecast(%vorbis(quality=0.6),\n"
+        output_str += '    host="localhost", port=3333, password="Arkelis77",\n'
+        output_str += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
 
-        return timetable_to_write, output_to_write
+        return source_str, output_str
