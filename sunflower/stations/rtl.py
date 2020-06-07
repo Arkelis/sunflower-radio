@@ -160,9 +160,6 @@ class RTL2(URLStation):
         return metadata
     
     def format_stream_metadata(self, metadata) -> StreamMetadata:
-        title = (
-            " • ".join(track_metadata) 
-            if all(track_metadata := (metadata.get("title"), metadata.get("artist")))
-            else self.station_slogan
-        )
+        track_metadata = (metadata.get("title"), metadata.get("artist"))
+        title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
         return StreamMetadata(title, self.station_name)
