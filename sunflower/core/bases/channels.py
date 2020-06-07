@@ -2,6 +2,8 @@ from datetime import datetime, time, timedelta
 import functools
 from logging import Logger
 
+from typing import Type
+
 from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.mixins import RedisMixin
@@ -84,8 +86,8 @@ class Channel(RedisMixin):
             raise RuntimeError("Jour de la semaine non supporté.")
         
         getting_following = False
-        asked_station_cls = None
-        following_station_cls = None
+        asked_station_cls: Type[Station] = None
+        following_station_cls: Type[Station] = None
 
         index_of_last_element = len(self.timetable[key]) - 1
         for (i, t) in enumerate(self.timetable[key]):
@@ -110,6 +112,7 @@ class Channel(RedisMixin):
             else:
                 # si on cherche la suivante, on enregistre uniquement la classe
                 following_station_cls = t[2]
+                break
         
         # si après avoir parcouru le bon jour on n'a rien trouvé : on lève une erreur
         if asked_station_cls is None:
@@ -121,7 +124,10 @@ class Channel(RedisMixin):
             week_day = (datetime_obj + timedelta(hours=24)).weekday()
             for t in self.timetable:
                 if week_day in t:
-                    following_station_cls = self.timetable[t][0][2]
+                    for e in self.timetable[t]:
+                        if (station := e[2]) != asked_station_cls:
+                            following_station_cls = station
+                            break
                     break
             else:
                 raise RuntimeError("Jour de la semaine non supporté pour la station suivante : {}. Jours dispos : {}".format(week_day, self.timetable.keys()))
