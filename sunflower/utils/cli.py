@@ -24,11 +24,8 @@ def abort_cli(msg="Fin du programme."):
     click.secho(msg, fg="red", bold=True)
     raise Exit(1)
 
-
 def success_cli(msg="Terminé."):
     click.secho(msg, fg="green", bold=True)
-    raise Exit(0)
-
 
 def install_liquidsoap_service():
     click.secho("Creating liquidsoap service.", fg="cyan", bold=True)
