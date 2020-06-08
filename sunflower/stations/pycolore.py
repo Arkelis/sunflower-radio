@@ -148,5 +148,4 @@ class PycolorePlaylistStation(DynamicStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        string = '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formated_station_name)
-        return string
+        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formated_station_name)

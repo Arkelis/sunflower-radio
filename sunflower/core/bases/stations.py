@@ -150,5 +150,4 @@ class URLStation(Station):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        formated_name = cls.formated_station_name
-        return '{} = mksafe(input.http("{}"))\n'.format(formated_name, cls.station_url)
+        return f'{cls.formated_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}")))\n'
