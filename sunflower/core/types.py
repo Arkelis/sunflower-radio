@@ -38,6 +38,7 @@ class CardMetadata(NamedTuple):
 class StreamMetadata(NamedTuple):
     title: str
     artist: str
+    album: str = ""
     
 # Views objects (not in web meaning but more in dict_view meaning)
 

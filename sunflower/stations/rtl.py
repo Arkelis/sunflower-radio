@@ -4,6 +4,7 @@ from logging import Logger
 
 import requests
 from bs4 import BeautifulSoup
+from typing import Optional
 
 from sunflower import settings
 from sunflower.core.bases import URLStation
@@ -159,7 +160,8 @@ class RTL2(URLStation):
         metadata.update(station=self.station_name, **show_metadata)
         return metadata
     
-    def format_stream_metadata(self, metadata) -> StreamMetadata:
+    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         track_metadata = (metadata.get("title"), metadata.get("artist"))
+        show_title = metadata.get("show_title", "")
         title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
-        return StreamMetadata(title, self.station_name)
+        return StreamMetadata(title, self.station_name, show_title)

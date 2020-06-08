@@ -3,7 +3,7 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -244,8 +244,8 @@ class RadioFranceStation(URLStation):
             return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
     
 
-    def format_stream_metadata(self, metadata):
-        return StreamMetadata(metadata.get("show_title", self.station_slogan), self.station_name)
+    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
+        return StreamMetadata(metadata.get("show_title", self.station_slogan), self.station_name, metadata.get("diffusion_title", ""))
 
     def _fetch_cover(self, podcast_link):
         """Scrap cover url from provided Apple Podcast link."""
