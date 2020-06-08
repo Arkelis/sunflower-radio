@@ -238,8 +238,8 @@ class Channel(RedisMixin):
             logger.debug(f"channel={self.endpoint} StreamMetadata is empty")
             return
         session = telnetlib.Telnet("localhost", 1234)
-        session.write(f'{self.endpoint}.insert title="{new_stream_metadata.title}",'.encode())
-        session.write(f'artist="{new_stream_metadata.artist}",album="{new_stream_metadata.album}\n'.encode())
+        metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}",album="{new_stream_metadata.album}"'
+        session.write(f'{self.endpoint}.insert {metadata_string}\n'.replace("-", " ").encode())
         session.write("exit\n".encode())
         session.close()
         logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
