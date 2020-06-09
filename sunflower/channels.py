@@ -16,11 +16,11 @@ tournesol = Channel(
             # (start, end, station_name),
             ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
             ("05:00", "07:00", FranceInfo), # Matinale
-            ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", PycolorePlaylistStation), # Musique
+            ("07:00", "10:00", FranceInter), # Matinale + Boomerang
+            ("10:00", "11:00", PycolorePlaylistStation), # Musique
             ("11:00", "12:00", FranceCulture), # Toute une vie
-            ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
-            ("15:00", "18:00", FranceCulture), # La compagnie des auteurs/poètes, La Méthode scientifique, LSD (la série docu)
+            ("12:00", "14:00", FranceInter), # Les P'tits bateaux, Le jeu des mille euros, Le journal, La Terre au carré, La Marche de l'histoire
+            ("14:00", "18:00", FranceCulture), # Economie, Littérature, Sciences, LSD (La série documentaire)
             ("18:00", "20:00", FranceInter), # Soirée
             ("20:00", "21:00", FranceInfo), # Les informés
             ("21:00", "22:00", RTL2), # Musique
@@ -28,7 +28,6 @@ tournesol = Channel(
         ],
         (5,): [
             ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
-            ("06:00", "07:00", FranceInfo), # Matinale
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "11:00", PycolorePlaylistStation), # Musique
             ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
@@ -39,10 +38,10 @@ tournesol = Channel(
             ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
         ],
         (6,): [
-            ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
-            ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "12:00", PycolorePlaylistStation),
-            ("12:00", "14:00", FranceInter), # Politique + journal
+            ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
+            ("06:00", "09:00", FranceInter), # Matinale
+            ("09:00", "11:00", PycolorePlaylistStation),
+            ("11:00", "14:00", FranceInter), # On va déguster, politique, journal
             ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
             # ("18:00", "19:00", RTL2),
             ("18:00", "21:00", FranceInter), # Spécial Corona : téléphone sonne et le masque et la plume
