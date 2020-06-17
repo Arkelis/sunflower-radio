@@ -14,6 +14,7 @@ class PycolorePlaylistStation(DynamicStation):
     station_name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
+    _songs_to_play: List[Song]
 
 
     # UNUSED:
@@ -33,14 +34,10 @@ class PycolorePlaylistStation(DynamicStation):
         self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist}, expiration_delay=172800) # expiration delay = 48h
 
     def __setup__(self):
-        self._songs_to_play: List[Song] = []
+        self._populate_songs_to_play()
         self._current_song: Optional[Song] = None
         self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
-    
-    def __init__(self):
-        super().__init__()
-        self._populate_songs_to_play()
     
     def _populate_songs_to_play(self):
         new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
