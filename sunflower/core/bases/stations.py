@@ -10,7 +10,26 @@ from sunflower.core.mixins import HTMLMixin, RedisMixin
 from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 
-class Station(HTMLMixin):
+STATIONS_INSTANCES = {} # type: Dict[StationMeta, Station]
+
+
+class StationMeta(type):
+    """Station metaclass
+
+    Station are singletons. This metaclass override Station classes instantiation mechanism:
+
+    - first time `StationKlass()` is called, an object is created
+    - the following times `StationKlass()` is called, it returns the existing instance
+      (does not call `__new__()` or `__init__()`)
+    """
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in STATIONS_INSTANCES:
+            STATIONS_INSTANCES[cls] = super().__call__(*args, **kwargs)
+        return STATIONS_INSTANCES[cls]
+
+
+class Station(HTMLMixin, metaclass=StationMeta):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -21,44 +40,25 @@ class Station(HTMLMixin):
     """
 
     data_type = "station"
-    station_name: str
-    station_thumbnail: str
+    station_name: str = ""
+    station_thumbnail: str = ""
     station_website_url: str = ""
-    station_slogan: str = ''
+    station_slogan: str = ""
 
     @classproperty
-    def formated_station_name(cls) -> str:
-        """Return formated station name.
+    def formatted_station_name(cls) -> str:
+        """Return formatted station name.
 
-        Formated name means name in lower case and with all spaces removed.
+        Formatted name means name in lower case and with all spaces removed.
         Example : "France Inter" becomes "franceinter".
 
         The parameter `cls` refers to the class and not to the instance.
         """
         return cls.station_name.lower().replace(" ", "")
 
-    def __new__(cls):
-        """Create new instance or return previously created one.
-
-        Station class is singleton, so once one instance is created,
-        all other calls to this method return the one created before. At
-        first instanciation, call __setup__() method.
-        """
-        instance_of_dict = STATIONS_INSTANCES.get(cls.__name__)
-        if instance_of_dict is None:
-            instance_of_dict = STATIONS_INSTANCES[cls.__name__] = super().__new__(cls)
-            instance_of_dict.__setup__()
-        return instance_of_dict
-
     @property
-    def html_formated_station_name(self):
+    def html_formatted_station_name(self):
         return self._format_html_anchor_element(self.station_website_url, self.station_name)
-
-    def __setup__(self):
-        """Equivalent of __init__() but it is called at first instanciation only.
-
-        Further instanciations return first created object as this class is a singleton.
-        """
 
     def _get_error_metadata(self, message, seconds):
         """Return general mapping containing a message and ERROR type.
@@ -120,9 +120,6 @@ class Station(HTMLMixin):
         """Return string containing liquidsoap config for this station."""
 
 
-STATIONS_INSTANCES: Dict[str, Station] = {}
-
-
 class DynamicStation(Station, RedisMixin):
     """Base class for internally managed stations.
     
@@ -141,13 +138,15 @@ class URLStation(Station):
     URLStation object can have station_slogan attribute that can be
     used when no metadata is provided at a given time.
     """
-    station_url: str
-    station_slogan: str
+    station_url: str = ""
+    station_slogan: str = ""
 
-    def __setup__(self):
-        if self.station_url == "":
+    def __new__(cls):
+        if cls.station_url == "":
             raise ValueError("URL not specified for URLStation object.")
+        return super().__new__(cls)
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return f'{cls.formated_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}")))\n'
+        return f'{cls.formatted_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}")))\n'
+

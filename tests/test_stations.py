@@ -6,12 +6,14 @@ from sunflower.stations import (
     PycolorePlaylistStation,
 )
 
+
 def test_instances_created():
     for station_cls in (RTL2, FranceInfo, FranceInter, FranceMusique, FranceCulture, PycolorePlaylistStation):
-        assert isinstance(station_cls(), station_cls), "Instances must be created automatically"
+        assert isinstance(station_cls(), station_cls)
+
 
 def test_instances_unique():
-    for (name, inst) in STATIONS_INSTANCES.items():
+    for (cls, inst) in STATIONS_INSTANCES.items():
         for station_cls in (RTL2, FranceInfo, FranceInter, FranceMusique, FranceCulture, PycolorePlaylistStation):
-            if name == station_cls.__name__:
+            if cls == station_cls:
                 assert inst is station_cls()
