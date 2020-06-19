@@ -1,10 +1,10 @@
+import time
+
 import click
-from click.exceptions import Exit
 from sunflower.utils.cli import (
     start_liquidsoap,
     abort_cli,
     success_cli,
-    install_liquidsoap_service,
     start_scheduler,
     stop_scheduler,
     stop_liquidsoap,
@@ -49,14 +49,9 @@ def stop(component):
     if component in ("radio", "all"):
         stop_liquidsoap()
     if component in ("scheduler", "all"):
+        time.sleep(1)
         stop_scheduler()
     success_cli()
-
-
-@sunflower.command()
-def install_service():
-    """Install liquidsoap service."""
-    install_liquidsoap_service()
 
 
 @sunflower.command()

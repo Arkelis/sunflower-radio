@@ -17,74 +17,91 @@ Radio Tournesol s'insère dans deux de ces éléments :
 
 ## Fonctionnement de Radio Tournesol
 
-### Client de lecture
+### Scheduler
 
-Le client de lecture se présente sous forme d'un serveur Flask. Celui-ci s'appuie sur deux types d'objets :
+Un planificateur (`Scheduler`) s'occupe de gérer des objets chaînes `Channel` qui contiennent des références vers les
+stations utilisées. À intervalle de temps régulier, il appelle une méthode `process()` de ces objets qui va lancer
+des traitements, par exemple pour aller chercher les informations sur le programme en cours de diffusion.
 
 #### Channel
 
-Elle est composée de stations. Elle va puiser les métadonnées chez les stations enregistrées. Lors de son instanciation, on indique les stations utilisées, son nom (qui sera aussi son endpoint), ainsi que sa table d'horaires. Par exemple, la chaîne Tournesol de Radio Pycolore est définie comme suit :
+Elle est composée de stations. Elle va puiser les métadonnées chez les stations enregistrées. Lors de son instanciation,
+on indique les stations utilisées, son nom (qui sera aussi son endpoint), ainsi que sa table d'horaires. Par exemple
+la chaîne Tournesol de Radio Pycolore est définie comme suit :
 
 ```python
 tournesol = Channel(
     endpoint="tournesol",
-    stations=(FranceCulture, FranceInter, FranceMusique, FranceInfo, RTL2),
+    handlers=(AdsHandler,),
     timetable={
         # (weekday1, weekday2, ...)
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
-            ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
-            ("05:00", "07:00", FranceInfo), # Matinale
-            ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", RTL2), # Musique
-            ("11:00", "12:00", FranceCulture), # Toute une vie
-            ("12:00", "15:00", FranceInter), # Jeu des mille, journal, boomerang
-            ("15:00", "18:00", FranceCulture), # La compagnie des auteurs/poètes, La Méthode scientifique, LSD (la série docu)
-            ("18:00", "20:00", FranceInter), # Soirée
-            ("20:00", "21:00", FranceInfo), # Les informés
-            ("21:00", "00:00", RTL2), # Musique
+            ("00:00", "05:00", FranceCulture),
+            ("05:00", "07:00", FranceInfo),
+            ("07:00", "10:00", FranceInter),
+            ("10:00", "11:00", PycolorePlaylistStation),
+            ("11:00", "12:00", FranceCulture),
+            ("12:00", "14:00", FranceInter),
+            ("14:00", "18:00", FranceCulture),
+            ("18:00", "20:00", FranceInter),
+            ("20:00", "21:00", FranceInfo),
+            ("21:00", "22:00", RTL2),
+            ("22:00", "00:00", PycolorePlaylistStation),
         ],
         (5,): [
-            ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
-            ("06:00", "07:00", FranceInfo), # Matinale
-            ("06:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", RTL2), # Musique
-            ("11:00", "14:00", FranceInter), # Sur les épaules de Darwin + politique + midi
-            ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
-            ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
-            ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
-            ("20:00", "21:00", FranceInfo), # Les informés
-            ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
+            ("00:00", "06:00", FranceCulture),
+            ("06:00", "09:00", FranceInter),
+            ("09:00", "11:00", PycolorePlaylistStation),
+            ("11:00", "14:00", FranceInter),
+            ("14:00", "17:00", FranceCulture),
+            ("17:00", "18:00", FranceInter),
+            ("18:00", "20:00", FranceInter),
+            ("20:00", "21:00", FranceInfo),
+            ("21:00", "00:00", FranceCulture),
         ],
         (6,): [
-            ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
-            ("07:00", "09:00", FranceInter), # Matinale
-            ("09:00", "12:00", RTL2),
-            ("12:00", "14:00", FranceInter), # Politique + journal
-            ("14:00", "18:00", FranceMusique), # Aprem Musique : Carrefour de Lodéon et La tribune des critiques de disques
+            ("00:00", "06:00", FranceCulture),
+            ("06:00", "09:00", FranceInter),
+            ("09:00", "11:00", PycolorePlaylistStation),
+            ("11:00", "14:00", FranceInter),
+            ("14:00", "18:00", FranceMusique),
             # ("18:00", "19:00", RTL2),
-            ("18:00", "21:00", FranceInter), # Spécial Corona : téléphone sonne et le masque et la plume
-            ("21:00", "00:00", RTL2),
+            ("18:00", "21:00", FranceInter),
+            ("21:00", "22:00", RTL2),
+            ("22:00", "00:00", PycolorePlaylistStation),
         ]
     },
 )
 ```
 
+Dans cet exemple, `tournesol` fait appel à un `Handler`, une classe qui altère les métadonnées une fois qu'elles ont
+été récupérées par la station.
+
 #### Station
 
-Une station représente une station jouée sur une plage horaire. Elle doit implémenter deux méthodes (`get_metadata()` et `format_info()`) pour alimenter la radio et le serveur Flask.
+Une station représente une station diffusée sur une plage horaire. Elle doit implémenter trois méthodes  pour alimenter la radio et le serveur Flask.
 
-### Scheduler
+* `get_metadata()` : cette méthode va chercher les informations sur le programme en cours de diffusion. Par exemple
+  , pour une station telle que France Inter, elle va utiliser l'API de Radio France.
+* `format_stream_metadata()` : cette méthode formate des métadonnées pour les envoyer à l'encodeur qui va les inclure
+  dans le flux audio. Elles sont lues par les lecteurs audio.
+* `format_info()` : cette méthode formate les données pour les afficher dans le client de lecture.
 
-Les métadonnées sont stockées sur le serveur dans la mémoire grâce à Redis. Elles sont récupérées par un scheduler lancé en démon grâce à Daemonize.
+### Client de lecture
+
+Si l'on peut écouter la radio simplement à partir du flux généré par Liquidsoap, `sunflower-radio` possède également
+un client de lecture, une application web [Flask](https://flask.palletsprojects.com/en/1.1.x/) qui met à disposition
+une page avec un lecteur, et une API exposant des données.
 
 ## Installation
+
+Il faut avoir [poetry](https://github.com/sdispater/poetry) installé sur le système. Puis :
 
 ```
 $ poetry install 
 ```
 
-Il faut [poetry](https://github.com/sdispater/poetry).
 
 ## Configuration
 
@@ -93,22 +110,49 @@ Le fichier `settings.py` contient trois éléments :
 - le chemin vers le dossier contenant les musiques à jouer en cas de pub ;
 - les noms des chaînes créées dans `channels.py`
 
-**Radio supportées :**
+## Lancer la radio pour la première fois
 
-- France Inter
-- France Musique
-- France Culture
-- France Info
-- RTL 2
+Dépendances :
 
-## Test
+* [Redis](https://redis.io/)
+* [Liquidsoap](https://www.liquidsoap.info/)
+
+Une fois que Liquidsoap est installé, on génère la configuration adéquate :
 
 ```
+$ poetry run python manage.py generate-liquidsoap-config
+```
+
+Cela crée un fichier `sunflower.liq` dans le répertoire actuel. Puis on lance Liquidsoap, en mode démon. Enfin, il ne
+ reste plus qu'à lancer le planificateur :
+
+```
+$ poetry run python manage.py start scheduler
 $ poetry run flask run
 ```
 
 - Aller à `localhost:8080` pour accéder au client de lecture.
 - Aller à `localhost:8080/api` pour accéder aux données exposées en JSON.
+
+### Service Liquidsoap
+
+Exemple de service pour Liquidsoap :
+
+```
+[Unit]
+Description=Pycolore Radio generation by liquidsoap
+
+[Service]
+Type=simple
+
+User=<user>
+Group=<group>
+UMask=007
+
+ExecStart=<chemin vers liquidsoap> <chemin vers le fichier de config>
+```
+
+Dans `settings.py`, on peut renseigner le nom du service dans la variable `LIQUIDSOAP_SERVICE`.
 
 ## Feuille de route
  

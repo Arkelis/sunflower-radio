@@ -6,56 +6,37 @@ from click.exceptions import Exit
 import subprocess
 import os
 
-SERVICE_FILE = """[Unit]
-Description=Pycolore Radio generation by liquidsoap
-
-[Service]
-Type=simple
-
-User=guillaume
-Group=guillaume
-UMask=007
-
-ExecStart=/home/guillaume/.opam/4.08.1/bin/liquidsoap /home/guillaume/radio/radio.liq
-"""
+try:
+    from sunflower.settings import LIQUIDSOAP_SERVICE
+except ImportError:
+    LIQUIDSOAP_SERVICE = "radio"
 
 
 def abort_cli(msg="Fin du programme."):
     click.secho(msg, fg="red", bold=True)
     raise Exit(1)
 
+
 def success_cli(msg="Terminé."):
     click.secho(msg, fg="green", bold=True)
-
-def install_liquidsoap_service():
-    click.secho("Creating liquidsoap service.", fg="cyan", bold=True)
-    with open("radio.service", "w") as f:
-        f.write(SERVICE_FILE)
-    install_service = subprocess.Popen(
-        ["sudo", "mv", "radio.service", "/etc/systemd/system/radio.service"]
-    )
-    _, stderr = install_service.communicate()
-    if not install_service.returncode:
-        success_cli("Service installed. Run start radio command to launch service.")
-    click.secho(stderr.decode(), fg="red")
-    abort_cli("Operation failed.")
 
 
 def start_liquidsoap(restart=False):
     """Start liquidsoap as a systemd service. If service doesnt exist, create it."""
 
+    service_name = LIQUIDSOAP_SERVICE
     command = "restart" if restart else "start"
     click.secho(
         "Starting liquidsoap service. The following command will be executed.",
         fg="cyan",
         bold=True,
     )
-    click.secho("sudo systemctl {} radio".format(command), bold=True)
+    click.secho(f"sudo systemctl {command} {service_name}", bold=True)
     rep = click.confirm("Voulez vous continuer ? ")
     if not rep:
         abort_cli("Opération annulée.")
     start_service = subprocess.Popen(
-        ["sudo", "systemctl", command, "radio"],
+        ["sudo", "systemctl", command, service_name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -65,7 +46,7 @@ def start_liquidsoap(restart=False):
     if "Failed to {}".format(command) in stderr.decode():
         click.secho(stderr.decode(), fg="red")
         abort_cli(
-            "Operation failed. If radio.service is not found, launch install-service command."
+            "Operation failed. If radio.service is not found, create it."
         )
 
 
@@ -83,17 +64,18 @@ def stop_scheduler():
 
 
 def stop_liquidsoap():
+    service_name = LIQUIDSOAP_SERVICE
     click.secho(
         "Stopping liquidsoap service. The following command will be executed.",
         fg="cyan",
         bold=True,
     )
-    click.secho("sudo systemctl stop radio", bold=True)
+    click.secho(f"sudo systemctl stop {service_name}", bold=True)
     rep = click.confirm("Voulez vous continuer ? ")
     if not rep:
         abort_cli("Opération annulée.")
     stop_service = subprocess.Popen(
-        ["sudo", "systemctl", "stop", "radio"],
+        ["sudo", "systemctl", "stop", service_name],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
