@@ -6,7 +6,6 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Optional
 
-from sunflower import settings
 from sunflower.core.bases import URLStation
 from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
@@ -51,7 +50,7 @@ class RTL2(URLStation):
             current_thumbnail=metadata["thumbnail_src"],
             current_show_title=metadata.get("show_title", ""),
             current_broadcast_summary=metadata.get("show_summary", ""),
-            current_station=self.html_formated_station_name,
+            current_station=self.html_formatted_station_name,
             current_broadcast_title=current_broadcast_title,
         )
 

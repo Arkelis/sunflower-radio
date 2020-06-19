@@ -189,7 +189,7 @@ class Channel(RedisMixin):
     def neutral_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
-            current_station=self.current_station.html_formated_station_name,
+            current_station=self.current_station.html_formatted_station_name,
             current_broadcast_title=self.current_station.station_slogan or "Vous écoutez {}".format(self.current_station.station_name),
             current_show_title="",
             current_broadcast_summary="",
@@ -199,7 +199,7 @@ class Channel(RedisMixin):
     def waiting_for_following_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
-            current_station=self.current_station.html_formated_station_name,
+            current_station=self.current_station.html_formatted_station_name,
             current_broadcast_title="Dans un instant : {}".format(self.following_station.station_name),
             current_show_title="",
             current_broadcast_summary="",
@@ -285,7 +285,7 @@ class Channel(RedisMixin):
         self.current_broadcast_info = new_info
         self.publish_to_redis("updated")
         self.update_stream_metadata(new_metadata, logger)
-        logger.debug(f"channel={self.endpoint} station={self.current_station.formated_station_name} Metadata was updated.")
+        logger.debug(f"channel={self.endpoint} station={self.current_station.formatted_station_name} Metadata was updated.")
         return True
     
     def get_liquidsoap_config(self):
@@ -305,14 +305,14 @@ class Channel(RedisMixin):
                         raise RuntimeError("Time format must be HH:MM.")
                     formated_start = start.replace(":", "h")
                     formated_end = end.replace(":", "h")
-                    line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, station.formated_station_name)
+                    line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, station.formatted_station_name)
                     source_str += line
             source_str += "])\n\n"
         else:
             source_str = ""
         
         # output
-        fallback = str(self.endpoint) + "_timetable" if source_str else self.stations[0].formated_station_name
+        fallback = str(self.endpoint) + "_timetable" if source_str else self.stations[0].formatted_station_name
         source_str += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         source_str += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
         source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'

@@ -14,7 +14,6 @@ class PycolorePlaylistStation(DynamicStation):
     station_name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
-    _songs_to_play: List[Song]
 
 
     # UNUSED:
@@ -33,12 +32,14 @@ class PycolorePlaylistStation(DynamicStation):
         ]
         self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist}, expiration_delay=172800) # expiration delay = 48h
 
-    def __setup__(self):
+    def __init__(self):
+        super().__init__()
+        self._songs_to_play: List[Song] = []
         self._populate_songs_to_play()
         self._current_song: Optional[Song] = None
         self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
-    
+
     def _populate_songs_to_play(self):
         new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
         self.persist_playlist(new_songs)
@@ -79,10 +80,12 @@ class PycolorePlaylistStation(DynamicStation):
         if self._current_song is None:
             self._current_song_end = now.timestamp() + max_length
             return
-        logger.debug("station={} Playing {} - {} ({} songs remaining in current list).".format(self.formated_station_name, self._current_song.artist, self._current_song.title, len(self._songs_to_play)))
+        logger.debug(
+            f"station={self.formatted_station_name} Playing {self._current_song.artist} - {self._current_song.title} ({len(self._songs_to_play)} songs remaining in current list)."
+        )
         self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
         session = telnetlib.Telnet("localhost", 1234)
-        session.write("{}_station_queue.push {}\n".format(self.formated_station_name, self._current_song.path).encode())
+        session.write("{}_station_queue.push {}\n".format(self.formatted_station_name, self._current_song.path).encode())
         session.write("exit\n".encode())
         session.close()
 
@@ -145,4 +148,4 @@ class PycolorePlaylistStation(DynamicStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formated_station_name)
+        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formatted_station_name)

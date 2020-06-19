@@ -24,3 +24,9 @@ sunflower/static/dist/index.*
 
 # tests
 .pytest_cache
+
+# pycharm
+.idea
+
+# testing module
+__main__.py

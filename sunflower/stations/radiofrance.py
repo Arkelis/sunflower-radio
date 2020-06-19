@@ -114,7 +114,7 @@ class RadioFranceStation(URLStation):
             current_show_title = self._format_html_anchor_element(metadata.get("show_url"), show_title)
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
-            current_station=self.html_formated_station_name,
+            current_station=self.html_formatted_station_name,
             current_broadcast_title=current_broadcast_title,
             current_show_title=current_show_title,
             current_broadcast_summary=metadata.get("diffusion_summary") or "",
