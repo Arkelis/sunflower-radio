@@ -1,12 +1,12 @@
-import telnetlib
-from datetime import date, datetime, time, timedelta
-from logging import Logger
-from typing import Iterable, Optional, List, Dict, Any
 import random
+import telnetlib
+from datetime import datetime, timedelta
+from logging import Logger
+from typing import Dict, List, Optional
 
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
-from sunflower.core.types import CardMetadata, MetadataType, Song, MetadataDict
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, Song
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
@@ -15,15 +15,6 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
 
-
-    # UNUSED:
-    # for the moment playlist getter is never used, implement it later if needed.
-    # @property
-    # def playlist(self) -> List[Song]:
-    #     songs: List[Dict[str, Any]] = self.get_from_redis("sunflower:station:pycolore:data")["playlist"]
-    #     return [Song(**mapping) for mapping in songs]
-    
-    # former playlist.setter
     def persist_playlist(self, songs: List[Song]):
         """Persist public fields of song objects in current  playlist in redis."""
         playlist = [
@@ -112,7 +103,10 @@ class PycolorePlaylistStation(DynamicStation):
         }
 
     def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        current_broadcast_title = self._format_html_anchor_element(metadata.get("link"), "{} • {}".format(metadata["artist"], metadata["title"]))
+        current_broadcast_title = self._format_html_anchor_element(
+            metadata.get("link"),
+            f"{metadata['artist']} • {metadata['title']}",
+        )
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
             current_station=metadata["station"],

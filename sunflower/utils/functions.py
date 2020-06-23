@@ -2,19 +2,15 @@
 
 import functools
 import glob
-import json
-from typing import List, Dict, Any
-
-from collections import namedtuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import mutagen
 import requests
 from flask import abort
-import redis
 
 from sunflower import settings
-from sunflower.core.types import Song
-from sunflower.core.types import ChannelView, StationView
+from sunflower.core.types import ChannelView, Song, StationView
+
 
 # flask views decorator
 
@@ -27,6 +23,7 @@ def get_channel_or_404(view_function):
         return view_function(channel_view)
     return wrapper
 
+
 def get_station_or_404(view_function):
     @functools.wraps(view_function)
     def wrapper(station: str):
@@ -35,6 +32,7 @@ def get_station_or_404(view_function):
         station_view = StationView(station)
         return view_function(station_view)
     return wrapper
+
 
 # utils functions
 
@@ -61,6 +59,7 @@ def prevent_consecutive_artists(songs_list: List[Song]) -> List[Song]:
             n, j = n + 1, j + 1
     return songs
 
+
 def parse_songs(glob_pattern: str) -> List[Song]:
     """Parse songs matching glob_pattern and return a list of Song objects.
     
@@ -82,46 +81,77 @@ def parse_songs(glob_pattern: str) -> List[Song]:
     return sorted(songs, key=lambda song: (song.artist + song.title).lower())
 
 
-def _get_data_from_deezer_url(*urls) -> Dict[Any, Any]:
-    """Get json from given urls and return first non-empty data json as dict.
-    
-    If all json are empty, return empty dict.
+def _get_data_from_deezer_url(*urls: str,
+                              getcover: Callable, getalbumurl: Callable,
+                              getitem: Callable = None, match: str = None) -> Optional[Tuple[str, str]]:
+    """Get json from given urls and return first relevant (cover_url, album_url) tuple.
+
+    If no relevant data is found, return None.
+
+    An endpoint of deezer api returns a list of objects. This function iterates on these json objects converted as dict
+    to find and return the first relevant (cover_url, album_url) tuple thanks to getitem and match parameters. If they
+    are not provided, the first element of the first list returned by an endpoint is returned.
+
+    Parameters:
+
+    - `*urls`: urls to fetch (in order)
+    - `getcover()`: callable taking one dict as argument and returning cover from it
+    - `getalbumurl()`: callable taking one dict as argument and returning album url from it
+
+    Item filtering can be done with two optional parameters:
+
+    - getitem: callable taking one dict as argument and returning an object relevant for filtering
+    - match: an object which will be compared to the result of getitem(obj).
+
+    If `getitem(obj) == match` is evaluated True, this object is considered as relevant.
+    If no getitem nor match are provided, return the first object of the first nonempty retrieved data.
+
     """
+    relevant_data: Optional[Dict] = None
     for url in urls:
         rep = requests.get(url)
         json_data = rep.json().get("data")
-        if json_data:
-            return json_data
-    return {}
+        if not json_data:
+            continue
+        if not getitem:
+            relevant_data = json_data[0]
+            break
+        for data in json_data:
+            if (obj := getitem(data)) == match:
+                relevant_data = obj
+                break
+        if relevant_data is not None:
+            break
+    else:
+        return None
+    return getcover(relevant_data), getalbumurl(relevant_data)
 
-def fetch_cover_and_link_on_deezer(backup_cover, artist, album=None, track=None):
-    """Get cover from Deezer API.
 
-    Search for a track with given artist and track. 
-    Take the cover of the album of the first found track.
+def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, track=None) -> Optional[Tuple[str, str]]:
+    """Get cover and link from Deezer API.
+
+    Search for a track with given artist , album or track.
+    Return the cover of the album and the link to the album on Deezer.
     """
     if album is not None:
         data = _get_data_from_deezer_url(
-            "https://api.deezer.com/search/album?q=artist:'{}' album:'{}'".format(artist, album),
-            "https://api.deezer.com/search/album?q={} {}".format(artist, album),
+            f"https://api.deezer.com/search/album?q=artist:'{artist}' album:'{album}'",
+            f"https://api.deezer.com/search/album?q={artist} {album}",
+            getcover=lambda x: x["cover_big"],
+            getalbumurl=lambda x: x["link"],
+            getitem=lambda x: x["album"]["title"],
+            match=album,
         )
     elif track is not None:
-        data = _get_data_from_deezer_url('https://api.deezer.com/search/track?q={} {}'.format(artist, track))
+        data = _get_data_from_deezer_url(
+            f"https://api.deezer.com/search/track?q=artist:'{artist}' track:'{track}'",
+            f'https://api.deezer.com/search/track?q={artist} {track}',
+            getcover=lambda x: x["album"]["cover_big"],
+            getalbumurl=lambda x: f"https://www.deezer.com/album/{x['album']['id']}",
+        )
     else:
-        data = _get_data_from_deezer_url('https://api.deezer.com/search/artist?q={}'.format(artist))
+        data = _get_data_from_deezer_url('https://api.deezer.com/search/artist?q={}'.format(artist),
+                                         getcover=lambda x: x["picture_big"],
+                                         getalbumurl=lambda x: "")
 
-    if not data:
-        return backup_cover, ""
-    
-    obj = data[0]
-
-    if album is not None:
-        cover_src = obj["cover_big"]
-        album_url = obj["link"]
-    elif track is not None:
-        cover_src = obj["album"]["cover_big"]
-        album_url = f"https://www.deezer.com/album/{obj['album']['id']}"
-    else:
-        cover_src = obj["picture_big"]
-        album_url = ""
-    return cover_src, album_url
+    return data or (backup_cover, "")
