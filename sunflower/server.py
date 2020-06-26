@@ -1,12 +1,8 @@
-import json
-import threading
-import time
 from collections import Counter
 
 import redis
-from flask import (Flask, Response, abort, jsonify, redirect, render_template,
-                   request, stream_with_context, url_for)
-from flask_cors import CORS, cross_origin
+from flask import (Flask, Response, jsonify, redirect, render_template,
+                   request, stream_with_context, url_for, )
 
 from sunflower import settings
 from sunflower.core.types import ChannelView, MetadataEncoder, StationView
@@ -16,12 +12,14 @@ app = Flask(__name__, static_url_path="/static", static_folder="static/dist")
 app.json_encoder = MetadataEncoder
 # cors = CORS(app)
 
+
 # Views
 
 @app.route("/")
 def index():
     last_visited_channel = request.cookies.get("lastVisitedChannel")
     return redirect(last_visited_channel or url_for("channel", channel="tournesol"))
+
 
 @app.route("/<string:channel>/")
 @get_channel_or_404
@@ -33,6 +31,7 @@ def channel(channel: ChannelView):
         "listen_url": url_for("update_broadcast_info_stream", channel=channel.endpoint),
     }
     return render_template("radio.html", **context)
+
 
 @app.route("/playlist/<string:station>")
 @get_station_or_404
@@ -63,6 +62,7 @@ def api_root():
                      for endpoint in settings.STATIONS},
     })
 
+
 @app.route("/api/channels/<string:channel>/")
 @get_channel_or_404
 def get_channel_links(channel):
@@ -73,20 +73,24 @@ def get_channel_links(channel):
         "raw_metadata": url_for("get_channel_info", channel=channel.endpoint, _external=True),
     })
 
+
 @app.route("/api/stations/<string:station>/")
 @get_station_or_404
 def get_station_links(station):
     return jsonify(station.data)
+
 
 @app.route("/api/channels/<string:channel>/metadata/")
 @get_channel_or_404
 def get_channel_info(channel):
     return jsonify(channel.metadata)
 
+
 @app.route("/api/channels/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
     return jsonify(channel.info)
+
 
 @app.route("/api/channels/<string:channel>/events/")
 @get_channel_or_404

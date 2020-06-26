@@ -4,6 +4,7 @@
 from sunflower.core.bases import URLStation
 from sunflower.core.descriptors import PersistentAttribute
 
+
 def write_liquidsoap_config(*channels, filename):
     """Write complete liquidsoap config file."""
     with open("{}.liq".format(filename), "w") as f:
@@ -57,8 +58,8 @@ def check_obj_integrity(obj):
         if not isinstance(attr, PersistentAttribute):
             continue
         if not hasattr(obj, "endpoint"):
-            errors.append(f"Missing 'endpoint' attribute in {obj} which contains PersistentAttribute attribute.")
+            errors.append(f"Missing 'endpoint' attribute in {obj} which contains PersistentAttribute descriptor.")
         if not hasattr(obj, "data_type"):
-            errors.append(f"Missing 'data_type' attribute in {obj} which contains PersistentAttribute attribute.")
+            errors.append(f"Missing 'data_type' attribute in {obj} which contains PersistentAttribute descriptor.")
 
     return errors

@@ -26,6 +26,7 @@ class MetadataType(Enum):
 
 MetadataDict = Dict[str, Union[str, MetadataType]]
 
+
 # Custom named tuples
 
 class Song(NamedTuple):
@@ -35,6 +36,7 @@ class Song(NamedTuple):
     title: str
     length: float
 
+
 class CardMetadata(NamedTuple):
     current_thumbnail: str
     current_station: str
@@ -42,11 +44,13 @@ class CardMetadata(NamedTuple):
     current_show_title: str
     current_broadcast_summary: str
 
+
 class StreamMetadata(NamedTuple):
     title: str
     artist: str
     album: str = ""
-    
+
+
 # Views objects (not in web meaning but more in dict_view meaning)
 
 class BaseView(RedisRepository):
@@ -129,6 +133,7 @@ class MetadataEncoder(json.JSONEncoder):
         if isinstance(obj, MetadataType):
             return obj.value
         return json.JSONEncoder.default(self, obj)
+
 
 def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
     """object_hook for supporting MetadataType at json deserialization."""
