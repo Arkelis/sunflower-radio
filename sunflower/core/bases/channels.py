@@ -1,19 +1,16 @@
-from datetime import datetime, time, timedelta
 import functools
-from logging import Logger
-
-from typing import Type
 import telnetlib
+from datetime import datetime, time, timedelta
+from logging import Logger
+from typing import Optional, Type
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
-from sunflower.core.mixins import RedisMixin
 from sunflower.core.descriptors import PersistentAttribute
-from sunflower.core.types import (CardMetadata, MetadataEncoder, MetadataType,
-                                  as_metadata_type, MetadataDict, StreamMetadata)
+from sunflower.core.types import (CardMetadata, MetadataDict, MetadataEncoder, MetadataType, as_metadata_type)
 
 
-class Channel(RedisMixin):
+class Channel:
     """Channel.
 
     Channel object contains and manages stations. It triggers station metadata updates
@@ -23,7 +20,7 @@ class Channel(RedisMixin):
     """
 
     data_type = "channel"
-    
+
     def __init__(self, endpoint, timetable, handlers=[]):
         """Channel constructor.
 
@@ -32,14 +29,10 @@ class Channel(RedisMixin):
         - timetable: dict
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
-        assert endpoint in settings.CHANNELS, "{} not mentionned in settings.CHANNELS".format(endpoint)
-
-        super().__init__()
-
+        assert endpoint in settings.CHANNELS, f"{endpoint} not mentioned in settings.CHANNELS"
         self.endpoint = endpoint
         self.timetable = timetable
         self.handlers = [Handler(self) for Handler in handlers]
-        
         if len(self.stations) == 1:
             self._current_station_instance = self.stations[0]()
             self._following_station_instance = None
@@ -48,9 +41,6 @@ class Channel(RedisMixin):
             self.current_station_end = datetime.now()
             self._current_station_instance = None
             self._following_station_instance = None
-
-        self.redis_metadata_key = "sunflower:channel:" + self.endpoint + ":metadata"
-        self.redis_info_key = "sunflower:channel:" + self.endpoint + ":info"
 
     @functools.cached_property
     def stations(self) -> tuple:
@@ -61,7 +51,7 @@ class Channel(RedisMixin):
                 stations.add(t[2])
         return tuple(stations)
 
-    def get_station_info(self, datetime_obj, following=False):
+    def get_station_info(self, datetime_obj):
         """Get info of station playing at given time.
 
         Parameters:
@@ -87,8 +77,8 @@ class Channel(RedisMixin):
             raise RuntimeError("Jour de la semaine non supporté.")
         
         getting_following = False
-        asked_station_cls: Type[Station] = None
-        following_station_cls: Type[Station] = None
+        asked_station_cls: Optional[Type[Station]] = None
+        following_station_cls: Optional[Type[Station]] = None
 
         index_of_last_element = len(self.timetable[key]) - 1
         for (i, t) in enumerate(self.timetable[key]):
@@ -140,8 +130,8 @@ class Channel(RedisMixin):
 
         - current_station_end
         - current_station_start
-        - _current_station_instance (hidden, use 'current_station' property instead to acces it)
-        - _following_station_instance (hidden, use 'ollowing_station' property instead to acces it)
+        - _current_station_instance (hidden, use 'current_station' property instead to access it)
+        - _following_station_instance (hidden, use 'following_station' property instead to access it)
         """
 
         if len(self.stations) == 1:
@@ -149,7 +139,7 @@ class Channel(RedisMixin):
             return
         
         if datetime.now() > self.current_station_end or self._current_station_instance is None:
-            new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now(), following=True)
+            new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now())
             self.current_station_end = new_end
             self.current_station_start = new_start
             self._current_station_instance = CurrentStationClass()
@@ -167,18 +157,18 @@ class Channel(RedisMixin):
         self._update_station_instances()
         return self._following_station_instance
 
-    current_broadcast_metadata = PersistentAttribute("metadata", MetadataEncoder, as_metadata_type)
-    current_broadcast_info = PersistentAttribute("info")
+    current_broadcast_metadata = PersistentAttribute("metadata", "Raw data for API", MetadataEncoder, as_metadata_type)
+    current_broadcast_info = PersistentAttribute("info", "Data for webapp player", notify_change=True)
 
-    def publish_to_redis(self, metadata):
-        return super().publish_to_redis(self.endpoint, metadata)
+    @current_broadcast_metadata.post_get_hook
+    def current_broadcat_metadata(self, redis_data):
+        """Return metadata as is except if it is None: return an empty dict."""
+        return {} if redis_data is None else redis_data
 
     @current_broadcast_info.post_get_hook
     def current_broadcast_info(self, redis_data) -> CardMetadata:
         """Retrieve card info stored in Redis as a dict."""
-        if redis_data is None:
-            return CardMetadata("", "", "", "", "")
-        return CardMetadata(**redis_data)
+        return CardMetadata("", "", "", "", "") if redis_data is None else CardMetadata(**redis_data)
 
     @current_broadcast_info.pre_set_hook
     def current_broadcast_info(self, info: CardMetadata):
@@ -218,7 +208,7 @@ class Channel(RedisMixin):
             return self.waiting_for_following_card_metadata
         return self.current_station.format_info(current_info, metadata, logger)
 
-    def get_current_broadcast_metadata(self, current_metadata, logger: Logger, dt: datetime):
+    def get_current_broadcast_metadata(self, current_metadata: MetadataDict, logger: Logger, now: datetime):
         """Get metadata of current broadcasted programm for current station.
 
         Param: current_metadata: current metadata stored in Redis
@@ -227,9 +217,7 @@ class Channel(RedisMixin):
         of currently broadcasted station. Station can use current metadata for example
         to do partial updates.
         """
-        if current_metadata is None:
-            current_metadata = {}
-        return self.current_station.get_metadata(current_metadata, logger, dt)
+        return self.current_station.get_metadata(current_metadata, logger, now)
     
     def update_stream_metadata(self, metadata: MetadataDict, logger: Logger):
         """Send stream metadata to liquidsoap."""
@@ -244,50 +232,42 @@ class Channel(RedisMixin):
         session.close()
         logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
 
-
     def process(self, logger: Logger, now: datetime, **kwargs):
         """If needed, update metadata.
 
         - Check if metadata needs to be updated
         - Get metadata and card info with stations methods
-        - Apply changements operated by handlers
+        - Apply changes operated by handlers
         - Update metadata in Redis
         - If needed, send SSE and update card info in Redis.
 
         If card info changed and need to be updated in client, return True.
         Else return False.
         """
-
+        # first retrieve current metadata
         current_metadata = self.current_broadcast_metadata
-
+        # check if we must retrieve new metadata
         if (
             current_metadata is not None
             and now.timestamp() < current_metadata["end"]
             and current_metadata["station"] == self.current_station.station_name
         ):
-            self.publish_to_redis("unchanged")
-            return False
-
+            self.current_broadcast_info = None # notify unchanged
+            return
+        # get current info and new metadata and info
         current_info = self.current_broadcast_info
-
         new_metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
         new_info = self.get_current_broadcast_info(current_info, new_metadata, logger)
-
+        # apply handlers if needed
         for handler in self.handlers:
             new_metadata, new_info = handler.process(new_metadata, new_info, logger, now)
-        
+        # update metadata and info if needed
         self.current_broadcast_metadata = new_metadata
-
-        if new_info == current_info:
-            self.publish_to_redis("unchanged")
-            return False
-        
         self.current_broadcast_info = new_info
-        self.publish_to_redis("updated")
+        # update stream metadata
         self.update_stream_metadata(new_metadata, logger)
         logger.debug(f"channel={self.endpoint} station={self.current_station.formatted_station_name} Metadata was updated.")
-        return True
-    
+
     def get_liquidsoap_config(self):
         """Renvoie une chaîne de caractères à écrire dans le fichier de configuration liquidsoap."""
 
@@ -295,7 +275,7 @@ class Channel(RedisMixin):
         if len(self.stations) > 1:
             source_str = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
             for days, timetable in self.timetable.items():
-                formated_weekday = (
+                formatted_weekday = (
                     ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
                     if len(days) > 1
                     else "{}w and".format(days[0]+1)
@@ -303,9 +283,9 @@ class Channel(RedisMixin):
                 for start, end, station in timetable:
                     if start.count(":") != 1 or end.count(":") != 1:
                         raise RuntimeError("Time format must be HH:MM.")
-                    formated_start = start.replace(":", "h")
-                    formated_end = end.replace(":", "h")
-                    line = "    ({{ {} {}-{} }}, {}),\n".format(formated_weekday, formated_start, formated_end, station.formatted_station_name)
+                    formatted_start = start.replace(":", "h")
+                    formatted_end = end.replace(":", "h")
+                    line = "    ({{ {} {}-{} }}, {}),\n".format(formatted_weekday, formatted_start, formatted_end, station.formatted_station_name)
                     source_str += line
             source_str += "])\n\n"
         else:

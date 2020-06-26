@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
+from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, Song
 from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
@@ -15,13 +16,15 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
 
-    def persist_playlist(self, songs: List[Song]):
-        """Persist public fields of song objects in current  playlist in redis."""
-        playlist = [
+    playlist = PersistentAttribute("playlist", expiration_delay=172800, persist_only=True)
+
+    @playlist.pre_set_hook
+    def playlist(self, songs: List[Song]):
+        """Persist public fields of song objects in current playlist in redis."""
+        return [
             {"artist": song.artist, "title": song.title, "album": song.album}
             for song in songs
         ]
-        self.set_to_redis("sunflower:station:pycolore:data", {"playlist": playlist}, expiration_delay=172800) # expiration delay = 48h
 
     def __init__(self):
         super().__init__()
@@ -33,14 +36,14 @@ class PycolorePlaylistStation(DynamicStation):
 
     def _populate_songs_to_play(self):
         new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
-        self.persist_playlist(new_songs)
+        self.playlist = new_songs
         self._songs_to_play += random.sample(new_songs, len(new_songs))
         self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
 
     def _get_next_song(self, max_length: float):
         """Get next song in current playlist.
 
-        Check if its length is not greater than remaining time befor end of use
+        Check if its length is not greater than remaining time before end of use
         of this station.
         """
         if len(self._songs_to_play) <= 5:

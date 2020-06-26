@@ -6,9 +6,8 @@ from logging import Logger
 from typing import Dict, Optional
 
 from sunflower.core.decorators import classproperty
-from sunflower.core.mixins import HTMLMixin, RedisMixin
+from sunflower.core.mixins import HTMLMixin
 from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
-
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Station]
 
@@ -120,7 +119,7 @@ class Station(HTMLMixin, metaclass=StationMeta):
         """Return string containing liquidsoap config for this station."""
 
 
-class DynamicStation(Station, RedisMixin):
+class DynamicStation(Station):
     """Base class for internally managed stations.
     
     Must implement process() method.

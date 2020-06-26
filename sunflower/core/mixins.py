@@ -2,13 +2,25 @@
 # Mixins
 
 import json
-from typing import Any, Type, Optional
+from typing import Any, Iterable, Optional, Type
 
 import redis
 
 from sunflower import settings
 
-class RedisMixin:
+
+class Repository:
+    def retrieve(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def persist(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def publish(self, *args, **kwargs):
+        raise NotImplementedError()
+
+
+class RedisRepository(Repository):
     """Provide a method to access data from redis database.
     
     Define REDIS_KEYS containing keys the application has right 
@@ -23,7 +35,7 @@ class RedisMixin:
     def __init__(self, *args, **kwargs):
         self._redis = redis.Redis()
 
-    def get_from_redis(self, key, object_hook=None):
+    def retrieve(self, key, object_hook=None):
         """Get value for given key from Redis.
         
         Data got from Redis is loaded from json with given object_hook.
@@ -34,7 +46,7 @@ class RedisMixin:
             return None
         return json.loads(raw_data.decode(), object_hook=object_hook)
     
-    def set_to_redis(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None, expiration_delay: int = 86400):
+    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None, expiration_delay: int = 86400):
         """Set new value for given key in Redis.
         
         value is dumped as json with given json_encoder_cls.
@@ -42,7 +54,7 @@ class RedisMixin:
         json_data = json.dumps(value, cls=json_encoder_cls)
         return self._redis.set(key, json_data, ex=expiration_delay)
 
-    def publish_to_redis(self, channel, data):
+    def publish(self, channel, data):
         """publish a message to a redis channel.
 
         Parameters:
@@ -61,7 +73,7 @@ class HTMLMixin:
     """Provide static mixin methods for formatting html elements."""
 
     @staticmethod
-    def _format_html_anchor_element(href, text, classes=[]):
+    def _format_html_anchor_element(href: str, text: str, classes: Iterable[str] = ()) -> str:
         """Generate html code for anchor tag.
 
         Parameters:

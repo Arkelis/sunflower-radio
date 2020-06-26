@@ -1,13 +1,19 @@
 # This file is part of sunflower package. radio
 
 import json
-from typing import NamedTuple
 from enum import Enum
-from typing import Any, Dict, Tuple, Optional, Union
-from sunflower.core.mixins import RedisMixin
-from dataclasses import dataclass
+from typing import Any, Dict, NamedTuple, Tuple, Union
+
+from sunflower.core.mixins import RedisRepository
+
 
 # Types
+
+
+class NotifyChangeStatus(Enum):
+    UNCHANGED = 0
+    UPDATED = 1
+
 
 class MetadataType(Enum):
     MUSIC = "Track"
@@ -16,6 +22,7 @@ class MetadataType(Enum):
     ADS = "Ads"
     ERROR = "Error"
     WAITING_FOR_FOLLOWING = "Transition"
+
 
 MetadataDict = Dict[str, Union[str, MetadataType]]
 
@@ -42,7 +49,7 @@ class StreamMetadata(NamedTuple):
     
 # Views objects (not in web meaning but more in dict_view meaning)
 
-class BaseView(RedisMixin):
+class BaseView(RedisRepository):
     """Object referencing Redis-stored data of an object of given type.
     
     All or almost all attributes are fetched dynamically with calls to
@@ -89,7 +96,7 @@ class ChannelView(BaseView):
 
     def __getattr__(self, name):
         if name in self.fields:
-            return self.get_from_redis(f"sunflower:channel:{self.endpoint}:{name}", object_hook=as_metadata_type)
+            return self.retrieve(f"sunflower:channel:{self.endpoint}:{name}", object_hook=as_metadata_type)
         return super().__getattr__(name)
 
 
@@ -110,7 +117,7 @@ class StationView(BaseView):
 
     def __getattr__(self, name):
         if name in self.fields:
-            return self.get_from_redis(f"sunflower:station:{self.endpoint}:{name}")
+            return self.retrieve(f"sunflower:station:{self.endpoint}:{name}")
         return super().__getattr__(name)
 
 
