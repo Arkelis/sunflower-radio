@@ -101,8 +101,8 @@ def update_broadcast_info_stream(channel):
         for message in pubsub.listen():
             redis_data = message.get("data")
             data_to_send = {
-                bytes(NotifyChangeStatus.UNCHANGED.value): "unchanged",
-                bytes(NotifyChangeStatus.UPDATED.value): "updated"
+                str(NotifyChangeStatus.UNCHANGED.value).encode(): "unchanged",
+                str(NotifyChangeStatus.UPDATED.value).encode(): "updated"
             }.get(redis_data)
             if data_to_send is None:
                 continue
