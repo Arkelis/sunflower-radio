@@ -5,8 +5,8 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, stream_with_context, url_for, )
 
 from sunflower import settings
-from sunflower.core.types import ChannelView, MetadataEncoder, StationView
-from sunflower.utils.functions import get_channel_or_404, get_station_or_404
+from sunflower.core.types import ChannelView, MetadataEncoder, NotifyChangeStatus, StationView
+from sunflower.utils.server import get_channel_or_404, get_station_or_404
 
 app = Flask(__name__, static_url_path="/static", static_folder="static/dist")
 app.json_encoder = MetadataEncoder
@@ -77,19 +77,19 @@ def get_channel_links(channel):
 @app.route("/api/stations/<string:station>/")
 @get_station_or_404
 def get_station_links(station):
-    return jsonify(station.data)
+    return jsonify(station)
 
 
 @app.route("/api/channels/<string:channel>/metadata/")
 @get_channel_or_404
 def get_channel_info(channel):
-    return jsonify(channel.metadata)
+    return jsonify(channel.current_broadcast_metadata)
 
 
 @app.route("/api/channels/<string:channel>/update/")
 @get_channel_or_404
 def update_broadcast_info(channel):
-    return jsonify(channel.info)
+    return jsonify(channel.current_broadcast_info._asdict())
 
 
 @app.route("/api/channels/<string:channel>/events/")
@@ -99,11 +99,13 @@ def update_broadcast_info_stream(channel):
         pubsub = redis.Redis().pubsub()
         pubsub.subscribe("sunflower:channel:" + channel.endpoint)
         for message in pubsub.listen():
-            data = message.get("data")
-            if not isinstance(data, type(b"")):
+            redis_data = message.get("data")
+            data_to_send = {
+                bytes(NotifyChangeStatus.UNCHANGED.value): "unchanged",
+                bytes(NotifyChangeStatus.UPDATED.value): "updated"
+            }.get(redis_data)
+            if data_to_send is None:
                 continue
-            if data == "unchanged":
-                yield ":"
-            yield "data: {}\n\n".format(data.decode())
+            yield f"data: {data_to_send}\n\n"
         return
     return Response(stream_with_context(updates_generator()), mimetype="text/event-stream")

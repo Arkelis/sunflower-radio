@@ -1,7 +1,7 @@
 from json import JSONEncoder
 from typing import Callable, Type
 
-from sunflower.core.mixins import RedisRepository, Repository
+from sunflower.core.repositories import RedisRepository, Repository
 from sunflower.core.types import NotifyChangeStatus
 
 
@@ -46,7 +46,7 @@ class PersistentAttribute:
     def __init__(self, key: str = "", doc: str = "",
                  json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
                  repository_cls: Type[Repository] = RedisRepository, expiration_delay: int = None,
-                 notify_change: bool = False, persist_only: bool = False,
+                 notify_change: bool = False,
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
         super().__init__()
         self.repository = repository_cls()
@@ -56,7 +56,6 @@ class PersistentAttribute:
         self.object_hook = object_hook
         self.expiration_delay = expiration_delay
         self.notify_change = notify_change
-        self.persist_only = persist_only
         self.pre_set_hook_func = pre_set_hook
         self.post_get_hook_func = post_get_hook
         self._cache = None
@@ -70,8 +69,6 @@ class PersistentAttribute:
         """Get data from Redis, and return self.post_get_hook_func(data)."""
         if obj is None:
             return self
-        if self.persist_only:
-            raise AttributeError(f"{self.name} is a persist-only PersistentAttribute.")
         data = self._cache = self.repository.retrieve(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", self.object_hook)
         return self.post_get_hook_func(obj, data)
 
@@ -111,7 +108,7 @@ class PersistentAttribute:
         """
         return type(self)(
             self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository), self.expiration_delay,
-            self.notify_change, self.persist_only, pre_set_hook_func, self.post_get_hook_func
+            self.notify_change, pre_set_hook_func, self.post_get_hook_func
         )
     
     def post_get_hook(self, post_get_hook_func):
@@ -128,9 +125,7 @@ class PersistentAttribute:
             return value
         ```
         """
-        if self.persist_only:
-            raise AttributeError(f"{self.name} is a persist-only PersistentAttribute.")
         return type(self)(
             self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository), self.expiration_delay,
-            self.notify_change, self.persist_only, self.pre_set_hook_func, post_get_hook_func
+            self.notify_change, self.pre_set_hook_func, post_get_hook_func
         )

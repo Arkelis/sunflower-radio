@@ -6,10 +6,11 @@ from logging import Logger
 from typing import Dict, Optional
 
 from sunflower.core.decorators import classproperty
-from sunflower.core.mixins import HTMLMixin
+from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
 from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
-STATIONS_INSTANCES = {} # type: Dict[StationMeta, Station]
+STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
+REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
 
 
 class StationMeta(type):
@@ -119,12 +120,15 @@ class Station(HTMLMixin, metaclass=StationMeta):
         """Return string containing liquidsoap config for this station."""
 
 
-class DynamicStation(Station):
+class DynamicStation(Station, ProvideViewMixin):
     """Base class for internally managed stations.
     
     Must implement process() method.
     """
-    endpoint: str # for api
+    endpoint: str = "" # for api
+
+    def __init_subclass__(cls):
+        REVERSE_STATIONS[cls.endpoint] = cls
 
     def process(self, logger, channels_using, now, **kwargs):
         raise NotImplementedError("process() must be implemented")

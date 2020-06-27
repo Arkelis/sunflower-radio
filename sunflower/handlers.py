@@ -1,12 +1,12 @@
+import random
 import telnetlib
 from datetime import datetime
-import random
-from typing import Tuple, Dict
+from typing import Tuple
 
 from sunflower import settings
-from sunflower.core.types import CardMetadata, MetadataType, MetadataDict
-from sunflower.utils.functions import fetch_cover_and_link_on_deezer, parse_songs
 from sunflower.core.mixins import HTMLMixin
+from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
+from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs
 
 
 class AdsHandler(HTMLMixin):

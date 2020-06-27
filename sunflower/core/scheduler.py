@@ -4,9 +4,9 @@
 import traceback
 from datetime import datetime
 from time import sleep
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
-from sunflower.core.bases import DynamicStation, Station, Channel
+from sunflower.core.bases import Channel, DynamicStation, Station
 
 
 class Scheduler:
@@ -35,7 +35,6 @@ class Scheduler:
                 objects_to_process.append(station)
         
         self.objects_to_process = objects_to_process
-
 
     @property
     def context(self) -> Dict[str, Any]:

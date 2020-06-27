@@ -4,10 +4,11 @@ import json
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Tuple, Union
 
-from sunflower.core.mixins import RedisRepository
-
+from sunflower.core.repositories import RedisRepository
 
 # Types
+
+ChannelView = StationView = NamedTuple
 
 
 class NotifyChangeStatus(Enum):
@@ -74,55 +75,6 @@ class BaseView(RedisRepository):
     def __repr__(self):
         attrs = ", ".join(f"{name}={getattr(self, name)}" for name in self.__slots__ + self.fields)
         return f"<{type(self).__name__}({attrs})>"
-
-
-class ChannelView(BaseView):
-    """Object referencing stored data of a Channel object.
-    
-    A ChannelView object contains only the endpoint of a given
-    channel. Other attributes are dynamically got from Redis:
-    - metadata is fetched from sunflower:channel:{endpoint}:metadata key
-    - info is fetched from sunflower:channel:{endpoint}:info key
-
-    Final attribues are defined:
-    - fields: dynamic attributes that can be accessed
-    - endpoint: endpoint of the corresponding Channel object
-
-    Any other attribute access will result in a AttributeError.
-    """
-
-    __slots__= ("endpoint",)
-    fields = ("metadata", "info")
-
-    def __init__(self, endpoint):
-        super().__init__()
-        self.endpoint = endpoint
-
-    def __getattr__(self, name):
-        if name in self.fields:
-            return self.retrieve(f"sunflower:channel:{self.endpoint}:{name}", object_hook=as_metadata_type)
-        return super().__getattr__(name)
-
-
-class StationView(BaseView):
-    """Object referencing stored data of a Channel object.
-    
-    A StatioObject object contains only the endpoint of a given
-    dynamic station. 'data' attribute is fetched from Redis.
-    'endpoint' attribute is also readable.
-    """
-
-    __slots__= ("endpoint",)
-    fields = ("data",)
-
-    def __init__(self, endpoint):
-        super().__init__()
-        self.endpoint = endpoint
-
-    def __getattr__(self, name):
-        if name in self.fields:
-            return self.retrieve(f"sunflower:station:{self.endpoint}:{name}")
-        return super().__getattr__(name)
 
 
 # MetadataType utils for json (de)serialization

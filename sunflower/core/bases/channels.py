@@ -7,10 +7,11 @@ from typing import Optional, Type
 from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.descriptors import PersistentAttribute
+from sunflower.core.mixins import ProvideViewMixin
 from sunflower.core.types import (CardMetadata, MetadataDict, MetadataEncoder, MetadataType, as_metadata_type)
 
 
-class Channel:
+class Channel(ProvideViewMixin):
     """Channel.
 
     Channel object contains and manages stations. It triggers station metadata updates
@@ -161,7 +162,7 @@ class Channel:
     current_broadcast_info = PersistentAttribute("info", "Data for webapp player", notify_change=True)
 
     @current_broadcast_metadata.post_get_hook
-    def current_broadcat_metadata(self, redis_data):
+    def current_broadcast_metadata(self, redis_data):
         """Return metadata as is except if it is None: return an empty dict."""
         return {} if redis_data is None else redis_data
 

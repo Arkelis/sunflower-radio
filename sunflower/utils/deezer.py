@@ -1,37 +1,12 @@
 """Utilitary classes used in several parts of sunflower application."""
 
-import functools
 import glob
 from typing import Callable, Dict, List, Optional, Tuple
 
 import mutagen
 import requests
-from flask import abort
 
-from sunflower import settings
-from sunflower.core.types import ChannelView, Song, StationView
-
-
-# flask views decorator
-
-def get_channel_or_404(view_function):
-    @functools.wraps(view_function)
-    def wrapper(channel: str):
-        if channel not in settings.CHANNELS:
-            abort(404)
-        channel_view = ChannelView(channel)
-        return view_function(channel_view)
-    return wrapper
-
-
-def get_station_or_404(view_function):
-    @functools.wraps(view_function)
-    def wrapper(station: str):
-        if station not in settings.STATIONS:
-            abort(404)
-        station_view = StationView(station)
-        return view_function(station_view)
-    return wrapper
+from sunflower.core.types import Song
 
 
 # utils functions

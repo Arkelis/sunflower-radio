@@ -1,6 +1,8 @@
-from sunflower.utils.functions import parse_songs, prevent_consecutive_artists
-from sunflower.core.types import Song
 import glob
+
+from sunflower.core.types import Song
+from sunflower.utils.deezer import parse_songs, prevent_consecutive_artists
+
 
 def test_parse_songs():
     pattern = "/home/guillaume/backup-songs/*.opus"
