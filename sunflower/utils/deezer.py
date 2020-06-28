@@ -1,7 +1,7 @@
 """Utilitary classes used in several parts of sunflower application."""
 
 import glob
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import mutagen
 import requests
@@ -58,7 +58,7 @@ def parse_songs(glob_pattern: str) -> List[Song]:
 
 def _get_data_from_deezer_url(*urls: str,
                               getcover: Callable, getalbumurl: Callable,
-                              getitem: Callable = None, match: str = None) -> Optional[Tuple[str, str]]:
+                              getmatch: Callable[[Any], str] = None, match: str = None) -> Optional[Tuple[str, str]]:
     """Get json from given urls and return first relevant (cover_url, album_url) tuple.
 
     If no relevant data is found, return None.
@@ -78,7 +78,7 @@ def _get_data_from_deezer_url(*urls: str,
     - getitem: callable taking one dict as argument and returning an object relevant for filtering
     - match: an object which will be compared to the result of getitem(obj).
 
-    If `getitem(obj) == match` is evaluated True, this object is considered as relevant.
+    If `getmatch(obj) == match` is evaluated True, this object is considered as relevant.
     If no getitem nor match are provided, return the first object of the first nonempty retrieved data.
 
     """
@@ -88,11 +88,11 @@ def _get_data_from_deezer_url(*urls: str,
         json_data = rep.json().get("data")
         if not json_data:
             continue
-        if not getitem:
+        if not getmatch:
             relevant_data = json_data[0]
             break
         for data in json_data:
-            if (obj := getitem(data)) == match:
+            if getmatch(data).lower() == match.lower():
                 relevant_data = data
                 break
         if relevant_data is not None:
@@ -114,7 +114,7 @@ def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, t
             f"https://api.deezer.com/search/album?q={artist} {album}",
             getcover=lambda x: x["cover_big"],
             getalbumurl=lambda x: x["link"],
-            getitem=lambda x: x["title"],
+            getmatch=lambda x: x["title"],
             match=album,
         )
     elif track is not None:
