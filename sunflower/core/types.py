@@ -1,6 +1,7 @@
 # This file is part of sunflower package. radio
 
 import json
+from collections import namedtuple
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Tuple, Union
 
@@ -8,7 +9,7 @@ from sunflower.core.repositories import RedisRepository
 
 # Types
 
-ChannelView = StationView = NamedTuple
+ChannelView = StationView = namedtuple("ViewObject", ["data_type", "endpoint"])
 
 
 class NotifyChangeStatus(Enum):
