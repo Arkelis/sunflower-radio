@@ -1,8 +1,8 @@
 from json import JSONEncoder
 from typing import Callable, Type
 
+from sunflower.core.custom_types import NotifyChangeStatus
 from sunflower.core.repositories import RedisRepository, Repository
-from sunflower.core.types import NotifyChangeStatus
 
 
 class PersistentAttribute:

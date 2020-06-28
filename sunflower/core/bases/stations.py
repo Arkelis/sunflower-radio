@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 from logging import Logger
 from typing import Dict, Optional
 
+from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]

@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import mutagen
 import requests
 
-from sunflower.core.types import Song
+from sunflower.core.custom_types import Song
 
 
 # utils functions

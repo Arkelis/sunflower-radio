@@ -1,14 +1,14 @@
 import functools
-import telnetlib
 from datetime import datetime, time, timedelta
 from logging import Logger
 from typing import Optional, Type
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
+from sunflower.core.custom_types import (CardMetadata, MetadataDict, MetadataEncoder, MetadataType, as_metadata_type)
 from sunflower.core.descriptors import PersistentAttribute
+from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import ProvideViewMixin
-from sunflower.core.types import (CardMetadata, MetadataDict, MetadataEncoder, MetadataType, as_metadata_type)
 
 
 class Channel(ProvideViewMixin):
@@ -221,11 +221,9 @@ class Channel(ProvideViewMixin):
         if new_stream_metadata is None:
             logger.debug(f"channel={self.endpoint} StreamMetadata is empty")
             return
-        session = telnetlib.Telnet("localhost", 1234)
-        metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
-        session.write(f'{self.endpoint}.insert {metadata_string}\n'.encode())
-        session.write("exit\n".encode())
-        session.close()
+        with open_telnet_session(logger=logger) as session:
+            metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
+            session.write(f'{self.endpoint}.insert {metadata_string}\n'.encode())
         logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
 
     def process(self, logger: Logger, now: datetime, **kwargs):

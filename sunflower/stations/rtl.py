@@ -1,13 +1,13 @@
 import json
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, timedelta
 from logging import Logger
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
-from typing import Optional
 
 from sunflower.core.bases import URLStation
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 
 class RTL2(URLStation):

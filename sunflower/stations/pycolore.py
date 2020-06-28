@@ -1,13 +1,13 @@
 import random
-import telnetlib
 from datetime import datetime, timedelta
 from logging import Logger
 from typing import Dict, List, Optional
 
 from sunflower import settings
 from sunflower.core.bases import DynamicStation
+from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, Song
 from sunflower.core.descriptors import PersistentAttribute
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType, Song
+from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
@@ -78,10 +78,8 @@ class PycolorePlaylistStation(DynamicStation):
             f"station={self.formatted_station_name} Playing {self._current_song.artist} - {self._current_song.title} ({len(self._songs_to_play)} songs remaining in current list)."
         )
         self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
-        session = telnetlib.Telnet("localhost", 1234)
-        session.write("{}_station_queue.push {}\n".format(self.formatted_station_name, self._current_song.path).encode())
-        session.write("exit\n".encode())
-        session.close()
+        with open_telnet_session(logger=logger) as session:
+            session.write(f"{self.formatted_station_name}_station_queue.push {self._current_song.path}\n".encode())
 
     def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         if self._current_song is None:

@@ -1,6 +1,6 @@
 import glob
 
-from sunflower.core.types import Song
+from sunflower.core.custom_types import Song
 from sunflower.utils.deezer import parse_songs, prevent_consecutive_artists
 
 

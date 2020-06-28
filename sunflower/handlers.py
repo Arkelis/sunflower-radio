@@ -1,11 +1,12 @@
 import random
-import telnetlib
 from datetime import datetime
+from logging import Logger
 from typing import Tuple
 
 from sunflower import settings
+from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType
+from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import HTMLMixin
-from sunflower.core.types import CardMetadata, MetadataDict, MetadataType
 from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs
 
 
@@ -19,7 +20,13 @@ class AdsHandler(HTMLMixin):
         new_songs = parse_songs(self.glob_pattern)
         return random.sample(new_songs, len(new_songs))
 
-    def process(self, metadata, info, logger, dt: datetime) -> Tuple[MetadataDict, CardMetadata]:
+    def process(
+        self,
+        metadata: MetadataDict,
+        info: CardMetadata,
+        logger: Logger,
+        dt: datetime
+    ) -> Tuple[MetadataDict, CardMetadata]:
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if metadata["type"] == MetadataType.ADS:
             logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.formatted_station_name} Ads detected.")
@@ -29,11 +36,9 @@ class AdsHandler(HTMLMixin):
             backup_song = self.backup_songs.pop(0)
 
             # tell liquidsoap to play backup song
-            session = telnetlib.Telnet("localhost", 1234)
-            session.write("{}_custom_songs.push {}\n".format(self.channel.endpoint, backup_song.path).encode())
-            session.write("exit\n".encode())
-            session.close()
-            
+            with open_telnet_session(logger) as session:
+                session.write(f"{self.channel.endpoint}_custom_songs.push {backup_song.path}\n".encode())
+
             station = metadata["station"]
             thumbnail, url = fetch_cover_and_link_on_deezer(
                 self.channel.current_station.station_thumbnail, backup_song.artist, backup_song.album, backup_song.title

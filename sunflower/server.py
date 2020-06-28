@@ -5,7 +5,7 @@ from flask import (Flask, Response, jsonify, redirect, render_template,
                    request, stream_with_context, url_for, )
 
 from sunflower import settings
-from sunflower.core.types import ChannelView, MetadataEncoder, NotifyChangeStatus, StationView
+from sunflower.core.custom_types import ChannelView, MetadataEncoder, NotifyChangeStatus, StationView
 from sunflower.utils.server import get_channel_or_404, get_station_or_404
 
 app = Flask(__name__, static_url_path="/static", static_folder="static/dist")

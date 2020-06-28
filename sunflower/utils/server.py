@@ -6,7 +6,7 @@ from flask import abort
 
 from sunflower import settings
 from sunflower.core.bases import Channel, REVERSE_STATIONS
-from sunflower.core.types import ChannelView, StationView
+from sunflower.core.custom_types import ChannelView, StationView
 # noinspection PyUnresolvedReferences
 from sunflower.stations import *
 

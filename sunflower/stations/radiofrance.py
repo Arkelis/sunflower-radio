@@ -3,14 +3,14 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
-from sunflower.core.types import CardMetadata, MetadataType, MetadataDict, StreamMetadata
+from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
