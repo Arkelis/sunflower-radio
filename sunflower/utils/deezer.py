@@ -93,7 +93,7 @@ def _get_data_from_deezer_url(*urls: str,
             break
         for data in json_data:
             if (obj := getitem(data)) == match:
-                relevant_data = obj
+                relevant_data = data
                 break
         if relevant_data is not None:
             break
@@ -114,7 +114,7 @@ def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, t
             f"https://api.deezer.com/search/album?q={artist} {album}",
             getcover=lambda x: x["cover_big"],
             getalbumurl=lambda x: x["link"],
-            getitem=lambda x: x["album"]["title"],
+            getitem=lambda x: x["title"],
             match=album,
         )
     elif track is not None:
