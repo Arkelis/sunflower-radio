@@ -7,6 +7,7 @@ from flask import abort
 
 from sunflower import settings
 from sunflower.core.bases import Channel, REVERSE_STATIONS
+from sunflower.stations import *
 
 
 # flask views decorator

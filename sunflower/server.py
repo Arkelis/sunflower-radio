@@ -36,7 +36,7 @@ def channel(channel: ChannelView):
 @app.route("/playlist/<string:station>")
 @get_station_or_404
 def station_playlist(station: StationView):
-    playlist = station.data["playlist"]
+    playlist = station.public_playlist
     artists = Counter([song["artist"] for song in playlist])
     playlist_dict = {
         artist: [song for song in playlist if song["artist"] == artist]
