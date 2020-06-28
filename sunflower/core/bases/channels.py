@@ -161,11 +161,6 @@ class Channel(ProvideViewMixin):
     current_broadcast_metadata = PersistentAttribute("metadata", "Raw data for API", MetadataEncoder, as_metadata_type)
     current_broadcast_info = PersistentAttribute("info", "Data for webapp player", notify_change=True)
 
-    @current_broadcast_metadata.post_get_hook
-    def current_broadcast_metadata(self, redis_data):
-        """Return metadata as is except if it is None: return an empty dict."""
-        return {} if redis_data is None else redis_data
-
     @current_broadcast_info.post_get_hook
     def current_broadcast_info(self, redis_data) -> CardMetadata:
         """Retrieve card info stored in Redis as a dict."""
