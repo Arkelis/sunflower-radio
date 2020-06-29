@@ -36,7 +36,7 @@ class AdsHandler(HTMLMixin):
             backup_song = self.backup_songs.pop(0)
 
             # tell liquidsoap to play backup song
-            with open_telnet_session(logger) as session:
+            with open_telnet_session(logger=logger) as session:
                 session.write(f"{self.channel.endpoint}_custom_songs.push {backup_song.path}\n".encode())
 
             station = metadata["station"]

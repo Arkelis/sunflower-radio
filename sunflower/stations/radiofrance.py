@@ -218,7 +218,7 @@ class RadioFranceStation(URLStation):
                 # métadonnées d'émission (show)
                 # show = attribut "show" de diffusion ou attribut "show" du parent ou {} s'il vaut None
                 show = diffusion.get("show", (parent_diffusion or {}).get("show")) or {}
-                podcast_link = show.get("podcast", {}).get("itunes")
+                podcast_link = (show.get("podcast") or {}).get("itunes")
                 thumbnail_src = self._fetch_cover(podcast_link)
                 show_title = show.get("title", "")
                 show_url = show.get("url", "")
