@@ -220,7 +220,7 @@ class RTL2(RTLGroupStation):
             show_metadata = {k: v for k, v in current_metadata.items() if k in show_metadata_keys}
 
         # next, update song info
-        fetched_data = self._fetch_metadata()
+        fetched_data = self._fetch_metadata(dt)
         fetched_data_type = fetched_data.get("type")
 
         if fetched_data_type == MetadataType.ADS:
