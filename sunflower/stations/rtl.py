@@ -10,7 +10,10 @@ from bs4 import BeautifulSoup
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
-locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
+try:
+    locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
+except locale.Error:
+    pass
 
 
 class RTLGroupStation(URLStation):
@@ -67,11 +70,11 @@ class RTLGroupStation(URLStation):
                 return self._get_error_metadata("API Timeout", 90)
             return self._fetch_metadata(dt, retry + 1)
         if diffusion_type == "Pubs":
-            return {"type": MetadataType.ADS}
+            return {"type": MetadataType.ADS, "end": 0}
         elif diffusion_type == "Emissions":
             return {"type": MetadataType.PROGRAMME, "start": start, "end": end}
         elif diffusion_type != "Musique" or end < dt.timestamp():
-            return {"type": MetadataType.NONE}
+            return {"type": MetadataType.NONE, "end": 0}
         else:
             return self._fetch_song_metadata()
 
@@ -231,7 +234,7 @@ class RTL2(RTLGroupStation):
                 "end": 0,
             }
 
-        end = int(fetched_data["end"] / 1000)
+        end = fetched_data["end"]
         if dt_timestamp > end:
             if not show_metadata:
                 return {
