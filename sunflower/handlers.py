@@ -37,7 +37,7 @@ class AdsHandler(HTMLMixin):
                 self.metadata = {}
                 self.info = CardMetadata("", "", "", "", "")
                 with open_telnet_session() as session:
-                    session.write(f'{self.channel.endpoint}.skip')
+                    session.write(f'{self.channel.endpoint}.skip\n'.encode())
             return metadata, info
         if self.ads_on_air:
             return self.metadata, self.info
