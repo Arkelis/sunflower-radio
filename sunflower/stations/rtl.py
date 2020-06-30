@@ -45,7 +45,7 @@ class RTLGroupStation(URLStation):
             try:
                 first_row: BeautifulSoup = soup.find_all("tr")[2]
                 diffusion_type: str = first_row.find_all("td")[1].text
-                start_end_text: str = first_row.find_all("td")[4].text.replace(" ", "").replace("\n", "")
+                start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
                 start_time, end_time = map(time.fromisoformat, start_end_text[:start_end_text.index("(")].split("⇾")) # type: time, time
                 start = int(datetime.combine(dt.date(), start_time).timestamp())
                 end = int(datetime.combine(dt.date(), end_time).timestamp())
@@ -58,7 +58,7 @@ class RTLGroupStation(URLStation):
                 try:
                     first_row: BeautifulSoup = soup.find_all("tr")[2]
                     diffusion_type: str = first_row.find_all("td")[1].text
-                    start_end_text: str = first_row.find_all("td")[4].text.replace(" ", "").replace("\n", "")
+                    start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
                     start_time, end_time = map(
                         time.fromisoformat,
                         start_end_text[:start_end_text.index("(")].split("⇾")
