@@ -26,7 +26,7 @@ class MetadataType(Enum):
     WAITING_FOR_FOLLOWING = "Transition"
 
 
-MetadataDict = Dict[str, Union[str, MetadataType]]
+MetadataDict = Dict[str, Union[str, int, MetadataType]]
 
 
 # Custom named tuples
