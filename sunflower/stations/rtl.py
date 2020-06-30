@@ -59,8 +59,10 @@ class RTLGroupStation(URLStation):
                     first_row: BeautifulSoup = soup.find_all("tr")[2]
                     diffusion_type: str = first_row.find_all("td")[1].text
                     start_end_text: str = first_row.find_all("td")[4].text.replace(" ", "").replace("\n", "")
-                    start_time, end_time = map(time.fromisoformat, start_end_text[:start_end_text.index("(")].split(
-                        "⇾"))  # type: time, time
+                    start_time, end_time = map(
+                        time.fromisoformat,
+                        start_end_text[:start_end_text.index("(")].split("⇾")
+                    )  # type: time, time
                     start = int(datetime.combine(dt.date(), start_time).timestamp())
                     end = int(datetime.combine(dt.date(), end_time).timestamp())
                 except KeyError:
@@ -152,7 +154,10 @@ class RTL(RTLGroupStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return f'{cls.formatted_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}", buffer=60.)))\n'
+        string = 'rtl_stream = input.http("{cls.station_url}", buffer=60., max=120.)\n'
+        string += (f'{cls.formatted_station_name} = drop_metadata(fallback(track_sensitive=false, '
+                   '[rtl_stream, default]))\n')
+        return string
 
 
 class RTL2(RTLGroupStation):
