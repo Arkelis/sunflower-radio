@@ -169,6 +169,13 @@ class RTL(RTLGroupStation):
             current_broadcast_title=current_broadcast_title,
         )
 
+    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
+        title = metadata.get("title")
+        track_metadata = (metadata.get("artist"), title)
+        show_title = metadata.get("show_title", "")
+        title = (" • ".join(track_metadata) if all(track_metadata) else title) or self.station_slogan
+        return StreamMetadata(title, self.station_name, show_title)
+
     @classmethod
     def get_liquidsoap_config(cls):
         string = 'rtl_stream = input.http("{cls.station_url}", buffer=60., max=120.)\n'
