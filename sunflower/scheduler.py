@@ -3,6 +3,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import traceback
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -45,7 +46,14 @@ def launch_scheduler():
         raise RuntimeError("Integrity errors found.")
 
     logger.info("Starting scheduler.")
-    scheduler = Scheduler(scheduled_channels, logger)
+    try:
+        scheduler = Scheduler(scheduled_channels, logger)
+    except Exception as err:
+        std_handler = logging.StreamHandler(sys.stdout)
+        std_handler.setLevel(logging.ERROR)
+        std_handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(std_handler)
+        logger.error(traceback.format_exc())
     logger.info("Scheduler instantiated.")
     
     scheduler.run()
