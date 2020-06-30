@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 
-locale.setlocale(locale.LC_TIME, "fr_FR")
+locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
 
 
 class RTLGroupStation(URLStation):
