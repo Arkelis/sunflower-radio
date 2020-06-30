@@ -91,7 +91,7 @@ class RTL(RTLGroupStation):
     _songs_data_url = "https://timeline.rtl.fr/RTL/songs"
 
     def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
-        """Pour l'instant RTL n'est utilisé que pour les Grosses Têtes."""
+        """Pour l'instant RTL n'est utilisé que pour les Grosses Têtes et A la bonne heure."""
         dt_timestamp = dt.timestamp()
 
         # next, update song info
@@ -108,14 +108,31 @@ class RTL(RTLGroupStation):
 
         end = fetched_data["end"]
         if fetched_data_type == MetadataType.PROGRAMME:
+            if (
+                datetime.combine(datetime.today(), time(15, 30)).timestamp()
+                <= end
+                <= datetime.combine(datetime.today(), time(18, 0)).timestamp()
+            ):
+                title = f"Les Grosses Têtes du {dt.strftime('%A %d %B %Y')}"
+                show_title = "Les Grosses Têtes de Laurent Ruquier"
+                show_summary = ("Du lundi au vendredi de 15h30 à 18h, retrouvez Laurent Ruquier, chef d'orchestre de "
+                                "l'émission. Entouré des ses fidèles Grosses Têtes, il imprime sa marque à ce "
+                                "programme culte de la radio tout en restant fidèle à ses fondamentaux.")
+                show_url = "https://www.rtl.fr/emission/les-grosses-tetes"
+            else:
+                title = f"À la bonne heure ! {dt.strftime('%A %d %B %Y')}"
+                show_title = "À la bonne heure ! de Stéphane Bern"
+                show_summary = ('Du lundi au vendredi de 11h à 12h30, Stéphane Bern, entouré de ses espiègles '
+                                'chroniqueurs, reçoit une personnalité de l’actualité culturelle pour une heure trente '
+                                'de "drôleries".')
+                show_url = "https://www.rtl.fr/emission/a-la-bonne-heure"
             return {
                 "station": self.station_name,
                 "thumbnail_src": self.station_thumbnail,
-                "title": f"Les Grosses Têtes du {dt.strftime('%A %d %B %Y')}",
-                "show_title": "Les Grosses Têtes",
-                "show_summary": ("Du lundi au vendredi de 15h30 à 18h, retrouvez Laurent Ruquier, chef d'orchestre de "
-                                 "l'émission. Entouré des ses fidèles Grosses Têtes, il imprime sa marque à ce programme "
-                                 "culte de la radio tout en restant fidèle à ses fondamentaux."),
+                "title": title,
+                "show_title": show_title,
+                "show_summary": show_summary,
+                "show_url": show_url,
                 "type": fetched_data_type,
                 "end": end,
             }
@@ -146,7 +163,7 @@ class RTL(RTLGroupStation):
 
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
-            current_show_title=metadata.get("show_title", ""),
+            current_show_title=self._format_html_anchor_element(metadata.get("show_url"), metadata.get("show_title", "")),
             current_broadcast_summary=metadata.get("show_summary", ""),
             current_station=self.html_formatted_station_name,
             current_broadcast_title=current_broadcast_title,
