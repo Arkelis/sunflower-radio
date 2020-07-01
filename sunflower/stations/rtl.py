@@ -178,10 +178,7 @@ class RTL(RTLGroupStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        string = 'rtl_stream = input.http("{cls.station_url}", buffer=60., max=120.)\n'
-        string += (f'{cls.formatted_station_name} = drop_metadata(fallback(track_sensitive=false, '
-                   '[rtl_stream, default]))\n')
-        return string
+        return f'{cls.formatted_station_name} = drop_metadata(input.http("{cls.station_url}", buffer=90., max=120.))\n'
 
 
 class RTL2(RTLGroupStation):
