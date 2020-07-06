@@ -267,21 +267,9 @@ class Channel(ProvideViewMixin):
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            source_str = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
-            for days, timetable in self.timetable.items():
-                formatted_weekday = (
-                    ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
-                    if len(days) > 1
-                    else "{}w and".format(days[0]+1)
-                )
-                for start, end, station in timetable:
-                    if start.count(":") != 1 or end.count(":") != 1:
-                        raise RuntimeError("Time format must be HH:MM.")
-                    formatted_start = start.replace(":", "h")
-                    formatted_end = end.replace(":", "h")
-                    line = "    ({{ {} {}-{} }}, {}),\n".format(formatted_weekday, formatted_start, formatted_end, station.formatted_station_name)
-                    source_str += line
-            source_str += "])\n\n"
+            source_str = ("# sources\n"
+                          f'{self.endpoint}_radio = fallback(track_sensitive=false, '
+                          f'[{", ".join(map(lambda x: x.formatted_station_name, self.stations))}]\n')
         else:
             source_str = ""
         

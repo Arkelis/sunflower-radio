@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
 from sunflower.core.decorators import classproperty
+from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
@@ -143,6 +144,7 @@ class URLStation(Station):
     """
     station_url: str = ""
     station_slogan: str = ""
+    is_on: bool = False
 
     def __new__(cls):
         if cls.station_url == "":
@@ -151,5 +153,22 @@ class URLStation(Station):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return f'{cls.formatted_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}")))\n'
+        return (f'{cls.formatted_station_name} = '
+                f'mksafe(drop_metadata(input.http(id="{cls.formatted_station_name}", autostart=false, '
+                f'"{cls.station_url}")))\n')
 
+    def start_liquidsoap_source(self):
+        with open_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.start")
+
+    def stop_liquidsoap_source(self):
+        with open_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.stop")
+
+    def process(self, channels_using, channels_using_next):
+        if self in (*channels_using, *channels_using_next):
+            if not self.is_on:
+                self.start_liquidsoap_source()
+        else:
+            if self.is_on:
+                self.stop_liquidsoap_source()

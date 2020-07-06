@@ -4,7 +4,7 @@
 import traceback
 from datetime import datetime
 from time import sleep
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from sunflower.core.bases import Channel, DynamicStation, Station
 
@@ -12,11 +12,11 @@ from sunflower.core.bases import Channel, DynamicStation, Station
 class Scheduler:
 
     def __init__(self, channels, logger):
-        self.channels = channels
+        self.channels: List[Channel] = channels
         self.logger = logger
 
         # get stations
-        self.stations = {Station() for channel in channels for Station in channel.stations}
+        self.stations: Set[Station] = {station_cls() for channel in channels for station_cls in channel.stations}
 
         # get objects to process at each iteration
         objects_to_process = []
@@ -48,13 +48,21 @@ class Scheduler:
             are currently used.
         - `now`: datetime object representing current timestamp.
         """
+        now = datetime.now()
         channels_using: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels if channel.current_station is station]
             for station in self.stations
         }
+        channels_using_next: Dict[Station, List[Channel]] = {
+            station: [channel for channel in self.channels
+                      if (channel.current_station_end - now).timestamp() < 10
+                      if channel.following_station is station]
+            for station in self.stations
+        }
         return {
             "channels_using": channels_using,
-            "now": datetime.now(),
+            "channels_using_next": channels_using_next,
+            "now": now,
         }
 
     def run(self):

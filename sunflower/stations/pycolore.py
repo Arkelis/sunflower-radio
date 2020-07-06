@@ -79,7 +79,7 @@ class PycolorePlaylistStation(DynamicStation):
         )
         self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
         with open_telnet_session(logger=logger) as session:
-            session.write(f"{self.formatted_station_name}_station_queue.push {self._current_song.path}\n".encode())
+            session.write(f"{self.formatted_station_name}.push {self._current_song.path}\n".encode())
 
     def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         if self._current_song is None:
@@ -143,4 +143,4 @@ class PycolorePlaylistStation(DynamicStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}_station_queue"), default])\n'.format(cls.formatted_station_name)
+        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}"), default])\n'.format(cls.formatted_station_name)
