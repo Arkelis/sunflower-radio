@@ -1,0 +1,180 @@
+openapi: 3.0.0
+info:
+  title: sunflower
+  version: '1.0'
+  license:
+    name: AGPL
+  description: ''
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  '/channels/{endpoint}':
+    parameters:
+      - schema:
+          type: string
+        name: endpoint
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+              examples: {}
+          headers: {}
+      operationId: get-channels-endpoint
+      description: Get information about a given channel.
+  '/channels/{endpoint}/current':
+    parameters:
+      - schema:
+          type: string
+        name: endpoint
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-channels-endpoint-current
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Broadcast'
+  '/channels/{endpoint}/next':
+    parameters:
+      - schema:
+          type: string
+        name: endpoint
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-channels-endpoint-next
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Broadcast'
+  '/channels/{endpoint}/schedule':
+    parameters:
+      - schema:
+          type: string
+        name: endpoint
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-channels-endpoint-schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Step'
+components:
+  schemas:
+    Channel:
+      title: Channel
+      type: object
+      x-examples:
+        tournesol:
+          endpoint: tournesol
+          name: Tournesol
+          current_broadcast: /channels/tournesol/current
+          next_broadcast: /channels/tournesol/next
+          schedule: /channels/tournesol/schedule
+        music:
+          endpoint: music
+          name: Musique
+          current_broadcast: /channels/music/current
+          next_broadcast: /channels/music/next
+          schedule: /channels/music/schedule
+      properties:
+        endpoint:
+          type: string
+          description: |
+            Channel identifier
+        name:
+          type: string
+          description: The name of the station (display purpose)
+        current_broadcast:
+          type: string
+          description: URI to current broadcast resource
+        next_broadcast:
+          type: string
+          description: |
+            URI to next broadcast resource
+        schedule:
+          type: string
+          description: URI to schedule
+      required:
+        - endpoint
+        - name
+        - current_broadcast
+        - next_broadcast
+        - schedule
+      description: Object representing a radio channel containing a schedule of stations.
+    Broadcast:
+      title: Broadcast
+      type: object
+      properties:
+        broadcast_title:
+          type: string
+        broadcast_link:
+          type: string
+        show_title:
+          type: string
+        show_link:
+          type: string
+        summary:
+          type: string
+        thumbnail_src:
+          type: string
+        station:
+          $ref: '#/components/schemas/Station'
+        parent_show_title:
+          type: string
+        parent_show_link:
+          type: string
+      required:
+        - broadcast_title
+        - show_title
+        - summary
+        - thumbnail_src
+        - station
+    Station:
+      title: Station
+      type: object
+      properties:
+        endpoint:
+          type: string
+        name:
+          type: string
+        website:
+          type: string
+      required:
+        - name
+        - website
+    Step:
+      title: Step
+      type: object
+      properties:
+        start:
+          type: integer
+        end:
+          type: integer
+        broadcast:
+          $ref: '#/components/schemas/Broadcast'
+      x-examples:
+        example-1: {}
