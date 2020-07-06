@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import mutagen
 import requests
+from bs4 import BeautifulSoup
 
 from sunflower.core.custom_types import Song
 
@@ -130,3 +131,14 @@ def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, t
                                          getalbumurl=lambda x: "")
 
     return data or (backup_cover, "")
+
+
+def fetch_apple_podcast_cover(podcast_link: str, fallback: str):
+    """Scrap cover url from provided Apple Podcast link."""
+    if not podcast_link:
+        return fallback
+    req = requests.get(podcast_link)
+    bs = BeautifulSoup(req.content.decode(), "html.parser")
+    sources = bs.find_all("source")
+    cover_url = sources[0].attrs["srcset"].split(",")[1].replace(" 2x", "")
+    return cover_url

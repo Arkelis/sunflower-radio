@@ -8,7 +8,7 @@ from sunflower.core.bases import DynamicStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, Song
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.liquidsoap import open_telnet_session
-from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
+from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
 class PycolorePlaylistStation(DynamicStation):

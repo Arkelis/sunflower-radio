@@ -6,11 +6,11 @@ from logging import Logger
 from typing import Any, Dict, List, Optional
 
 import requests
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.utils.music import fetch_apple_podcast_cover
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
@@ -219,7 +219,7 @@ class RadioFranceStation(URLStation):
                 # show = attribut "show" de diffusion ou attribut "show" du parent ou {} s'il vaut None
                 show = diffusion.get("show", (parent_diffusion or {}).get("show")) or {}
                 podcast_link = (show.get("podcast") or {}).get("itunes")
-                thumbnail_src = self._fetch_cover(podcast_link)
+                thumbnail_src = fetch_apple_podcast_cover(self.station_thumbnail, podcast_link)
                 show_title = show.get("title", "")
                 show_url = show.get("url", "")
 
@@ -242,21 +242,9 @@ class RadioFranceStation(URLStation):
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
-    
 
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         return StreamMetadata(metadata.get("show_title", self.station_slogan), self.station_name, metadata.get("diffusion_title", ""))
-
-    def _fetch_cover(self, podcast_link):
-        """Scrap cover url from provided Apple Podcast link."""
-        if not podcast_link:
-            return self.station_thumbnail
-        req = requests.get(podcast_link)
-        bs = BeautifulSoup(req.content.decode(), "html.parser")
-        sources = bs.find_all("source")
-        cover_url = sources[0].attrs["srcset"].split(",")[1].replace(" 2x", "")
-        return cover_url
-
 
     def _fetch_metadata(self, dt: datetime):
         """Fetch metadata from radiofrance open API."""

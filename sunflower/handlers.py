@@ -7,7 +7,7 @@ from sunflower import settings
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType
 from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import HTMLMixin
-from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs
+from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs
 
 
 class AdsHandler(HTMLMixin):

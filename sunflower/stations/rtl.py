@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.utils.music import fetch_apple_podcast_cover
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -119,23 +120,27 @@ class RTL(RTLGroupStation):
                                 "l'émission. Entouré des ses fidèles Grosses Têtes, il imprime sa marque à ce "
                                 "programme culte de la radio tout en restant fidèle à ses fondamentaux.")
                 show_url = "https://www.rtl.fr/emission/les-grosses-tetes"
-            else:
-                title = f"À la bonne heure ! {dt.strftime('%A %d %B %Y')}"
-                show_title = "À la bonne heure ! de Stéphane Bern"
-                show_summary = ('Du lundi au vendredi de 11h à 12h30, Stéphane Bern, entouré de ses espiègles '
-                                'chroniqueurs, reçoit une personnalité de l’actualité culturelle pour une heure trente '
-                                'de "drôleries".')
-                show_url = "https://www.rtl.fr/emission/a-la-bonne-heure"
-            return {
-                "station": self.station_name,
-                "thumbnail_src": self.station_thumbnail,
-                "title": title,
-                "show_title": show_title,
-                "show_summary": show_summary,
-                "show_url": show_url,
-                "type": fetched_data_type,
-                "end": end,
-            }
+                thumbnail_src = fetch_apple_podcast_cover(
+                    'https://podcasts.apple.com/fr/podcast/les-grosses-t%C3%AAtes/id369369012',
+                    self.station_thumbnail,
+                )
+            # else:
+            #     title = f"À la bonne heure ! {dt.strftime('%A %d %B %Y')}"
+            #     show_title = "À la bonne heure ! de Stéphane Bern"
+            #     show_summary = ('Du lundi au vendredi de 11h à 12h30, Stéphane Bern, entouré de ses espiègles '
+            #                     'chroniqueurs, reçoit une personnalité de l’actualité culturelle pour une heure trente '
+            #                     'de "drôleries".')
+            #     show_url = "https://www.rtl.fr/emission/a-la-bonne-heure"
+                return {
+                    "station": self.station_name,
+                    "thumbnail_src": thumbnail_src,
+                    "title": title,
+                    "show_title": show_title,
+                    "show_summary": show_summary,
+                    "show_url": show_url,
+                    "type": fetched_data_type,
+                    "end": end,
+                }
 
         if dt_timestamp > end:
             return {
