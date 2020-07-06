@@ -55,7 +55,7 @@ class Scheduler:
         }
         channels_using_next: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels
-                      if (channel.current_station_end - now).timestamp() < 10
+                      if (channel.current_station_end - now).seconds < 10
                       if channel.following_station is station]
             for station in self.stations
         }
@@ -72,6 +72,7 @@ class Scheduler:
             while True:
                 sleep(4)
                 context = self.context
+                self.logger.debug(context)
                 for obj in self.objects_to_process:
                     try:
                         obj.process(self.logger, **context)

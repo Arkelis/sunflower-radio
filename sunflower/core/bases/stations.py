@@ -159,13 +159,13 @@ class URLStation(Station):
 
     def start_liquidsoap_source(self):
         with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.start")
+            session.write(f"{self.formatted_station_name}.start\n".encode())
 
     def stop_liquidsoap_source(self):
         with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.stop")
+            session.write(f"{self.formatted_station_name}.stop\n".encode())
 
-    def process(self, channels_using, channels_using_next):
+    def process(self, logger, channels_using, channels_using_next):
         if self in (*channels_using, *channels_using_next):
             if not self.is_on:
                 self.start_liquidsoap_source()

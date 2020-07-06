@@ -77,7 +77,7 @@ def get_channel_links(channel):
 @app.route("/api/stations/<string:station>/")
 @get_station_or_404
 def get_station_links(station):
-    return jsonify(station)
+    return jsonify(station._asdict())
 
 
 @app.route("/api/channels/<string:channel>/metadata/")
