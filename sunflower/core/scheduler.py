@@ -4,9 +4,9 @@
 import traceback
 from datetime import datetime
 from time import sleep
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Union
 
-from sunflower.core.bases import Channel, DynamicStation, Station
+from sunflower.core.bases import Channel, Station
 
 
 class Scheduler:
@@ -14,26 +14,16 @@ class Scheduler:
     def __init__(self, channels, logger):
         self.channels: List[Channel] = channels
         self.logger = logger
-
         # get stations
         self.stations: Set[Station] = {station_cls() for channel in channels for station_cls in channel.stations}
-
         # get objects to process at each iteration
-        objects_to_process = []
-
-        # add logger to channels
+        objects_to_process: List[Union[Channel, Station]] = []
         # add channels to objects to process
-        for channel in self.channels:
-            channel.logger = logger
-            objects_to_process.append(channel)
-        
-        # add logger to dynamic stations
-        # add dynamic stations to objects to process
+        objects_to_process.extend(self.channels)
+        # add stations with process() method to objects to process
         for station in self.stations:
-            if isinstance(station, DynamicStation):
-                station.logger = logger
+            if hasattr(station, "process"):
                 objects_to_process.append(station)
-        
         self.objects_to_process = objects_to_process
 
     @property
@@ -46,6 +36,10 @@ class Scheduler:
             a dict containing key=station, value=list of channels objects where station is currently
             on air on these channels. This key allows station to know on which channels they
             are currently used.
+        - `channels_using_next` (Dict[Station, List[Channel]]):
+            a dict containing key=station, value=list of channels objects where station will be on air on these
+            channels in less than 10 seconds. This key allows station to know on which channels they will
+            be used.
         - `now`: datetime object representing current timestamp.
         """
         now = datetime.now()
