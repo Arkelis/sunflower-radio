@@ -77,7 +77,7 @@ class Channel(ProvideViewMixin):
                 break
         else:
             raise RuntimeError("Jour de la semaine non supporté.")
-        
+
         getting_following = False
         asked_station_cls: Optional[Type[Station]] = None
         following_station_cls: Optional[Type[Station]] = None
@@ -91,7 +91,7 @@ class Channel(ProvideViewMixin):
             # on le prend
             if asked_time > end and i != index_of_last_element:
                 continue
-            
+
             # cas où end > asked_time, càd on se situe dans la bonne plage
             # on sélectionne la plage courante
             if not getting_following:
@@ -106,7 +106,7 @@ class Channel(ProvideViewMixin):
                 # si on cherche la suivante, on enregistre uniquement la classe
                 following_station_cls = t[2]
                 break
-        
+
         # si après avoir parcouru le bon jour on n'a rien trouvé : on lève une erreur
         if asked_station_cls is None:
             raise RuntimeError("Aucune station programmée à cet horaire.")
@@ -124,7 +124,7 @@ class Channel(ProvideViewMixin):
                     break
             else:
                 raise RuntimeError("Jour de la semaine non supporté pour la station suivante : {}. Jours dispos : {}".format(week_day, self.timetable.keys()))
-            
+
         return asked_station_start, asked_station_end, asked_station_cls, following_station_cls
 
     def _update_station_instances(self):
@@ -139,7 +139,7 @@ class Channel(ProvideViewMixin):
         if len(self.stations) == 1:
             # If only one station, skip.
             return
-        
+
         if datetime.now() > self.current_station_end or self._current_station_instance is None:
             new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now())
             self.current_station_end = new_end
@@ -152,7 +152,7 @@ class Channel(ProvideViewMixin):
         """Return Station object currently on air."""
         self._update_station_instances()
         return self._current_station_instance
-    
+
     @property
     def following_station(self) -> Station:
         """Return next Station object to be on air."""
@@ -171,7 +171,7 @@ class Channel(ProvideViewMixin):
     def current_broadcast_info(self, info: CardMetadata):
         """Store card info in Redis."""
         return info._asdict()
-    
+
     @property
     def neutral_card_metadata(self) -> CardMetadata:
         return CardMetadata(
@@ -181,7 +181,7 @@ class Channel(ProvideViewMixin):
             current_show_title="",
             current_broadcast_summary="",
         )
-    
+
     @property
     def waiting_for_following_card_metadata(self) -> CardMetadata:
         return CardMetadata(
@@ -215,7 +215,7 @@ class Channel(ProvideViewMixin):
         to do partial updates.
         """
         return self.current_station.get_metadata(current_metadata, logger, now)
-    
+
     def update_stream_metadata(self, metadata: MetadataDict, logger: Logger):
         """Send stream metadata to liquidsoap."""
         new_stream_metadata = self.current_station.format_stream_metadata(metadata)
@@ -243,8 +243,9 @@ class Channel(ProvideViewMixin):
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
             with open_telnet_session() as session:
                 session.write(f'var.set {current_station_name}_on_{self.endpoint} = true\n'.encode())
-                session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
-                self._liquidsoap_station = current_station_name
+                if self._liquidsoap_station:
+                    session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
+            self._liquidsoap_station = current_station_name
         # first retrieve current metadata
         current_metadata = self.current_broadcast_metadata
         # check if we must retrieve new metadata
@@ -281,12 +282,11 @@ class Channel(ProvideViewMixin):
             source_str += f'{self.endpoint}_radio = switch(track_sensitive=false, [\n'
             for station in self.stations:
                 station_name = station.formatted_station_name
-                station_id = station.station_id
                 source_str += f'    ({station_name}_on_{self.endpoint}, {station_name}),\n'
             source_str += "])\n"
         else:
             source_str = ""
-        
+
         # output
         fallback = str(self.endpoint) + "_radio" if source_str else self.stations[0].formatted_station_name
         source_str += str(self.endpoint) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
