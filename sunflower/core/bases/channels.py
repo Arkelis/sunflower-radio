@@ -34,6 +34,7 @@ class Channel(ProvideViewMixin):
         self.endpoint = endpoint
         self.timetable = timetable
         self.handlers = [Handler(self) for Handler in handlers]
+        self._liquidsoap_station = ""
         if len(self.stations) == 1:
             self._current_station_instance = self.stations[0]()
             self._following_station_instance = None
@@ -238,6 +239,10 @@ class Channel(ProvideViewMixin):
         If card info changed and need to be updated in client, return True.
         Else return False.
         """
+        # make sure current station is used by liquidsoap
+        if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
+            with open_telnet_session() as session:
+                session.write(f'var.set current_{self.endpoint}_station = "{current_station_name}"\n'.encode())
         # first retrieve current metadata
         current_metadata = self.current_broadcast_metadata
         # check if we must retrieve new metadata
@@ -267,14 +272,18 @@ class Channel(ProvideViewMixin):
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            source_str = ("# sources\n"
-                          f'{self.endpoint}_radio = fallback(track_sensitive=false, '
-                          f'[{", ".join(map(lambda x: x.formatted_station_name, self.stations))}]\n')
+            source_str = (f"# {self.endpoint} channel\n"
+                          f'current_{self.endpoint}_station = interactive.string("current_{self.endpoint}_station")\n'
+                          f'{self.endpoint}_radio = switch(track_sensitive=false,\n')
+            for station in self.stations:
+                station_name = station.formatted_station_name
+                source_str += f'    ({{ current_{self.endpoint}_station == "{station_name}" }}, {station_name}),\n'
+            source_str += ")\n"
         else:
             source_str = ""
         
         # output
-        fallback = str(self.endpoint) + "_timetable" if source_str else self.stations[0].formatted_station_name
+        fallback = str(self.endpoint) + "_radio" if source_str else self.stations[0].formatted_station_name
         source_str += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
         source_str += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
         source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'

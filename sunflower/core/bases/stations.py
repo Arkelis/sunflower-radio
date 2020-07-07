@@ -144,7 +144,11 @@ class URLStation(Station):
     """
     station_url: str = ""
     station_slogan: str = ""
-    is_on: bool = False
+    _is_on: bool = False
+
+    @property
+    def is_onair(self) -> bool:
+        return self._is_on
 
     def __new__(cls):
         if cls.station_url == "":
@@ -166,9 +170,11 @@ class URLStation(Station):
             session.write(f"{self.formatted_station_name}.stop\n".encode())
 
     def process(self, logger, channels_using, channels_using_next):
-        if self in (*channels_using, *channels_using_next):
-            if not self.is_on:
+        if any(channels_using_next[self]) or any(channels_using[self]):
+            if not self._is_on:
                 self.start_liquidsoap_source()
+                self._is_on = True
         else:
-            if self.is_on:
+            if self._is_on:
                 self.stop_liquidsoap_source()
+                self._is_on = False
