@@ -24,14 +24,6 @@ class StationMeta(type):
       (does not call `__new__()` or `__init__()`)
     """
 
-    increment = 0
-
-    def __new__(mcs, *args, **kwargs):
-        mcs.increment += 1
-        cls = super().__new__(mcs, *args, **kwargs)
-        cls.station_id = mcs.increment
-        return cls
-
     def __call__(cls, *args, **kwargs):
         if cls not in STATIONS_INSTANCES:
             STATIONS_INSTANCES[cls] = super().__call__(*args, **kwargs)
@@ -53,7 +45,6 @@ class Station(HTMLMixin, metaclass=StationMeta):
     station_thumbnail: str = ""
     station_website_url: str = ""
     station_slogan: str = ""
-    station_id: int
 
     @classproperty
     def formatted_station_name(cls) -> str:
