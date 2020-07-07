@@ -219,7 +219,7 @@ class RadioFranceStation(URLStation):
                 # show = attribut "show" de diffusion ou attribut "show" du parent ou {} s'il vaut None
                 show = diffusion.get("show", (parent_diffusion or {}).get("show")) or {}
                 podcast_link = (show.get("podcast") or {}).get("itunes")
-                thumbnail_src = fetch_apple_podcast_cover(self.station_thumbnail, podcast_link)
+                thumbnail_src = fetch_apple_podcast_cover(podcast_link, self.station_thumbnail)
                 show_title = show.get("title", "")
                 show_url = show.get("url", "")
 

@@ -22,7 +22,7 @@ class Channel(ProvideViewMixin):
 
     data_type = "channel"
 
-    def __init__(self, endpoint, timetable, handlers=[]):
+    def __init__(self, endpoint, timetable, handlers=()):
         """Channel constructor.
 
         Parameters:

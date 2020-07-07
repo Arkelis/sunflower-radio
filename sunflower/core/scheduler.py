@@ -66,7 +66,6 @@ class Scheduler:
             while True:
                 sleep(4)
                 context = self.context
-                self.logger.debug(context)
                 for obj in self.objects_to_process:
                     try:
                         obj.process(self.logger, **context)
