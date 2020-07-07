@@ -34,7 +34,7 @@ class Channel(ProvideViewMixin):
         self.endpoint = endpoint
         self.timetable = timetable
         self.handlers = [Handler(self) for Handler in handlers]
-        self._liquidsoap_station = ""
+        self._liquidsoap_station: int = 0
         if len(self.stations) == 1:
             self._current_station_instance = self.stations[0]()
             self._following_station_instance = None
@@ -240,9 +240,9 @@ class Channel(ProvideViewMixin):
         Else return False.
         """
         # make sure current station is used by liquidsoap
-        if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
+        if (current_station_id := self.current_station.station_id) != self._liquidsoap_station:
             with open_telnet_session() as session:
-                session.write(f'var.set current_{self.endpoint}_station = "{current_station_name}"\n'.encode())
+                session.write(f'var.set current_{self.endpoint}_station = {current_station_id}\n'.encode())
         # first retrieve current metadata
         current_metadata = self.current_broadcast_metadata
         # check if we must retrieve new metadata
@@ -273,11 +273,12 @@ class Channel(ProvideViewMixin):
         # définition des horaires des radios
         if len(self.stations) > 1:
             source_str = (f"# {self.endpoint} channel\n"
-                          f'current_{self.endpoint}_station = interactive.string("current_{self.endpoint}_station")\n'
+                          f'current_{self.endpoint}_station = interactive.int("current_{self.endpoint}_station")\n'
                           f'{self.endpoint}_radio = switch(track_sensitive=false,\n')
             for station in self.stations:
                 station_name = station.formatted_station_name
-                source_str += f'    ({{ current_{self.endpoint}_station == "{station_name}" }}, {station_name}),\n'
+                station_id = station.station_id
+                source_str += f'    ({{ current_{self.endpoint}_station == {station_id} }}, {station_name}),\n'
             source_str += ")\n"
         else:
             source_str = ""
