@@ -289,7 +289,7 @@ class Channel(ProvideViewMixin):
         
         # output
         fallback = str(self.endpoint) + "_radio" if source_str else self.stations[0].formatted_station_name
-        source_str += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
+        source_str += str(self.endpoint) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
         source_str += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
         source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
 
