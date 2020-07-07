@@ -145,7 +145,7 @@ class RTL(Station, RTLGroupMixin):
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
             current_show_title=self._format_html_anchor_element(metadata.get("show_url"), metadata.get("show_title", "")),
-            current_broadcast_summary=metadata.get("show_summary", ""),
+            current_broadcast_summary=metadata.get("summary", ""),
             current_station=self.html_formatted_station_name,
             current_broadcast_title=current_broadcast_title,
         )
