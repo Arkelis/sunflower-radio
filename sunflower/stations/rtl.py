@@ -107,9 +107,9 @@ class RTL(Station, RTLGroupMixin):
         summary = rss.find("description").text
         first_item = rss.find("item")
         broadcast_title = first_item.find("title").text
-        stream = first_item.find("enclosure")
-        stream_url = stream.get("url")
-        broadcast_length = int(stream.get("length"))
+        stream_url = first_item.find("enclosure").get("url")
+        duration = tuple(map(int, first_item.find("itunes:duration").text.split(":")))
+        broadcast_length = duration[0]*3600 + duration[1]*60 + duration[2]
         return {
             "show_url": show_url,
             "show_title": show_title,
