@@ -28,7 +28,7 @@ class BroadcastType(Enum):
 @pydantic_dataclass
 class StationInfo:
     name: str
-    website: Optional[str] = None
+    website: Optional[str] = ""
 
 
 @pydantic_dataclass
@@ -37,12 +37,12 @@ class Broadcast:
     type: BroadcastType
     station: StationInfo
     thumbnail_src: str
-    link: Optional[str] = None
-    show_title: Optional[str] = None
-    show_link: Optional[str] = None
-    summary: Optional[str] = None
-    parent_show_title: Optional[str] = None
-    parent_show_link: Optional[str] = None
+    link: Optional[str] = ""
+    show_title: Optional[str] = ""
+    show_link: Optional[str] = ""
+    summary: Optional[str] = ""
+    parent_show_title: Optional[str] = ""
+    parent_show_link: Optional[str] = ""
 
     @classmethod
     def waiting_for_next(cls, station: "Station", next_station_name: str):
@@ -99,6 +99,6 @@ def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
         return mapping
     for member in BroadcastType:
         if type_ == member.value:
-            mapping["type"] = MetadataType(type_)
+            mapping["type"] = BroadcastType(type_)
             break
     return mapping
