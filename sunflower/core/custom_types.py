@@ -1,14 +1,10 @@
 # This file is part of sunflower package. radio
 
 import json
-from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, Optional
 
-from pydantic import AnyHttpUrl
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-
-from sunflower.core.repositories import RedisRepository
 
 
 # Enums
@@ -24,7 +20,7 @@ class BroadcastType(Enum):
     NONE = ""
     ADS = "Ads"
     ERROR = "Error"
-    WAITING_FOR_FOLLOWING = "Transition"
+    WAITING_FOR_NEXT = "Transition"
 
 
 # Dataclasses
@@ -32,22 +28,31 @@ class BroadcastType(Enum):
 @pydantic_dataclass
 class StationInfo:
     name: str
-    website: Optional[AnyHttpUrl]
-    endpoint: Optional[str]
+    website: Optional[str] = None
 
 
 @pydantic_dataclass
 class Broadcast:
     title: str
     type: BroadcastType
-    link: Optional[AnyHttpUrl]
-    show_title: str
-    show_link: Optional[AnyHttpUrl]
-    summary: Optional[str]
-    thumbnail_src: AnyHttpUrl
     station: StationInfo
-    parent_show_title: Optional[str]
-    parent_show_link: Optional[AnyHttpUrl]
+    thumbnail_src: str
+    link: Optional[str] = None
+    show_title: Optional[str] = None
+    show_link: Optional[str] = None
+    summary: Optional[str] = None
+    parent_show_title: Optional[str] = None
+    parent_show_link: Optional[str] = None
+
+    @classmethod
+    def waiting_for_next(cls, station: "Station", next_station_name: str):
+        """Factory method for broadcast just waiting for next station"""
+        return cls(
+            title=f"Dans un instant : {next_station_name}.",
+            type=BroadcastType.WAITING_FOR_NEXT,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail,
+        )
 
 
 @pydantic_dataclass
@@ -55,6 +60,10 @@ class Step:
     start: int
     end: int
     broadcast: Broadcast
+
+    @classmethod
+    def waiting_for_next(cls, start: int, end: int, station: "Station", next_station_name: str):
+        return cls(start, end, Broadcast.waiting_for_next(station, next_station_name))
 
 
 @pydantic_dataclass
