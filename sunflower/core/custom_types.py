@@ -3,21 +3,22 @@
 import json
 from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Tuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
+
+from pydantic import AnyHttpUrl
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from sunflower.core.repositories import RedisRepository
 
-# Types
 
-ChannelView = StationView = namedtuple("ViewObject", ["data_type", "endpoint"])
-
+# Enums
 
 class NotifyChangeStatus(Enum):
     UNCHANGED = 0
     UPDATED = 1
 
 
-class MetadataType(Enum):
+class BroadcastType(Enum):
     MUSIC = "Track"
     PROGRAMME = "Programme"
     NONE = ""
@@ -26,12 +27,38 @@ class MetadataType(Enum):
     WAITING_FOR_FOLLOWING = "Transition"
 
 
-MetadataDict = Dict[str, Union[str, int, MetadataType]]
+# Dataclasses
+
+@pydantic_dataclass
+class StationInfo:
+    name: str
+    website: Optional[AnyHttpUrl]
+    endpoint: Optional[str]
 
 
-# Custom named tuples
+@pydantic_dataclass
+class Broadcast:
+    title: str
+    type: BroadcastType
+    link: Optional[AnyHttpUrl]
+    show_title: str
+    show_link: Optional[AnyHttpUrl]
+    summary: Optional[str]
+    thumbnail_src: AnyHttpUrl
+    station: StationInfo
+    parent_show_title: Optional[str]
+    parent_show_link: Optional[AnyHttpUrl]
 
-class Song(NamedTuple):
+
+@pydantic_dataclass
+class Step:
+    start: int
+    end: int
+    broadcast: Broadcast
+
+
+@pydantic_dataclass
+class Song:
     path: str
     artist: str
     album: str
@@ -39,61 +66,29 @@ class Song(NamedTuple):
     length: float
 
 
-class CardMetadata(NamedTuple):
-    current_thumbnail: str
-    current_station: str
-    current_broadcast_title: str
-    current_show_title: str
-    current_broadcast_summary: str
-
-
-class StreamMetadata(NamedTuple):
+@pydantic_dataclass
+class StreamMetadata:
     title: str
     artist: str
     album: str = ""
 
 
-# Views objects (not in web meaning but more in dict_view meaning)
-
-class BaseView(RedisRepository):
-    """Object referencing Redis-stored data of an object of given type.
-    
-    All or almost all attributes are fetched dynamically with calls to
-    Redis database. Views are used by the server for getting stored data
-    of Channel and Station objects without having to deal with these big
-    objects. Instead, it uses these view objects which are only exposing
-    Redis-stored data.
-    """
-    __slots__ = ()
-    fields: Tuple[str, ...] = ()
-
-    def __getattr__(self, name):
-        raise AttributeError(
-            f"'{name}' attribute is not readable. "
-            "Only following attributes are readable: " + ", ".join(self.fields) + "."
-        )
-    
-    def __repr__(self):
-        attrs = ", ".join(f"{name}={getattr(self, name)}" for name in self.__slots__ + self.fields)
-        return f"<{type(self).__name__}({attrs})>"
-
-
-# MetadataType utils for json (de)serialization
+# BroadcastType utils for json (de)serialization
 
 class MetadataEncoder(json.JSONEncoder):
-    """Subclass of json.JSONEncoder supporting MetadataType serialization."""
+    """Subclass of json.JSONEncoder supporting BroadcastType serialization."""
     def default(self, obj):
-        if isinstance(obj, MetadataType):
+        if isinstance(obj, BroadcastType):
             return obj.value
         return json.JSONEncoder.default(self, obj)
 
 
 def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
-    """object_hook for supporting MetadataType at json deserialization."""
+    """object_hook for supporting BroadcastType at json deserialization."""
     type_ = mapping.get("type")
     if type_ is None:
         return mapping
-    for member in MetadataType:
+    for member in BroadcastType:
         if type_ == member.value:
             mapping["type"] = MetadataType(type_)
             break
