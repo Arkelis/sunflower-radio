@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 from logging import Logger
 from typing import Dict, Optional
 
-from sunflower.core.custom_types import BroadcastType, StationInfo, Step, StreamMetadata
+from sunflower.core.custom_types import Broadcast, BroadcastType, StationInfo, Step, StreamMetadata
 from sunflower.core.decorators import classproperty
-from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
+from sunflower.core.mixins import HTMLMixin
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
@@ -111,7 +111,7 @@ class Station(HTMLMixin, metaclass=StationMeta):
     #     as it is done in Channel class.
     #     """
     
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         """For sending data to liquidsoap server.
 
         These metadata will be attached to stream file and can be readen by
@@ -127,7 +127,7 @@ class Station(HTMLMixin, metaclass=StationMeta):
         """Return string containing liquidsoap config for this station."""
 
 
-class DynamicStation(Station, ProvideViewMixin):
+class DynamicStation(Station):
     """Base class for internally managed stations.
     
     Must implement process() method.
