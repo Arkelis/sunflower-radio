@@ -4,15 +4,15 @@ from logging import Logger
 from typing import Dict, List, Optional
 
 from sunflower import settings
-from sunflower.core.bases import DynamicStation
-from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, Song
+from sunflower.core.bases import Channel, DynamicStation
+from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.utils.deezer import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
 class PycolorePlaylistStation(DynamicStation):
-    station_name = "Radio Pycolore"
+    name = "Radio Pycolore"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
     endpoint = "pycolore"
 
@@ -81,39 +81,40 @@ class PycolorePlaylistStation(DynamicStation):
         with open_telnet_session(logger=logger) as session:
             session.write(f"{self.formatted_station_name}_station_queue.push {self._current_song.path}\n".encode())
 
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
+    def get_step(self, logger: Logger, dt: datetime, channel: Channel, for_schedule: bool = False) -> Step:
+        dt_timestamp = int(dt.timestamp())
+        if for_schedule:
+            return Step(
+                start=dt_timestamp,
+                end=int(channel.current_station_end.timestamp()),
+                broadcast=Broadcast(
+                    title="La playlist Pycolore",
+                    type=BroadcastType.MUSIC,
+                    station=self.station_info,
+                    thumbnail_src=self.station_thumbnail,
+                )
+            )
         if self._current_song is None:
-            return {
-                "station": self.station_name,
-                "type": MetadataType.WAITING_FOR_FOLLOWING,
-                "end": self._current_song_end,
-            }
+            next_station_name = channel.next_station.name
+            next_station_start = int(channel.current_station_end.timestamp())
+            return Step.waiting_for_next(dt_timestamp, next_station_name, self, next_station_start)
         artists_list = tuple(self._artists)
         artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
         thumbnail_src, link = fetch_cover_and_link_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title)
-        return {
-            "station": self.station_name,
-            "type": MetadataType.MUSIC,
-            "artist": self._current_song.artist,
-            "title": self._current_song.title,
-            "thumbnail_src": thumbnail_src,
-            "link": link,
-            "end": int(self._current_song_end),
-            "show": "La playlist Pycolore",
-            "summary": "Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : {}.".format(artists_str)
-        }
-
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        current_broadcast_title = self._format_html_anchor_element(
-            metadata.get("link"),
-            f"{metadata['artist']} • {metadata['title']}",
-        )
-        return CardMetadata(
-            current_thumbnail=metadata["thumbnail_src"],
-            current_station=metadata["station"],
-            current_broadcast_title=current_broadcast_title,
-            current_show_title=self._format_html_anchor_element("/playlist/pycolore", metadata["show"]),
-            current_broadcast_summary=metadata["summary"],
+        return Step(
+            start=dt_timestamp,
+            end=int(self._current_song_end),
+            broadcast=Broadcast(
+                title=f"{self._current_song.artist} • {self._current_song.title}",
+                link=link,
+                thumbnail_src=thumbnail_src,
+                station=self.station_info,
+                type=BroadcastType.MUSIC,
+                show_link="/pycolore/playlist",
+                show_title="La playlist Pycolore",
+                summary=(f"Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : "
+                         f"{artists_str}."),
+            )
         )
 
     def process(self, logger: Logger, channels_using: Dict, now: datetime, **kwargs):
