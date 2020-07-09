@@ -21,7 +21,7 @@ class Channel:
 
     data_type = "channel"
 
-    def __init__(self, endpoint, timetable, handlers=[]):
+    def __init__(self, endpoint, timetable, handlers=()):
         """Channel constructor.
 
         Parameters:
@@ -33,6 +33,7 @@ class Channel:
         self.endpoint = endpoint
         self.timetable = timetable
         self.handlers = [Handler(self) for Handler in handlers]
+        self._liquidsoap_station = ""
         if len(self.stations) == 1:
             self._current_station_instance = self.stations[0]()
             self._following_station_instance = None
@@ -75,7 +76,7 @@ class Channel:
                 break
         else:
             raise RuntimeError("Jour de la semaine non supporté.")
-        
+
         getting_following = False
         asked_station_cls: Optional[Type[Station]] = None
         following_station_cls: Optional[Type[Station]] = None
@@ -89,7 +90,7 @@ class Channel:
             # on le prend
             if asked_time > end and i != index_of_last_element:
                 continue
-            
+
             # cas où end > asked_time, càd on se situe dans la bonne plage
             # on sélectionne la plage courante
             if not getting_following:
@@ -104,7 +105,7 @@ class Channel:
                 # si on cherche la suivante, on enregistre uniquement la classe
                 following_station_cls = t[2]
                 break
-        
+
         # si après avoir parcouru le bon jour on n'a rien trouvé : on lève une erreur
         if asked_station_cls is None:
             raise RuntimeError("Aucune station programmée à cet horaire.")
@@ -122,7 +123,7 @@ class Channel:
                     break
             else:
                 raise RuntimeError("Jour de la semaine non supporté pour la station suivante : {}. Jours dispos : {}".format(week_day, self.timetable.keys()))
-            
+
         return asked_station_start, asked_station_end, asked_station_cls, following_station_cls
 
     def _update_station_instances(self):
@@ -137,7 +138,7 @@ class Channel:
         if len(self.stations) == 1:
             # If only one station, skip.
             return
-        
+
         if datetime.now() > self.current_station_end or self._current_station_instance is None:
             new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now())
             self.current_station_end = new_end
@@ -150,7 +151,7 @@ class Channel:
         """Return Station object currently on air."""
         self._update_station_instances()
         return self._current_station_instance
-    
+
     @property
     def next_station(self) -> Station:
         """Return next Station object to be on air."""
@@ -212,6 +213,13 @@ class Channel:
         If card info changed and need to be updated in client, return True.
         Else return False.
         """
+        # make sure current station is used by liquidsoap
+        if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
+            with open_telnet_session() as session:
+                session.write(f'var.set {current_station_name}_on_{self.endpoint} = true\n'.encode())
+                if self._liquidsoap_station:
+                    session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
+            self._liquidsoap_station = current_station_name
         # first retrieve current metadata
         current_metadata = self.current_broadcast
         # check if we must retrieve new metadata
@@ -239,27 +247,21 @@ class Channel:
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            source_str = "# timetable\n{}_timetable = switch(track_sensitive=false, [\n".format(self.endpoint)
-            for days, timetable in self.timetable.items():
-                formatted_weekday = (
-                    ("(" + " or ".join("{}w".format(wd+1) for wd in days) + ") and")
-                    if len(days) > 1
-                    else "{}w and".format(days[0]+1)
-                )
-                for start, end, station in timetable:
-                    if start.count(":") != 1 or end.count(":") != 1:
-                        raise RuntimeError("Time format must be HH:MM.")
-                    formatted_start = start.replace(":", "h")
-                    formatted_end = end.replace(":", "h")
-                    line = "    ({{ {} {}-{} }}, {}),\n".format(formatted_weekday, formatted_start, formatted_end, station.formatted_station_name)
-                    source_str += line
-            source_str += "])\n\n"
+            source_str = f"# {self.endpoint} channel\n"
+            for station in self.stations:
+                station_name = station.formatted_station_name
+                source_str += f'{station_name}_on_{self.endpoint} = interactive.bool("{station_name}_on_{self.endpoint}", false)\n'
+            source_str += f'{self.endpoint}_radio = switch(track_sensitive=false, [\n'
+            for station in self.stations:
+                station_name = station.formatted_station_name
+                source_str += f'    ({station_name}_on_{self.endpoint}, {station_name}),\n'
+            source_str += "])\n"
         else:
             source_str = ""
-        
+
         # output
-        fallback = str(self.endpoint) + "_timetable" if source_str else self.stations[0].formatted_station_name
-        source_str += str(self.endpoint) + "_radio = fallback([" + fallback + ", default])\n"    
+        fallback = str(self.endpoint) + "_radio" if source_str else self.stations[0].formatted_station_name
+        source_str += str(self.endpoint) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
         source_str += str(self.endpoint) + '_radio = fallback(track_sensitive=false, [request.queue(id="' + str(self.endpoint) + '_custom_songs"), ' + str(self.endpoint) + '_radio])\n'
         source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
 

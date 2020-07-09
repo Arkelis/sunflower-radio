@@ -8,6 +8,7 @@ from typing import Dict, Optional
 from sunflower.core.custom_types import Broadcast, BroadcastType, StationInfo, Step, StreamMetadata
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin
+from sunflower.core.liquidsoap import open_telnet_session
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
@@ -150,6 +151,11 @@ class URLStation(Station):
     """
     station_url: str = ""
     station_slogan: str = ""
+    _is_on: bool = False
+
+    @property
+    def is_onair(self) -> bool:
+        return self._is_on
 
     def __new__(cls):
         if cls.station_url == "":
@@ -158,5 +164,24 @@ class URLStation(Station):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        return f'{cls.formatted_station_name} = mksafe(drop_metadata(input.http("{cls.station_url}")))\n'
+        return (f'{cls.formatted_station_name} = '
+                f'mksafe(drop_metadata(input.http(id="{cls.formatted_station_name}", autostart=false, '
+                f'"{cls.station_url}")))\n')
 
+    def start_liquidsoap_source(self):
+        with open_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.start\n".encode())
+
+    def stop_liquidsoap_source(self):
+        with open_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.stop\n".encode())
+
+    def process(self, logger, channels_using, channels_using_next, **kwargs):
+        if any(channels_using_next[self]) or any(channels_using[self]):
+            if not self._is_on:
+                self.start_liquidsoap_source()
+                self._is_on = True
+        else:
+            if self._is_on:
+                self.stop_liquidsoap_source()
+                self._is_on = False

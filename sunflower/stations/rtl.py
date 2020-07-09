@@ -3,12 +3,14 @@ import locale
 from datetime import datetime, time, timedelta
 from logging import Logger
 from typing import Optional
+from xml.etree import ElementTree
 
 import requests
 from bs4 import BeautifulSoup
 
-from sunflower.core.bases import URLStation
+from sunflower.core.bases import Station, URLStation
 from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.liquidsoap import open_telnet_session
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -16,7 +18,7 @@ except locale.Error:
     pass
 
 
-class RTLGroupStation(URLStation):
+class RTLGroupMixin:
     _main_data_url: str = ""
     _songs_data_url: str = ""
 
@@ -30,7 +32,7 @@ class RTLGroupStation(URLStation):
             return song_data
         except requests.exceptions.Timeout:
             if retry == 11:
-                return self._get_error_metadata("API Timeout", 90)
+                raise requests.exceptions.Timeout from None
             return self._fetch_song_metadata(retry + 1)
 
     def _fetch_metadata(self, dt: datetime, retry=0):
@@ -66,10 +68,10 @@ class RTLGroupStation(URLStation):
                     start = int(datetime.combine(dt.date(), start_time).timestamp())
                     end = int(datetime.combine(dt.date(), end_time).timestamp())
                 except KeyError:
-                    raise RuntimeError("Le titre de la chanson ne peut pas être trouvé.")
+                    raise RuntimeError("Le titre de la chanson oupne peut pas être trouvé.")
         except requests.exceptions.Timeout:
             if retry == 11:
-                return self._get_error_metadata("API Timeout", 90)
+                raise requests.exceptions.Timeout from None
             return self._fetch_metadata(dt, retry + 1)
         if diffusion_type == "Pubs":
             return {"type": MetadataType.ADS, "end": 0}
@@ -81,90 +83,69 @@ class RTLGroupStation(URLStation):
             return self._fetch_song_metadata()
 
 
-class RTL(RTLGroupStation):
+class RTL(Station, RTLGroupMixin):
     station_name = "RTL"
     station_slogan = "On a tellement de choses à se dire !"
     station_website_url = "https://www.rtl.fr"
     station_thumbnail = "/static/rtl.svg"
-    station_url = "http://streaming.radio.rtl2.fr/rtl-1-48-192"
-    _main_data_url = "https://timeline.rtl.fr/RTL/items"
-    _songs_data_url = "https://timeline.rtl.fr/RTL/songs"
+    # station_url = "http://streaming.radio.rtl2.fr/rtl-1-48-192"
+    # _main_data_url = "https://timeline.rtl.fr/RTL/items"
+    # _songs_data_url = "https://timeline.rtl.fr/RTL/songs"
+    _grosses_tetes_podcast_url = "https://www.rtl.fr/podcast/les-grosses-tetes.xml"
+
+    def __init__(self):
+        super().__init__()
+        self._last_grosses_tetes_diffusion_date = datetime.today()
+
+    @staticmethod
+    def _fetch_last_podcast_metadata(url):
+        rep = requests.get(url)
+        rss = ElementTree.fromstring(rep.text).find("channel")
+        show_url = rss.find("link").text
+        thumbnail_src = rss.find("image").find("url").text
+        show_title = rss.find("title").text
+        summary = rss.find("description").text
+        first_item = rss.find("item")
+        broadcast_title = first_item.find("title").text
+        stream_url = first_item.find("enclosure").get("url")
+        duration = tuple(map(int, first_item.find("itunes:duration").text.split(":")))
+        broadcast_length = duration[0]*3600 + duration[1]*60 + duration[2]
+        return {
+            "show_url": show_url,
+            "show_title": show_title,
+            "thumbnail_src": thumbnail_src,
+            "summary": summary,
+            "title": broadcast_title,
+            "stream_url": stream_url,
+            "length": broadcast_length,
+        }
 
     def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
         """Pour l'instant RTL n'est utilisé que pour les Grosses Têtes et A la bonne heure."""
-        dt_timestamp = dt.timestamp()
-
-        # next, update song info
-        fetched_data = self._fetch_metadata(dt)
-        fetched_data_type = fetched_data.get("type")
-
-        if fetched_data_type in (MetadataType.ADS, MetadataType.NONE):
-            return {
-                "station": self.station_name,
-                "thumbnail_src": self.station_thumbnail,
-                "type": fetched_data_type,
-                "end": 0,
-            }
-
-        end = fetched_data["end"]
-        if fetched_data_type == MetadataType.PROGRAMME:
-            if (
-                datetime.combine(datetime.today(), time(15, 30)).timestamp()
-                <= end
-                <= datetime.combine(datetime.today(), time(18, 0)).timestamp()
-            ):
-                title = f"Les Grosses Têtes du {dt.strftime('%A %d %B %Y')}"
-                show_title = "Les Grosses Têtes de Laurent Ruquier"
-                show_summary = ("Du lundi au vendredi de 15h30 à 18h, retrouvez Laurent Ruquier, chef d'orchestre de "
-                                "l'émission. Entouré des ses fidèles Grosses Têtes, il imprime sa marque à ce "
-                                "programme culte de la radio tout en restant fidèle à ses fondamentaux.")
-                show_url = "https://www.rtl.fr/emission/les-grosses-tetes"
-            else:
-                title = f"À la bonne heure ! {dt.strftime('%A %d %B %Y')}"
-                show_title = "À la bonne heure ! de Stéphane Bern"
-                show_summary = ('Du lundi au vendredi de 11h à 12h30, Stéphane Bern, entouré de ses espiègles '
-                                'chroniqueurs, reçoit une personnalité de l’actualité culturelle pour une heure trente '
-                                'de "drôleries".')
-                show_url = "https://www.rtl.fr/emission/a-la-bonne-heure"
-            return {
-                "station": self.station_name,
-                "thumbnail_src": self.station_thumbnail,
-                "title": title,
-                "show_title": show_title,
-                "show_summary": show_summary,
-                "show_url": show_url,
-                "type": fetched_data_type,
-                "end": end,
-            }
-
-        if dt_timestamp > end:
-            return {
-                "station": self.station_name,
-                "thumbnail_src": self.station_thumbnail,
-                "type": MetadataType.NONE,
-                "end": 0,
-            }
-        else:
-            return {
-                "station": self.station_name,
-                "artist": fetched_data["singer"],
-                "title": fetched_data["title"],
-                "end": end,
-                "type": MetadataType.MUSIC,
-                "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
-            }
+        if dt.date() == self._last_grosses_tetes_diffusion_date:
+            return {"station": self.station_name, "type": MetadataType.ADS, "end": 0}
+        dt_timestamp = int(dt.timestamp())
+        # pour l'instant uniquement Les Grosses Têtes
+        podcast_url = self._grosses_tetes_podcast_url
+        broadcast_metadata = self._fetch_last_podcast_metadata(podcast_url)
+        with open_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.push {broadcast_metadata.pop('stream_url')}\n".encode())
+        broadcast_metadata["start"] = dt_timestamp
+        broadcast_metadata["end"] = dt_timestamp + broadcast_metadata.pop("length")
+        broadcast_metadata["station"] = self.station_name
+        broadcast_metadata["type"] = MetadataType.PROGRAMME
+        return broadcast_metadata
 
     def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
         current_broadcast_title = {
             MetadataType.ADS: "Publicité",
-            MetadataType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
             MetadataType.PROGRAMME: metadata.get("title") or self.station_slogan
         }.get(metadata["type"], self.station_slogan)
 
         return CardMetadata(
             current_thumbnail=metadata["thumbnail_src"],
             current_show_title=self._format_html_anchor_element(metadata.get("show_url"), metadata.get("show_title", "")),
-            current_broadcast_summary=metadata.get("show_summary", ""),
+            current_broadcast_summary=metadata.get("summary", ""),
             current_station=self.html_formatted_station_name,
             current_broadcast_title=current_broadcast_title,
         )
@@ -178,13 +159,10 @@ class RTL(RTLGroupStation):
 
     @classmethod
     def get_liquidsoap_config(cls):
-        string = 'rtl_stream = input.http("{cls.station_url}", buffer=60., max=120.)\n'
-        string += (f'{cls.formatted_station_name} = drop_metadata(fallback(track_sensitive=false, '
-                   '[rtl_stream, default]))\n')
-        return string
+        return '{0} = fallback(track_sensitive=false, [request.queue(id="{0}"), default])\n'.format(cls.formatted_station_name)
 
 
-class RTL2(RTLGroupStation):
+class RTL2(URLStation, RTLGroupMixin):
     station_name = "RTL 2"
     station_slogan = "Le son Pop-Rock"
     station_website_url = "https://www.rtl2.fr"
@@ -247,12 +225,18 @@ class RTL2(RTLGroupStation):
         # first, update show info if needed
         show_metadata_keys = ("show_end", "show_title", "show_summary")
         if current_metadata.get("show_end") is None or current_metadata.get("show_end") < dt_timestamp:
-            show_metadata = self._fetch_show_metadata(dt)
+            try:
+                show_metadata = self._fetch_show_metadata(dt)
+            except requests.exceptions.Timeout:
+                return self._get_error_metadata("API Timeout", 90)
         else:
             show_metadata = {k: v for k, v in current_metadata.items() if k in show_metadata_keys}
 
         # next, update song info
-        fetched_data = self._fetch_metadata(dt)
+        try:
+            fetched_data = self._fetch_metadata(dt)
+        except requests.exceptions.Timeout:
+            return self._get_error_metadata("API Timeout", 90)
         fetched_data_type = fetched_data.get("type")
 
         if fetched_data_type == MetadataType.ADS:
