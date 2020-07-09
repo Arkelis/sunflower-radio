@@ -5,7 +5,7 @@ from typing import Optional, Type
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
-from sunflower.core.custom_types import (CardMetadata, MetadataDict, MetadataEncoder, MetadataType, as_metadata_type)
+from sunflower.core.custom_types import (BroadcastType, CardMetadata, MetadataDict, MetadataEncoder, as_metadata_type)
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import ProvideViewMixin
@@ -153,30 +153,21 @@ class Channel(ProvideViewMixin):
         return self._current_station_instance
     
     @property
-    def following_station(self) -> Station:
+    def next_station(self) -> Station:
         """Return next Station object to be on air."""
         self._update_station_instances()
         return self._following_station_instance
 
-    current_broadcast_metadata = PersistentAttribute("metadata", "Raw data for API", MetadataEncoder, as_metadata_type)
-    current_broadcast_info = PersistentAttribute("info", "Data for webapp player", notify_change=True)
+    current_broadcast = PersistentAttribute("current", "Current broadcast data", MetadataEncoder, as_metadata_type, notify_change=True)
+    next_broadcast = PersistentAttribute("next", "Next broadcast data", MetadataEncoder, as_metadata_type)
+    schedule = PersistentAttribute("next", "Schedule", MetadataEncoder, as_metadata_type)
 
-    @current_broadcast_info.post_get_hook
-    def current_broadcast_info(self, redis_data) -> CardMetadata:
-        """Retrieve card info stored in Redis as a dict."""
-        return CardMetadata("", "", "", "", "") if redis_data is None else CardMetadata(**redis_data)
-
-    @current_broadcast_info.pre_set_hook
-    def current_broadcast_info(self, info: CardMetadata):
-        """Store card info in Redis."""
-        return info._asdict()
-    
     @property
     def neutral_card_metadata(self) -> CardMetadata:
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
             current_station=self.current_station.html_formatted_station_name,
-            current_broadcast_title=self.current_station.station_slogan or "Vous écoutez {}".format(self.current_station.station_name),
+            current_broadcast_title=self.current_station.station_slogan or "Vous écoutez {}".format(self.current_station.name),
             current_show_title="",
             current_broadcast_summary="",
         )
@@ -186,7 +177,7 @@ class Channel(ProvideViewMixin):
         return CardMetadata(
             current_thumbnail=self.current_station.station_thumbnail,
             current_station=self.current_station.html_formatted_station_name,
-            current_broadcast_title="Dans un instant : {}".format(self.following_station.station_name),
+            current_broadcast_title="Dans un instant : {}".format(self.next_station.name),
             current_show_title="",
             current_broadcast_summary="",
         )
@@ -198,13 +189,13 @@ class Channel(ProvideViewMixin):
         method of currently broadcasted station.
         """
         metadata_type = metadata["type"]
-        if metadata_type in (MetadataType.NONE, MetadataType.ERROR):
+        if metadata_type in (BroadcastType.NONE, BroadcastType.ERROR):
             return self.neutral_card_metadata
-        if metadata_type == MetadataType.WAITING_FOR_FOLLOWING:
+        if metadata_type == BroadcastType.WAITING_FOR_NEXT:
             return self.waiting_for_following_card_metadata
         return self.current_station.format_info(current_info, metadata, logger)
 
-    def get_current_broadcast_metadata(self, current_metadata: MetadataDict, logger: Logger, now: datetime):
+    def get_current_broadcast(self, logger: Logger, now: datetime):
         """Get metadata of current broadcasted programm for current station.
 
         Param: current_metadata: current metadata stored in Redis
@@ -213,7 +204,7 @@ class Channel(ProvideViewMixin):
         of currently broadcasted station. Station can use current metadata for example
         to do partial updates.
         """
-        return self.current_station.get_metadata(current_metadata, logger, now)
+        return self.current_station.get_step(logger, now, self)
     
     def update_stream_metadata(self, metadata: MetadataDict, logger: Logger):
         """Send stream metadata to liquidsoap."""
@@ -226,7 +217,7 @@ class Channel(ProvideViewMixin):
             session.write(f'{self.endpoint}.insert {metadata_string}\n'.encode())
         logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
 
-    def process(self, logger: Logger, now: datetime, **kwargs):
+    def process(self, logger: Logger, now: datetime, **context):
         """If needed, update metadata.
 
         - Check if metadata needs to be updated
@@ -239,25 +230,25 @@ class Channel(ProvideViewMixin):
         Else return False.
         """
         # first retrieve current metadata
-        current_metadata = self.current_broadcast_metadata
+        current_metadata = self.current_broadcast
         # check if we must retrieve new metadata
         if (
             current_metadata is not None
             and now.timestamp() < current_metadata["end"]
-            and current_metadata["station"] == self.current_station.station_name
+            and current_metadata["station"] == self.current_station.name
         ):
-            self.current_broadcast_info = None # notify unchanged
+            self.next_broadcast = None # notify unchanged
             return
         # get current info and new metadata and info
-        current_info = self.current_broadcast_info
-        new_metadata = self.get_current_broadcast_metadata(current_metadata, logger, now)
+        current_info = self.next_broadcast
+        new_metadata = self.get_current_broadcast(logger, now, )
         new_info = self.get_current_broadcast_info(current_info, new_metadata, logger)
         # apply handlers if needed
         for handler in self.handlers:
             new_metadata, new_info = handler.process(new_metadata, new_info, logger, now)
         # update metadata and info if needed
-        self.current_broadcast_metadata = new_metadata
-        self.current_broadcast_info = new_info
+        self.current_broadcast = new_metadata
+        self.next_broadcast = new_info
         # update stream metadata
         self.update_stream_metadata(new_metadata, logger)
         logger.debug(f"channel={self.endpoint} station={self.current_station.formatted_station_name} Metadata was updated.")

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from logging import Logger
 from typing import Dict, Optional
 
-from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.custom_types import BroadcastType, StationInfo, Step, StreamMetadata
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
 
@@ -40,10 +40,17 @@ class Station(HTMLMixin, metaclass=StationMeta):
     """
 
     data_type = "station"
-    station_name: str = ""
+    name: str = ""
     station_thumbnail: str = ""
     station_website_url: str = ""
     station_slogan: str = ""
+
+    @property
+    def station_info(self):
+        info = StationInfo(name=self.name)
+        if self.station_website_url:
+            info.website = self.station_website_url
+        return info
 
     @classproperty
     def formatted_station_name(cls) -> str:
@@ -54,11 +61,11 @@ class Station(HTMLMixin, metaclass=StationMeta):
 
         The parameter `cls` refers to the class and not to the instance.
         """
-        return cls.station_name.lower().replace(" ", "")
+        return cls.name.lower().replace(" ", "")
 
     @property
     def html_formatted_station_name(self):
-        return self._format_html_anchor_element(self.station_website_url, self.station_name)
+        return self._format_html_anchor_element(self.station_website_url, self.name)
 
     def _get_error_metadata(self, message, seconds):
         """Return general mapping containing a message and ERROR type.
@@ -68,14 +75,14 @@ class Station(HTMLMixin, metaclass=StationMeta):
         - seconds: error duration
         """
         return {
-            "station": self.station_name,
-            "type": MetadataType.ERROR,
+            "station": self.name,
+            "type": BroadcastType.ERROR,
             "message": message,
             "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
             "thumbnail_src": self.station_thumbnail,
         }
 
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
+    def get_step(self, logger: Logger, dt: datetime, channel: "Channel", for_schedule: bool = False) -> Step:
         """Return mapping containing new metadata about current broadcast.
         
         current_metadata is metadata stored in Redis and known by
@@ -85,24 +92,24 @@ class Station(HTMLMixin, metaclass=StationMeta):
         Returned data is data meant to be exposed as json and used by format_info() method.
         
         Mandatory fields in returned mapping:
-        - type: element of MetadataType enum (see sunflower.core.types module);
+        - type: element of BroadcastType enum (see sunflower.core.types module);
         - end: timestamp (int) telling Channel object when to call this method for updating
         metadata;
         
         and other metadata fields required by format_info().
         """
 
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        """Format metadata for displaying in the card.
-
-        Return a CardMetadata namedtuple (see sunflower.core.types).
-        If empty, a given key should have "" (empty string) as value, and not None.
-
-        Data in returned CardMetadata must come from metadata mapping argument.
-
-        Don't support MetadataType.NONE and MetadataType.WAITNIG_FOR_FOLLOWING cases
-        as it is done in Channel class.
-        """
+    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
+    #     """Format metadata for displaying in the card.
+    #
+    #     Return a CardMetadata namedtuple (see sunflower.core.types).
+    #     If empty, a given key should have "" (empty string) as value, and not None.
+    #
+    #     Data in returned CardMetadata must come from metadata mapping argument.
+    #
+    #     Don't support BroadcastType.NONE and BroadcastType.WAITNIG_FOR_FOLLOWING cases
+    #     as it is done in Channel class.
+    #     """
     
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         """For sending data to liquidsoap server.
