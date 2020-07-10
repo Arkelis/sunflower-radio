@@ -186,6 +186,8 @@ class Channel:
                 tmp_end = start_dt
                 while tmp_end <= end_dt:
                     new_step = station_cls().get_step(logger, tmp_end, self, for_schedule=True)
+                    if new_step.end == tmp_end:
+                        new_step.end = end_dt
                     schedule.append(new_step)
                     tmp_end = datetime.fromtimestamp(new_step.end)
         return schedule
