@@ -97,7 +97,7 @@ class PycolorePlaylistStation(DynamicStation):
         if self._current_song is None:
             next_station_name = channel.next_station.name
             next_station_start = int(channel.current_station_end.timestamp())
-            return Step.waiting_for_next(dt_timestamp, next_station_name, self, next_station_start)
+            return Step.waiting_for_next_station(dt_timestamp, next_station_start, self, next_station_name)
         artists_list = tuple(self._artists)
         artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
         thumbnail_src, link = fetch_cover_and_link_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title)
