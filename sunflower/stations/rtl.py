@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from sunflower.core.bases import Station, URLStation
-from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata
 from sunflower.core.liquidsoap import open_telnet_session
 
 try:
@@ -39,7 +39,7 @@ class RTLGroupMixin:
         """Fetch data from timeline.rtl.fr.
 
         Scrap from items page. If song object detected, get data from songs endpoint.
-        Else return MetadataType object.
+        Else return BroadcastType object.
         """
         try:
             rep = requests.get(self._main_data_url, timeout=1)
@@ -74,17 +74,17 @@ class RTLGroupMixin:
                 raise requests.exceptions.Timeout from None
             return self._fetch_metadata(dt, retry + 1)
         if diffusion_type == "Pubs":
-            return {"type": MetadataType.ADS, "end": 0}
+            return {"type": BroadcastType.ADS, "end": 0}
         elif diffusion_type == "Emissions":
-            return {"type": MetadataType.PROGRAMME, "start": start, "end": end}
+            return {"type": BroadcastType.PROGRAMME, "start": start, "end": end}
         elif diffusion_type != "Musique" or end < dt.timestamp():
-            return {"type": MetadataType.NONE, "end": 0}
+            return {"type": BroadcastType.NONE, "end": 0}
         else:
             return self._fetch_song_metadata()
 
 
 class RTL(Station, RTLGroupMixin):
-    station_name = "RTL"
+    name = "RTL"
     station_slogan = "On a tellement de choses à se dire !"
     station_website_url = "https://www.rtl.fr"
     station_thumbnail = "/static/rtl.svg"
@@ -96,6 +96,9 @@ class RTL(Station, RTLGroupMixin):
     def __init__(self):
         super().__init__()
         self._last_grosses_tetes_diffusion_date = datetime.today()
+        self._grosses_tetes_broadcast: Optional[Broadcast] = None
+        self._grosses_tetes_audio_stream: Optional[str] = None
+        self._grosses_tetes_duration: Optional[int] = 0
 
     @staticmethod
     def _fetch_last_podcast_metadata(url):
@@ -111,51 +114,44 @@ class RTL(Station, RTLGroupMixin):
         duration = tuple(map(int, first_item.find("itunes:duration").text.split(":")))
         broadcast_length = duration[0]*3600 + duration[1]*60 + duration[2]
         return {
-            "show_url": show_url,
+            "show_link": show_url,
             "show_title": show_title,
             "thumbnail_src": thumbnail_src,
             "summary": summary,
             "title": broadcast_title,
             "stream_url": stream_url,
-            "length": broadcast_length,
+            "duration": broadcast_length,
         }
 
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
-        """Pour l'instant RTL n'est utilisé que pour les Grosses Têtes et A la bonne heure."""
-        if dt.date() == self._last_grosses_tetes_diffusion_date:
-            return {"station": self.station_name, "type": MetadataType.ADS, "end": 0}
+    def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
+        """Pour l'instant RTL n'est utilisé que pour les Grosses Têtes."""
         dt_timestamp = int(dt.timestamp())
+        if dt.date() == self._last_grosses_tetes_diffusion_date:
+            if for_schedule:
+                return Step(dt_timestamp, dt_timestamp, self._grosses_tetes_broadcast)
+            return Step.ads(dt_timestamp, self)
         # pour l'instant uniquement Les Grosses Têtes
         podcast_url = self._grosses_tetes_podcast_url
         broadcast_metadata = self._fetch_last_podcast_metadata(podcast_url)
+        self._grosses_tetes_duration = broadcast_metadata.pop("duration")
+        self._grosses_tetes_audio_stream = broadcast_metadata.pop("stream_url")
+        self._grosses_tetes_broadcast = Broadcast(
+            type=BroadcastType.PROGRAMME,
+            station=self.station_info,
+            **broadcast_metadata)
+        if for_schedule:
+            return Step(dt_timestamp, dt_timestamp, self._grosses_tetes_broadcast)
         with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.push {broadcast_metadata.pop('stream_url')}\n".encode())
-        broadcast_metadata["start"] = dt_timestamp
-        broadcast_metadata["end"] = dt_timestamp + broadcast_metadata.pop("length")
-        broadcast_metadata["station"] = self.station_name
-        broadcast_metadata["type"] = MetadataType.PROGRAMME
-        return broadcast_metadata
+            session.write(f"{self.formatted_station_name}.push {self._grosses_tetes_audio_stream}\n".encode())
+        return Step(dt_timestamp, dt_timestamp + self._grosses_tetes_duration, self._grosses_tetes_broadcast)
 
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        current_broadcast_title = {
-            MetadataType.ADS: "Publicité",
-            MetadataType.PROGRAMME: metadata.get("title") or self.station_slogan
-        }.get(metadata["type"], self.station_slogan)
-
-        return CardMetadata(
-            current_thumbnail=metadata["thumbnail_src"],
-            current_show_title=self._format_html_anchor_element(metadata.get("show_url"), metadata.get("show_title", "")),
-            current_broadcast_summary=metadata.get("summary", ""),
-            current_station=self.html_formatted_station_name,
-            current_broadcast_title=current_broadcast_title,
-        )
-
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
-        title = metadata.get("title")
-        track_metadata = (metadata.get("artist"), title)
-        show_title = metadata.get("show_title", "")
-        title = (" • ".join(track_metadata) if all(track_metadata) else title) or self.station_slogan
-        return StreamMetadata(title, self.station_name, show_title)
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
+        title, album = {
+            BroadcastType.MUSIC: (broadcast.title, broadcast.show_title),
+            BroadcastType.PROGRAMME: (broadcast.show_title, ""),
+            BroadcastType.ADS: (broadcast.title, ""),
+        }[broadcast.type]
+        return StreamMetadata(title, self.name, album)
 
     @classmethod
     def get_liquidsoap_config(cls):
@@ -163,7 +159,7 @@ class RTL(Station, RTLGroupMixin):
 
 
 class RTL2(URLStation, RTLGroupMixin):
-    station_name = "RTL 2"
+    name = "RTL 2"
     station_slogan = "Le son Pop-Rock"
     station_website_url = "https://www.rtl2.fr"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
@@ -172,6 +168,10 @@ class RTL2(URLStation, RTLGroupMixin):
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
     _show_grid_url = ("https://pc.middleware.6play.fr/6play/v2/platforms/m6group_web/services/m6replay/guidetv?channel="
                       "rtl2&from={}&to={}&limit=1&offset=0&with=realdiffusiondates")
+
+    def __init__(self):
+        super().__init__()
+        self.show_data: Optional[dict] = None
 
     def _fetch_show_metadata(self, dt: datetime):
         start_str = dt.isoformat(sep=" ", timespec="seconds")
@@ -185,52 +185,62 @@ class RTL2(URLStation, RTLGroupMixin):
         end_of_show_timestamp = int(end_of_show.timestamp())
         return {
             "show_title": show["title"],
-            "show_summary": show["description"],
+            "summary": show["description"],
             "show_end": end_of_show_timestamp,
         }
 
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        current_broadcast_title = {
-            MetadataType.ADS: "Publicité",
-            MetadataType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
-        }.get(metadata["type"], self.station_slogan)
+    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
+    #     current_broadcast_title = {
+    #         BroadcastType.ADS: "Publicité",
+    #         BroadcastType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
+    #     }.get(metadata["type"], self.station_slogan)
+    #
+    #     return CardMetadata(
+    #         current_thumbnail=metadata["thumbnail_src"],
+    #         current_show_title=metadata.get("show_title", ""),
+    #         current_broadcast_summary=metadata.get("show_summary", ""),
+    #         current_station=self.html_formatted_station_name,
+    #         current_broadcast_title=current_broadcast_title,
+    #     )
 
-        return CardMetadata(
-            current_thumbnail=metadata["thumbnail_src"],
-            current_show_title=metadata.get("show_title", ""),
-            current_broadcast_summary=metadata.get("show_summary", ""),
-            current_station=self.html_formatted_station_name,
-            current_broadcast_title=current_broadcast_title,
-        )
-
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
+    def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
         """Returns mapping containing info about current song.
 
-        If music: {"type": MetadataType.MUSIC, "artist": artist, "title": title}
-        If ads: "type": MetadataType.ADS
-        Else: "type": MetadataType.NONE
+        If music: {"type": BroadcastType.MUSIC, "artist": artist, "title": title}
+        If ads: "type": BroadcastType.ADS
+        Else: "type": BroadcastType.NONE
 
         Moreover, returns other metadata for postprocessing.
         end datetime object
 
         To sum up, here are the keys of returned mapping:
-        - type: MetadataType object
+        - type: BroadcastType object
         - end: timestamp in sec
         - artist: str (optional)
         - title: str (optional)
         - thumbnail_src: url to thumbnail
         """
-        dt_timestamp = dt.timestamp()
+        start = int(dt.timestamp())
 
         # first, update show info if needed
-        show_metadata_keys = ("show_end", "show_title", "show_summary")
-        if current_metadata.get("show_end") is None or current_metadata.get("show_end") < dt_timestamp:
-            try:
-                show_metadata = self._fetch_show_metadata(dt)
-            except requests.exceptions.Timeout:
-                return self._get_error_metadata("API Timeout", 90)
-        else:
-            show_metadata = {k: v for k, v in current_metadata.items() if k in show_metadata_keys}
+        if self.show_data.get("show_end") is None or self.show_data.get("show_end") < start:
+            self.show_data = self._fetch_show_metadata(dt)
+
+        show_data = self.show_data.copy()
+        show_end = show_data.pop("show_end") or start
+
+        if for_schedule:
+            return Step(
+                start,
+                show_end,
+                Broadcast(
+                    title=show_data.get("show_title", self.station_slogan),
+                    type=BroadcastType.PROGRAMME,
+                    station=self.station_info,
+                    thumbnail_src=self.station_thumbnail,
+                    summary=show_data.get("summary", "")
+                )
+            )
 
         # next, update song info
         try:
@@ -239,41 +249,30 @@ class RTL2(URLStation, RTLGroupMixin):
             return self._get_error_metadata("API Timeout", 90)
         fetched_data_type = fetched_data.get("type")
 
-        if fetched_data_type == MetadataType.ADS:
-            return {
-                "station": self.station_name,
-                "thumbnail_src": self.station_thumbnail,
-                "type": fetched_data_type,
-                "end": 0,
-            }
+        if fetched_data_type == BroadcastType.ADS:
+            Step.ads(start, self)
 
         end = fetched_data["end"]
-        if dt_timestamp > end:
-            if not show_metadata:
-                return {
-                    "station": self.station_name,
-                    "thumbnail_src": self.station_thumbnail,
-                    "type": MetadataType.NONE,
-                    "end": 0,
-                }
-            metadata = {
+        if start > end:
+            if not show_data:
+                return Step.empty(start, self)
+            end = 0
+            broadcast_data = {
                 "thumbnail_src": self.station_thumbnail,
-                "type": MetadataType.PROGRAMME,
-                "end": 0,
+                "type": BroadcastType.PROGRAMME,
+                "title": self.station_slogan,
             }
         else:
-            metadata = {
-                "artist": fetched_data["singer"],
-                "title": fetched_data["title"],
-                "end": end,
-                "type": MetadataType.MUSIC,
+            broadcast_data = {
+                "title": f"{fetched_data['singer']} • {fetched_data['title']}",
+                "type": BroadcastType.MUSIC,
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
-        metadata.update(station=self.station_name, **show_metadata)
-        return metadata
+        broadcast_data.update(station=self.station_info, **self.show_data)
+        return Step(start, end, Broadcast(**broadcast_data))
 
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         track_metadata = (metadata.get("artist"), metadata.get("title"))
         show_title = metadata.get("show_title", "")
         title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
-        return StreamMetadata(title, self.station_name, show_title)
+        return StreamMetadata(title, self.name, show_title)
