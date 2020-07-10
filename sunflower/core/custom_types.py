@@ -2,10 +2,12 @@
 
 import json
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
+if TYPE_CHECKING:
+    from sunflower.core.bases import Station
 
 # Enums
 
@@ -45,13 +47,31 @@ class Broadcast:
     parent_show_link: Optional[str] = ""
 
     @classmethod
-    def waiting_for_next(cls, station: "Station", next_station_name: str):
+    def waiting_for_next(cls, station: "Station", next_station_name: str) -> "Broadcast":
         """Factory method for broadcast just waiting for next station"""
         return cls(
             title=f"Dans un instant : {next_station_name}.",
             type=BroadcastType.WAITING_FOR_NEXT,
             station=station.station_info,
             thumbnail_src=station.station_thumbnail,
+        )
+
+    @classmethod
+    def ads(cls, station) -> "Broadcast":
+        return cls(
+            title=f"Publicité",
+            type=BroadcastType.ADS,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail,
+        )
+
+    @classmethod
+    def empty(cls, station) -> "Broadcast":
+        return cls(
+            title=station.station_slogan,
+            type=BroadcastType.NONE,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail
         )
 
 
@@ -62,8 +82,22 @@ class Step:
     broadcast: Broadcast
 
     @classmethod
-    def waiting_for_next(cls, start: int, end: int, station: "Station", next_station_name: str):
+    def waiting_for_next_station(cls, start: int, end: int, station: "Station", next_station_name: str) -> "Step":
+        """Generic step indicating next station."""
         return cls(start, end, Broadcast.waiting_for_next(station, next_station_name))
+
+    @classmethod
+    def ads(cls, start: int, station: "Station") -> "Step":
+        """Generic ads step."""
+        return cls(start, 0, Broadcast.ads(station))
+
+    @classmethod
+    def empty(cls, start: int, station: "Station") -> "Step":
+        return cls(start, 0, Broadcast.empty(station))
+
+    @classmethod
+    def empty_until(cls, start: int, end: int, station: "Station"):
+        return cls(start, end, Broadcast.empty(station))
 
 
 @pydantic_dataclass
