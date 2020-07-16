@@ -1,7 +1,7 @@
 import json
 import os
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from logging import Logger
 from typing import Any, Dict, List, Optional
 
@@ -193,7 +193,7 @@ class RadioFranceStation(URLStation):
             if diffusion is None and parent_diffusion is None:
                 show_title = current_show["title"]
                 metadata.update({
-                    "show_title": show_title,
+                    "title": show_title,
                     "thumbnail_src": self.station_thumbnail,
                 })
 
@@ -239,9 +239,11 @@ class RadioFranceStation(URLStation):
             # on RENVOIE alors les métadonnées
             return Step(start, current_show_end, Broadcast(**metadata))
         except Exception as err:
+            if for_schedule:
+                raise RuntimeError("An error occured during making schedule")
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
-            return self._get_error_metadata("Error during API response parsing: {}".format(err), 90)
+            return Step.empty_until(start, start+90, self)
 
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         return StreamMetadata(metadata.get("show_title", self.station_slogan), self.name, metadata.get("diffusion_title", ""))
@@ -319,7 +321,7 @@ class RadioFranceStation(URLStation):
             # sans valider child["start"] < now. Autrement dit, le premier
             # enfant n'a pas encore commencé. On renvoie donc le parent et le
             # début du premier enfant (stocké dans next_child) comme end
-            return parent, int(next_child["start"])
+            return parent, int(next_child.get("start")) or parent["end"]
     
 
 class FranceInter(RadioFranceStation):
@@ -338,6 +340,20 @@ class FranceInfo(RadioFranceStation):
     _station_api_name = "FRANCEINFO"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
     station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
+
+    def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
+        if for_schedule:
+            start = int(dt.timestamp())
+            if not time(19, 55) < dt.time() < time(21, 0):
+                return Step.empty_until(start, start, self)
+            else:
+                return Step(start, start, Broadcast(
+                    "Les Informés de France Info",
+                    BroadcastType.PROGRAMME,
+                    self.station_info,
+                    "https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
+                ))
+        return super().get_step(logger, dt, channel, for_schedule)
 
 
 class FranceMusique(RadioFranceStation):
