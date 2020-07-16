@@ -171,7 +171,7 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def __init__(self):
         super().__init__()
-        self.show_data: Optional[dict] = None
+        self.show_data = {}
 
     def _fetch_show_metadata(self, dt: datetime):
         start_str = dt.isoformat(sep=" ", timespec="seconds")
@@ -246,7 +246,7 @@ class RTL2(URLStation, RTLGroupMixin):
         try:
             fetched_data = self._fetch_metadata(dt)
         except requests.exceptions.Timeout:
-            return self._get_error_metadata("API Timeout", 90)
+            return Step.empty_until(start, start+90, self)
         fetched_data_type = fetched_data.get("type")
 
         if fetched_data_type == BroadcastType.ADS:
@@ -268,7 +268,7 @@ class RTL2(URLStation, RTLGroupMixin):
                 "type": BroadcastType.MUSIC,
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
-        broadcast_data.update(station=self.station_info, **self.show_data)
+        broadcast_data.update(station=self.station_info, **show_data)
         return Step(start, end, Broadcast(**broadcast_data))
 
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
