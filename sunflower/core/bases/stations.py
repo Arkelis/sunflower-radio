@@ -7,8 +7,8 @@ from typing import Dict, Optional
 
 from sunflower.core.custom_types import Broadcast, BroadcastType, StationInfo, Step, StreamMetadata
 from sunflower.core.decorators import classproperty
-from sunflower.core.mixins import HTMLMixin
 from sunflower.core.liquidsoap import open_telnet_session
+from sunflower.core.mixins import HTMLMixin
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
@@ -84,20 +84,17 @@ class Station(HTMLMixin, metaclass=StationMeta):
         }
 
     def get_step(self, logger: Logger, dt: datetime, channel: "Channel", for_schedule: bool = False) -> Step:
-        """Return mapping containing new metadata about current broadcast.
-        
-        current_metadata is metadata stored in Redis and known by
-        Channel object. This method can use currant_metadata provided
-        by channel for partial updates. 
+        """Return Step object for broadcast starting at dt.
 
-        Returned data is data meant to be exposed as json and used by format_info() method.
-        
-        Mandatory fields in returned mapping:
-        - type: element of BroadcastType enum (see sunflower.core.types module);
-        - end: timestamp (int) telling Channel object when to call this method for updating
-        metadata;
-        
-        and other metadata fields required by format_info().
+        For schedule purpose: return a Step with end=start for a step during until the end of the
+        time slot.
+
+        Parameters:
+
+        - logger: Logger - for logging and debug purpose
+        - dt: datetime which should be the beginning of broadcast
+        - channel: Channel object calling this method, it can contains useful information
+        - for_schedule: bool - indicates if returned step is meant to be displayed in schedule or in player
         """
 
     # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:

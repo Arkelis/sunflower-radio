@@ -1,13 +1,14 @@
 import functools
 from datetime import datetime, time, timedelta
 from logging import Logger
-from typing import List, Optional, Type
+from typing import Iterable, List, Optional, Type
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.custom_types import (Broadcast, MetadataEncoder, Step, as_metadata_type)
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.core.liquidsoap import open_telnet_session
+from sunflower.handlers import Handler
 
 
 class Channel:
@@ -32,7 +33,7 @@ class Channel:
         assert endpoint in settings.CHANNELS, f"{endpoint} not mentioned in settings.CHANNELS"
         self.endpoint = endpoint
         self.timetable = timetable
-        self.handlers = [Handler(self) for Handler in handlers]
+        self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]
         self._liquidsoap_station = ""
         if len(self.stations) == 1:
             self._current_station_instance = self.stations[0]()
@@ -158,8 +159,8 @@ class Channel:
         self._update_station_instances()
         return self._following_station_instance
 
-    current_broadcast = PersistentAttribute("current", "Current broadcast data", MetadataEncoder, as_metadata_type, notify_change=True)
-    next_broadcast = PersistentAttribute("next", "Next broadcast data", MetadataEncoder, as_metadata_type)
+    current_step = PersistentAttribute("current", "Current broadcast data", MetadataEncoder, as_metadata_type, notify_change=True)
+    next_step = PersistentAttribute("next", "Next broadcast data", MetadataEncoder, as_metadata_type)
     schedule = PersistentAttribute("next", "Schedule", MetadataEncoder, as_metadata_type)
 
     def get_current_step(self, logger: Logger, now: datetime) -> Step:
@@ -173,6 +174,13 @@ class Channel:
         """
         return self.current_station.get_step(logger, now, self)
 
+    def get_next_step(self, logger: Logger, start: datetime) -> Step:
+        station = [
+            self.current_station, # current station if start > self.current_station_end == False
+            self.next_station, # next station if start > self.current_station_end == True
+        ][start > self.current_station_end]
+        return station.get_step(logger, start, self)
+
     def get_schedule(self, logger: Logger) -> List[Step]:
         """Get list of steps which is the schedule of current day"""
         today = datetime.today()
@@ -183,11 +191,18 @@ class Channel:
             for start, end, station_cls in L: # type: str, str, Type[Station]
                 start_dt = datetime.combine(today, time.fromisoformat(start))
                 end_dt = datetime.combine(today, time.fromisoformat(end))
+                end_timestamp = int(end_dt.timestamp())
+                if end_dt < start_dt:
+                    end_dt = end_dt + timedelta(days=1)
                 tmp_end = start_dt
-                while tmp_end <= end_dt:
+                while tmp_end < end_dt:
                     new_step = station_cls().get_step(logger, tmp_end, self, for_schedule=True)
-                    if new_step.end == tmp_end:
-                        new_step.end = end_dt
+                    if new_step.end == new_step.start:
+                        new_step.end = int(end_dt.timestamp())
+                    if new_step.end > end_timestamp:
+                        new_step.end = end_timestamp
+                        if new_step.end - new_step.start < 300:
+                            break
                     schedule.append(new_step)
                     tmp_end = datetime.fromtimestamp(new_step.end)
         return schedule
@@ -222,26 +237,26 @@ class Channel:
                 if self._liquidsoap_station:
                     session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
             self._liquidsoap_station = current_station_name
-        # first retrieve current metadata
-        current_metadata = self.current_broadcast
+        # first retrieve current step
+        current_step = self.current_step
         # check if we must retrieve new metadata
         if (
-            current_metadata is not None
-            and now.timestamp() < current_metadata["end"]
-            and current_metadata["station"] == self.current_station.name
+            current_step is not None
+            and now.timestamp() < current_step.end
+            and current_step.broadcast.station.name == self.current_station.name
         ):
-            self.next_broadcast = None # notify unchanged
+            self.current_step = None # notify unchanged
             return
         # get current info and new metadata and info
-        current_info = self.next_broadcast
-        new_metadata = self.get_current_step(logger, now)
+        current_step = self.get_current_step(logger, now)
+        self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end))
         # apply handlers if needed
         for handler in self.handlers:
-            new_metadata, new_info = handler.process(new_metadata, new_info, logger, now)
+            current_step = handler.process(current_step, logger, now)
         # update metadata and info if needed
-        self.current_broadcast = new_metadata
+        self.current_step = current_step
         # update stream metadata
-        self.update_stream_metadata(new_metadata, logger)
+        self.update_stream_metadata(current_step.broadcast, logger)
         logger.debug(f"channel={self.endpoint} station={self.current_station.formatted_station_name} Metadata was updated.")
 
     def get_liquidsoap_config(self):

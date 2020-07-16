@@ -86,7 +86,7 @@ class PycolorePlaylistStation(DynamicStation):
         if for_schedule:
             return Step(
                 start=dt_timestamp,
-                end=int(channel.current_station_end.timestamp()),
+                end=dt_timestamp,
                 broadcast=Broadcast(
                     title="La playlist Pycolore",
                     type=BroadcastType.MUSIC,

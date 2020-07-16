@@ -1,3 +1,4 @@
+import abc
 import random
 from datetime import datetime
 from logging import Logger
@@ -10,7 +11,13 @@ from sunflower.core.mixins import HTMLMixin
 from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs
 
 
-class AdsHandler(HTMLMixin):
+class Handler(abc.ABC):
+    @abc.abstractmethod
+    def process(self, step: Step, logger: Logger, dt: datetime):
+        return NotImplemented
+
+
+class AdsHandler(Handler, HTMLMixin):
     def __init__(self, channel):
         self.channel = channel
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
