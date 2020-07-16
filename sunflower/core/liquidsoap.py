@@ -12,6 +12,7 @@ def open_telnet_session(host: str = "localhost", port: int = 1234, logger: Optio
             yield telnet
         finally:
             telnet.write(b"exit\n")
+            telnet.read_until(b"Bye!")
             telnet.close()
     except ConnectionRefusedError:
         if logger:

@@ -235,6 +235,7 @@ class Channel:
             with open_telnet_session() as session:
                 session.write(f'var.set {current_station_name}_on_{self.endpoint} = true\n'.encode())
                 if self._liquidsoap_station:
+                    session.read_until(b"\n")
                     session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
             self._liquidsoap_station = current_station_name
         # first retrieve current step

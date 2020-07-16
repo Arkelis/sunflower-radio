@@ -1,6 +1,6 @@
 import json
 import locale
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 from logging import Logger
 from typing import Optional
 from xml.etree import ElementTree
@@ -95,13 +95,14 @@ class RTL(Station, RTLGroupMixin):
 
     def __init__(self):
         super().__init__()
-        self._last_grosses_tetes_diffusion_date = datetime.today()
+        self._last_grosses_tetes_diffusion_date = date(1970, 1, 1)
         self._grosses_tetes_broadcast: Optional[Broadcast] = None
         self._grosses_tetes_audio_stream: Optional[str] = None
         self._grosses_tetes_duration: Optional[int] = 0
 
     @staticmethod
     def _fetch_last_podcast_metadata(url):
+        namespace = {"itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd"}
         rep = requests.get(url)
         rss = ElementTree.fromstring(rep.text).find("channel")
         show_url = rss.find("link").text
@@ -111,7 +112,7 @@ class RTL(Station, RTLGroupMixin):
         first_item = rss.find("item")
         broadcast_title = first_item.find("title").text
         stream_url = first_item.find("enclosure").get("url")
-        duration = tuple(map(int, first_item.find("itunes:duration").text.split(":")))
+        duration = tuple(map(int, first_item.find("itunes:duration", namespace).text.split(":")))
         broadcast_length = duration[0]*3600 + duration[1]*60 + duration[2]
         return {
             "show_link": show_url,
