@@ -237,7 +237,7 @@ class RadioFranceStation(URLStation):
                 metadata.update({"parent_show_title": parent_title, "parent_show_link": parent_url})
 
             # on RENVOIE alors les métadonnées
-            return Step(start, current_show_end, Broadcast(**metadata))
+            return Step(start=start, end=current_show_end, broadcast=Broadcast(**metadata))
         except Exception as err:
             if for_schedule:
                 raise RuntimeError("An error occured during making schedule")
@@ -245,8 +245,13 @@ class RadioFranceStation(URLStation):
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return Step.empty_until(start, start+90, self)
 
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
-        return StreamMetadata(metadata.get("show_title", self.station_slogan), self.name, metadata.get("diffusion_title", ""))
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
+        artist = self.name
+        title, album = {
+            True: (broadcast.show_title, broadcast.title),
+            False: (broadcast.title, ""),
+        }[any(broadcast.show_title)]
+        return StreamMetadata(title=title, artist=artist, album=album)
 
     def _fetch_metadata(self, dt: datetime) -> Dict[Any, Any]:
         """Fetch metadata from radiofrance open API."""
@@ -345,13 +350,13 @@ class FranceInfo(RadioFranceStation):
         if for_schedule:
             start = int(dt.timestamp())
             if not time(19, 55) < dt.time() < time(21, 0):
-                return Step.empty_until(start, start, self)
+                return Step.empty_until(start=start, end=start, station=self)
             else:
-                return Step(start, start, Broadcast(
-                    "Les Informés de France Info",
-                    BroadcastType.PROGRAMME,
-                    self.station_info,
-                    "https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
+                return Step(start=start, end=start, broadcast=Broadcast(
+                    title="Les Informés de France Info",
+                    type=BroadcastType.PROGRAMME,
+                    station=self.station_info,
+                    thumbnail_src="https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
                 ))
         return super().get_step(logger, dt, channel, for_schedule)
 

@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from sunflower.core.bases import Station
@@ -27,14 +27,12 @@ class BroadcastType(Enum):
 
 # Dataclasses
 
-@pydantic_dataclass
-class StationInfo:
+class StationInfo(BaseModel):
     name: str
     website: Optional[str] = ""
 
 
-@pydantic_dataclass
-class Broadcast:
+class Broadcast(BaseModel):
     title: str
     type: BroadcastType
     station: StationInfo
@@ -75,8 +73,7 @@ class Broadcast:
         )
 
 
-@pydantic_dataclass
-class Step:
+class Step(BaseModel):
     start: int
     end: int
     broadcast: Broadcast
@@ -84,24 +81,23 @@ class Step:
     @classmethod
     def waiting_for_next_station(cls, start: int, end: int, station: "Station", next_station_name: str) -> "Step":
         """Generic step indicating next station."""
-        return cls(start, end, Broadcast.waiting_for_next(station, next_station_name))
+        return cls(start=start, end=end, broadcast=Broadcast.waiting_for_next(station, next_station_name))
 
     @classmethod
     def ads(cls, start: int, station: "Station") -> "Step":
         """Generic ads step."""
-        return cls(start, 0, Broadcast.ads(station))
+        return cls(start=start, end=0, broadcast=Broadcast.ads(station))
 
     @classmethod
     def empty(cls, start: int, station: "Station") -> "Step":
-        return cls(start, 0, Broadcast.empty(station))
+        return cls(start=start, end=0, broadcast=Broadcast.empty(station))
 
     @classmethod
     def empty_until(cls, start: int, end: int, station: "Station"):
-        return cls(start, end, Broadcast.empty(station))
+        return cls(start=start, end=end, broadcast=Broadcast.empty(station))
 
 
-@pydantic_dataclass
-class Song:
+class Song(BaseModel):
     path: str
     artist: str
     album: str
@@ -109,8 +105,7 @@ class Song:
     length: float
 
 
-@pydantic_dataclass
-class StreamMetadata:
+class StreamMetadata(BaseModel):
     title: str
     artist: str
     album: str = ""
