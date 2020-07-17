@@ -1,6 +1,6 @@
 import json
 import locale
-from datetime import datetime, time, timedelta, date
+from datetime import date, datetime, time, timedelta
 from logging import Logger
 from typing import Optional
 from xml.etree import ElementTree
@@ -129,7 +129,7 @@ class RTL(Station, RTLGroupMixin):
         dt_timestamp = int(dt.timestamp())
         if dt.date() == self._last_grosses_tetes_diffusion_date:
             if for_schedule:
-                return Step(dt_timestamp, dt_timestamp, self._grosses_tetes_broadcast)
+                return Step(start=dt_timestamp, end=dt_timestamp, broadcast=self._grosses_tetes_broadcast)
             return Step.ads(dt_timestamp, self)
         # pour l'instant uniquement Les Grosses Têtes
         podcast_url = self._grosses_tetes_podcast_url
@@ -141,10 +141,10 @@ class RTL(Station, RTLGroupMixin):
             station=self.station_info,
             **broadcast_metadata)
         if for_schedule:
-            return Step(dt_timestamp, dt_timestamp, self._grosses_tetes_broadcast)
+            return Step(start=dt_timestamp, end=dt_timestamp, broadcast=self._grosses_tetes_broadcast)
         with open_telnet_session() as session:
             session.write(f"{self.formatted_station_name}.push {self._grosses_tetes_audio_stream}\n".encode())
-        return Step(dt_timestamp, dt_timestamp + self._grosses_tetes_duration, self._grosses_tetes_broadcast)
+        return Step(start=dt_timestamp, end=dt_timestamp + self._grosses_tetes_duration, broadcast=self._grosses_tetes_broadcast)
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         title, album = {
@@ -152,7 +152,7 @@ class RTL(Station, RTLGroupMixin):
             BroadcastType.PROGRAMME: (broadcast.show_title, ""),
             BroadcastType.ADS: (broadcast.title, ""),
         }[broadcast.type]
-        return StreamMetadata(title, self.name, album)
+        return StreamMetadata(title=title, artist=self.name, album=album)
 
     @classmethod
     def get_liquidsoap_config(cls):
@@ -232,9 +232,9 @@ class RTL2(URLStation, RTLGroupMixin):
 
         if for_schedule:
             return Step(
-                start,
-                show_end,
-                Broadcast(
+                start=start,
+                end=show_end,
+                broadcast=Broadcast(
                     title=show_data.get("show_title", self.station_slogan),
                     type=BroadcastType.PROGRAMME,
                     station=self.station_info,
@@ -270,10 +270,10 @@ class RTL2(URLStation, RTLGroupMixin):
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
         broadcast_data.update(station=self.station_info, **show_data)
-        return Step(start, end, Broadcast(**broadcast_data))
+        return Step(start=start, end=end, broadcast=Broadcast(**broadcast_data))
 
     def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
         track_metadata = (metadata.get("artist"), metadata.get("title"))
         show_title = metadata.get("show_title", "")
         title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
-        return StreamMetadata(title, self.name, show_title)
+        return StreamMetadata(title=title, artist=self.name, album=show_title)

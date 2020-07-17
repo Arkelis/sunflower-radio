@@ -46,11 +46,11 @@ def parse_songs(glob_pattern: str) -> List[Song]:
         file = mutagen.File(path)
         try:
             songs.append(Song(
-                path,
-                file.get("artist", [None])[0],
-                file.get("album", [None])[0],
-                file.get("title", [None])[0],
-                file.info.length,
+                path=path,
+                artist=file.get("artist", [""])[0],
+                album=file.get("album", [""])[0],
+                title=file.get("title", [""])[0],
+                length=file.info.length,
             ))
         except KeyError as err:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err

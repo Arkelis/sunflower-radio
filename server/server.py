@@ -1,17 +1,17 @@
 import asyncio
-from typing import List, Optional
+from typing import List
 
 import redis
 from fastapi import FastAPI
 from pydantic import AnyHttpUrl
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from starlette.requests import Request
-from starlette.responses import StreamingResponse, RedirectResponse
+from starlette.responses import StreamingResponse
 
 from server.proxies import PycoloreStationProxy
-from sunflower import settings
-from sunflower.core.custom_types import Broadcast, MetadataEncoder, NotifyChangeStatus, Step
 from server.utils import get_channel_or_404
+from sunflower import settings
+from sunflower.core.custom_types import NotifyChangeStatus, Step
 from sunflower.settings import RADIO_NAME
 
 app = FastAPI(title=RADIO_NAME, docs_url="/", redoc_url=None)
@@ -25,8 +25,8 @@ class Channel:
     endpoint: str
     name: str
     audio_stream: AnyHttpUrl
-    current_broadcast: AnyHttpUrl
-    next_broadcast: AnyHttpUrl
+    current_step: AnyHttpUrl
+    next_step: AnyHttpUrl
     schedule: AnyHttpUrl
 
 #
@@ -72,8 +72,8 @@ def get_channel(channel, request: Request):
         "endpoint": channel.endpoint,
         "name": channel.endpoint.capitalize(),
         "audio_stream": settings.ICECAST_SERVER_URL + channel.endpoint,
-        "current_broadcast": request.url_for("get_current_broadcast_of", channel=channel.endpoint),
-        "next_broadcast": request.url_for("get_next_broadcast_of", channel=channel.endpoint),
+        "current_step": request.url_for("get_current_broadcast_of", channel=channel.endpoint),
+        "next_step": request.url_for("get_next_broadcast_of", channel=channel.endpoint),
         "schedule": request.url_for("get_schedule_of", channel=channel.endpoint),
     }
 
@@ -114,26 +114,26 @@ async def update_broadcast_info_stream(channel):
     "/channels/{channel}/current/",
     summary="Get current broadcast",
     tags=["Channels-related endpoints"],
-    response_model=Broadcast,
+    response_model=Step,
     response_description="Information about current broadcast"
 )
 @get_channel_or_404
 def get_current_broadcast_of(channel):
     """Get information about current broadcast on given channel"""
-    return channel.next_broadcast._asdict()
+    return channel.current_step
 
 
 @app.get(
     "/channels/{channel}/next/",
     summary="Get next broadcast",
     tags=["Channels-related endpoints"],
-    response_model=Broadcast,
+    response_model=Step,
     response_description="Information about next broadcast"
 )
 @get_channel_or_404
 def get_next_broadcast_of(channel):
     """Get information about next broadcast on given channel"""
-    return channel.current_broadcast
+    return channel.next_step
 
 
 @app.get(
@@ -146,7 +146,7 @@ def get_next_broadcast_of(channel):
 @get_channel_or_404
 def get_schedule_of(channel):
     """Get information about next broadcast on given channel"""
-    return channel.current_broadcast
+    return channel.schedule
 
 
 # custom endpoints

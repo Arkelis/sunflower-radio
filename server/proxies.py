@@ -1,8 +1,9 @@
 from typing import Type
 
-from sunflower.core.bases import Station, Channel
+from sunflower.core.bases import Channel
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.stations import PycolorePlaylistStation
+
 
 class Proxy:
     klass: Type

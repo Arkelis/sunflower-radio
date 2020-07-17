@@ -1,7 +1,9 @@
 import functools
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from logging import Logger
-from typing import Iterable, List, Optional, Type
+from typing import Dict, Iterable, List, Optional, Type
+
+from pydantic import ValidationError
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
@@ -31,18 +33,19 @@ class Channel:
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
         assert endpoint in settings.CHANNELS, f"{endpoint} not mentioned in settings.CHANNELS"
-        self.endpoint = endpoint
-        self.timetable = timetable
+        self.endpoint: str = endpoint
+        self.timetable: dict = timetable
         self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]
-        self._liquidsoap_station = ""
+        self._liquidsoap_station: str = ""
+        self._schedule_day: date = date(1970, 1, 1)
         if len(self.stations) == 1:
-            self._current_station_instance = self.stations[0]()
-            self._following_station_instance = None
+            self._current_station_instance: Optional[Station] = self.stations[0]()
+            self._following_station_instance: Optional[Station] = None
         else:
             self.current_station_start = datetime.now()
             self.current_station_end = datetime.now()
-            self._current_station_instance = None
-            self._following_station_instance = None
+            self._current_station_instance: Optional[Station] = None
+            self._following_station_instance: Optional[Station] = None
 
     @functools.cached_property
     def stations(self) -> tuple:
@@ -159,9 +162,43 @@ class Channel:
         self._update_station_instances()
         return self._following_station_instance
 
-    current_step = PersistentAttribute("current", "Current broadcast data", MetadataEncoder, as_metadata_type, notify_change=True)
-    next_step = PersistentAttribute("next", "Next broadcast data", MetadataEncoder, as_metadata_type)
-    schedule = PersistentAttribute("next", "Schedule", MetadataEncoder, as_metadata_type)
+    def _post_get_hook_step(self, data: dict):
+        try:
+            return Step(**data)
+        except (TypeError, ValidationError) as err:
+            return None
+
+    def _pre_set_hook_step(self, value: Optional[Step]):
+        if value is None:
+            return value
+        return value.dict()
+
+    current_step = PersistentAttribute(
+        "current",
+        "Current broadcast data",
+        MetadataEncoder,
+        as_metadata_type,
+        notify_change=True,
+        post_get_hook=_post_get_hook_step,
+        pre_set_hook=_pre_set_hook_step,
+    )
+    next_step = PersistentAttribute(
+        "next",
+        "Next broadcast data",
+        MetadataEncoder,
+        as_metadata_type,
+        post_get_hook=_post_get_hook_step,
+        pre_set_hook=_pre_set_hook_step,
+    )
+    schedule = PersistentAttribute("schedule", "Schedule", MetadataEncoder, as_metadata_type)
+
+    @schedule.post_get_hook
+    def schedule(self, data: List[Dict]):
+        return [Step(**step_data) for step_data in data]
+
+    @schedule.pre_set_hook
+    def schedule(self, value: List[Step]):
+        return [step.dict() for step in value]
 
     def get_current_step(self, logger: Logger, now: datetime) -> Step:
         """Get metadata of current broadcasted programm for current station.
@@ -179,7 +216,7 @@ class Channel:
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
         ][start > self.current_station_end]
-        return station.get_step(logger, start, self)
+        return station.get_step(logger, start, self, for_schedule=True)
 
     def get_schedule(self, logger: Logger) -> List[Step]:
         """Get list of steps which is the schedule of current day"""
@@ -230,6 +267,12 @@ class Channel:
         If card info changed and need to be updated in client, return True.
         Else return False.
         """
+        # update schedule if needed
+        if now.date() != self._schedule_day:
+            logger.info(f"channel={self.endpoint} Updating schedule...")
+            self.schedule = self.get_schedule(logger)
+            logger.info(f"channel={self.endpoint} Schedule updated!")
+            self._schedule_day = now.date()
         # make sure current station is used by liquidsoap
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
             with open_telnet_session() as session:
