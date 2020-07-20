@@ -6,7 +6,7 @@ from collections import Counter
 def test_tournesol_station_parsing():
     # Counter([...]) == Counter([...]) permet de comparer les éléments et leurs occurrences
     # de deux itérables sans se soucier de l'ordre
-    assert Counter(tournesol.stations) == Counter((FranceCulture, FranceInfo, FranceInter, FranceMusique, RTL2, PycolorePlaylistStation))
+    assert Counter(tournesol.stations) == Counter((FranceCulture, FranceInfo, FranceInter, FranceMusique))
 
 
 def test_music_station_parsing():

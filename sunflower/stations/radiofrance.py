@@ -1,16 +1,16 @@
 import json
 import os
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from logging import Logger
 from typing import Any, Dict, List, Optional
 
 import requests
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
-from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata
+from sunflower.utils.music import fetch_apple_podcast_cover
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
@@ -100,27 +100,28 @@ class RadioFranceStation(URLStation):
                 raise RuntimeError("No token for Radio France API found.")
         return os.getenv("TOKEN")
 
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        assert metadata["type"] == MetadataType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
-        parent_title = metadata.get("parent_title")
-        if metadata.get("diffusion_title") is None:
-            current_broadcast_title = metadata["show_title"]
-            current_show_title = parent_title or ""
-        else:
-            show_title = metadata["show_title"]
-            if parent_title is not None and show_title.lower() != parent_title.lower():
-                show_title += " • " + parent_title
-            current_broadcast_title = self._format_html_anchor_element(metadata.get("diffusion_url"), metadata["diffusion_title"])
-            current_show_title = self._format_html_anchor_element(metadata.get("show_url"), show_title)
-        return CardMetadata(
-            current_thumbnail=metadata["thumbnail_src"],
-            current_station=self.html_formatted_station_name,
-            current_broadcast_title=current_broadcast_title,
-            current_show_title=current_show_title,
-            current_broadcast_summary=metadata.get("diffusion_summary") or "",
-        )
+    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
+    #     assert metadata["type"] == BroadcastType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
+    #     parent_title = metadata.get("parent_title")
+    #     if metadata.get("diffusion_title") is None:
+    #         current_broadcast_title = metadata["show_title"]
+    #         current_show_title = parent_title or ""
+    #     else:
+    #         show_title = metadata["show_title"]
+    #         if parent_title is not None and show_title.lower() != parent_title.lower():
+    #             show_title += " • " + parent_title
+    #         current_broadcast_title = self._format_html_anchor_element(metadata.get("diffusion_url"), metadata["diffusion_title"])
+    #         current_show_title = self._format_html_anchor_element(metadata.get("show_url"), show_title)
+    #     return CardMetadata(
+    #         current_thumbnail=metadata["thumbnail_src"],
+    #         current_station=self.html_formatted_station_name,
+    #         current_broadcast_title=current_broadcast_title,
+    #         current_show_title=current_show_title,
+    #         current_broadcast_summary=metadata.get("diffusion_summary") or "",
+    #     )
 
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
+    def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
+        start = int(dt.timestamp())
         fetched_data = self._fetch_metadata(dt)
         if "API Timeout" in fetched_data.values():
             return self._get_error_metadata("API Timeout", 90) 
@@ -133,30 +134,29 @@ class RadioFranceStation(URLStation):
             # si celle-ci est terminée et la suivante n'a pas encore démarrée
             # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
             # suivante
-            if first_show_in_grid["end"] < dt.timestamp():
+            if first_show_in_grid["end"] < start:
                 next_show = fetched_data["data"]["grid"][1]
-                return {
-                    "station": self.station_name,
-                    "type": MetadataType.NONE,
-                    "end": int(next_show["start"]),
-                }
+                if for_schedule:
+                    first_show_in_grid = next_show
+                else:
+                    return Step.empty_until(start, int(next_show["start"]), self)
             
             # si l'émission n'est pas encore démarrée, on RENVOIE une métaonnée neutre
             # jusqu'au démarrage de celle-ci
-            if first_show_in_grid["start"] > dt.timestamp():
-                return {
-                    "station": self.station_name,
-                    "type": MetadataType.NONE,
-                    "end": int(first_show_in_grid["start"]),
-                }
+            if first_show_in_grid["start"] > dt.timestamp() and not for_schedule:
+                return Step.empty_until(start, int(first_show_in_grid['start']), self)
 
             # Sinon on traite les différentes formes d'émissions possibles.
             # On initialise le dictionnaire de métadonnées avec les infos de
             # base
-            metadata = {"station": self.station_name, "type": MetadataType.PROGRAMME}
+            metadata = {"station": self.station_info, "type": BroadcastType.PROGRAMME}
 
             # Un step peut avoir une liste de sous-programmes enfants
-            children = first_show_in_grid.get("children")
+            children = (
+                first_show_in_grid.get("children")
+                if not for_schedule
+                else []
+            )
 
             # on teste si children n'est pas None et n'est pas vide
             if children:
@@ -167,17 +167,17 @@ class RadioFranceStation(URLStation):
                  # ajout de parent title s'il est différent du titre du current show
                 if parent.get("diffusion") is None:
                     parent_title = parent["title"]
+                    parent_url = ""
                 else:
                     parent_title = parent["diffusion"]["show"]["title"]
+                    parent_url = parent["diffusion"]["show"]["url"]
             else:
                 # sinon on garde le premier élément de la grille récupérée
                 current_show, current_show_end = first_show_in_grid, int(first_show_in_grid["end"])
                 # et le parent est vide
                 parent = {}
                 parent_title = ""
-
-            # on peut maintenant ajouter la fin aux métadonnées
-            metadata["end"] = current_show_end
+                parent_url = ""
 
             # on récupère le sous-objet diffusion s'il existe
             diffusion = current_show.get("diffusion")
@@ -193,7 +193,7 @@ class RadioFranceStation(URLStation):
             if diffusion is None and parent_diffusion is None:
                 show_title = current_show["title"]
                 metadata.update({
-                    "show_title": show_title,
+                    "title": show_title,
                     "thumbnail_src": self.station_thumbnail,
                 })
 
@@ -212,53 +212,48 @@ class RadioFranceStation(URLStation):
                 else:
                     diffusion_title = diffusion["title"]
                 diffusion_summary = diffusion["standFirst"]
-                if not diffusion_summary or diffusion_summary in (".", "*"):
+                if not diffusion_summary or len(diffusion_summary.strip()) == 1:
                     diffusion_summary = ""
                 
                 # métadonnées d'émission (show)
                 # show = attribut "show" de diffusion ou attribut "show" du parent ou {} s'il vaut None
                 show = diffusion.get("show", (parent_diffusion or {}).get("show")) or {}
                 podcast_link = (show.get("podcast") or {}).get("itunes")
-                thumbnail_src = self._fetch_cover(podcast_link)
+                thumbnail_src = fetch_apple_podcast_cover(podcast_link, self.station_thumbnail)
                 show_title = show.get("title", "")
                 show_url = show.get("url", "")
 
                 # update metadata dict
                 metadata.update({
                     "show_title": show_title,
-                    "show_url": show_url,
-                    "diffusion_title": diffusion_title,
-                    "diffusion_url": diffusion.get("url", ""),
-                    "diffusion_summary": diffusion_summary.strip(),
+                    "show_link": show_url,
+                    "title": diffusion_title,
+                    "link": diffusion.get("url", ""),
+                    "summary": diffusion_summary.strip(),
                     "thumbnail_src": thumbnail_src,
                 })
 
             if parent_title and parent_title.lower().strip() != show_title.lower().strip():
-                metadata.update({"parent_title": parent_title})
+                metadata.update({"parent_show_title": parent_title, "parent_show_link": parent_url})
 
             # on RENVOIE alors les métadonnées
-            return metadata
+            return Step(start=start, end=current_show_end, broadcast=Broadcast(**metadata))
         except Exception as err:
+            if for_schedule:
+                raise RuntimeError("An error occured during making schedule")
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
-            return self._get_error_metadata("Error during API response parsing: {}".format(err), 90) 
-    
+            return Step.empty_until(start, start+90, self)
 
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
-        return StreamMetadata(metadata.get("show_title", self.station_slogan), self.station_name, metadata.get("diffusion_title", ""))
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
+        artist = self.name
+        title, album = {
+            True: (broadcast.show_title, broadcast.title),
+            False: (broadcast.title, ""),
+        }[any(broadcast.show_title)]
+        return StreamMetadata(title=title, artist=artist, album=album)
 
-    def _fetch_cover(self, podcast_link):
-        """Scrap cover url from provided Apple Podcast link."""
-        if not podcast_link:
-            return self.station_thumbnail
-        req = requests.get(podcast_link)
-        bs = BeautifulSoup(req.content.decode(), "html.parser")
-        sources = bs.find_all("source")
-        cover_url = sources[0].attrs["srcset"].split(",")[1].replace(" 2x", "")
-        return cover_url
-
-
-    def _fetch_metadata(self, dt: datetime):
+    def _fetch_metadata(self, dt: datetime) -> Dict[Any, Any]:
         """Fetch metadata from radiofrance open API."""
         start = dt
         end = start + timedelta(minutes=120)
@@ -275,7 +270,7 @@ class RadioFranceStation(URLStation):
             )
         except requests.exceptions.Timeout:
             return {"message": "API Timeout"}
-        data = json.loads(rep.content.decode())
+        data = json.loads(rep.text)
         return data
     
     @staticmethod
@@ -331,12 +326,11 @@ class RadioFranceStation(URLStation):
             # sans valider child["start"] < now. Autrement dit, le premier
             # enfant n'a pas encore commencé. On renvoie donc le parent et le
             # début du premier enfant (stocké dans next_child) comme end
-            return parent, int(next_child["start"])
+            return parent, int(next_child.get("start")) or parent["end"]
     
 
-
 class FranceInter(RadioFranceStation):
-    station_name = "France Inter"
+    name = "France Inter"
     station_website_url = "https://www.franceinter.fr"
     station_slogan = "Inter-Venez"
     _station_api_name = "FRANCEINTER"
@@ -345,16 +339,30 @@ class FranceInter(RadioFranceStation):
 
 
 class FranceInfo(RadioFranceStation):
-    station_name = "France Info"
+    name = "France Info"
     station_website_url = "https://www.francetvinfo.fr"
     station_slogan = "Et tout est plus clair"
     _station_api_name = "FRANCEINFO"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
     station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
 
+    def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
+        if for_schedule:
+            start = int(dt.timestamp())
+            if not time(19, 55) < dt.time() < time(21, 0):
+                return Step.empty_until(start=start, end=start, station=self)
+            else:
+                return Step(start=start, end=start, broadcast=Broadcast(
+                    title="Les Informés de France Info",
+                    type=BroadcastType.PROGRAMME,
+                    station=self.station_info,
+                    thumbnail_src="https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
+                ))
+        return super().get_step(logger, dt, channel, for_schedule)
+
 
 class FranceMusique(RadioFranceStation):
-    station_name = "France Musique"
+    name = "France Musique"
     station_website_url = "https://www.francemusique.fr"
     station_slogan = "Vous allez LA DO RÉ !"
     _station_api_name = "FRANCEMUSIQUE"
@@ -363,7 +371,7 @@ class FranceMusique(RadioFranceStation):
 
 
 class FranceCulture(RadioFranceStation):
-    station_name = "France Culture"
+    name = "France Culture"
     station_website_url = "https://www.franceculture.fr"
     station_slogan = "L'esprit d'ouverture"
     _station_api_name = "FRANCECULTURE"

@@ -1,5 +1,6 @@
+from datetime import datetime
 from json import JSONEncoder
-from typing import Callable, Type
+from typing import Callable, Optional, Type
 
 from sunflower.core.custom_types import NotifyChangeStatus
 from sunflower.core.repositories import RedisRepository, Repository
@@ -45,7 +46,7 @@ class PersistentAttribute:
 
     def __init__(self, key: str = "", doc: str = "",
                  json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
-                 repository_cls: Type[Repository] = RedisRepository, expiration_delay: int = None,
+                 repository_cls: Type[Repository] = RedisRepository, expiration_delay: int = 86400,
                  notify_change: bool = False,
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
         super().__init__()
@@ -59,6 +60,7 @@ class PersistentAttribute:
         self.pre_set_hook_func = pre_set_hook
         self.post_get_hook_func = post_get_hook
         self._cache = None
+        self._expiration_timestamp: Optional[int] = None
 
     def __set_name__(self, owner, name):
         self.name = name
@@ -78,13 +80,17 @@ class PersistentAttribute:
         data = self.pre_set_hook_func(obj, value) must be serializable.
         if value is None, notify unchanged or do nothing.
         """
+        now = datetime.now().timestamp()
+        if self._expiration_timestamp is None:
+            self._expiration_timestamp = now
         data = self.pre_set_hook_func(obj, value) if value is not None else value
-        if self._cache == data or data is None:
+        if (self._cache == data or data is None) and (now <= self._expiration_timestamp):
             if self.notify_change:
                 self.repository.publish(obj.endpoint, NotifyChangeStatus.UNCHANGED.value)
             return
         self.repository.persist(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", data, self.json_encoder_cls, self.expiration_delay)
         self._cache = data
+        self._expiration_timestamp = now + self.expiration_delay
         if self.notify_change:
             self.repository.publish(obj.endpoint, NotifyChangeStatus.UPDATED.value)
 

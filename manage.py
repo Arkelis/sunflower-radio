@@ -1,16 +1,12 @@
 import time
+import traceback
 
 import click
-from sunflower.utils.cli import (
-    start_liquidsoap,
-    abort_cli,
-    success_cli,
-    start_scheduler,
-    stop_scheduler,
-    stop_liquidsoap,
-)
-from sunflower.core.functions import write_liquidsoap_config
-from sunflower.channels import tournesol, music
+
+from sunflower.channels import music, tournesol
+from sunflower.core.liquidsoap import write_liquidsoap_config
+from sunflower.utils.cli import (abort_cli, start_liquidsoap, start_scheduler, stop_liquidsoap, stop_scheduler,
+                                 success_cli, )
 
 
 @click.group()
@@ -69,7 +65,8 @@ def generate_liquidsoap_config(filename):
     try:
         write_liquidsoap_config(music, tournesol, filename=filename)
     except Exception as err:
-        abort_cli(err)
+        click.secho(traceback.format_exc(), fg="red")
+        abort_cli(str(err))
     success_cli("Fichier créé")
 
 

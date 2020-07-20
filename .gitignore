@@ -15,7 +15,6 @@ sunflower.egg-info
 node_modules
 
 # parcel
-sunflower/static/dist/index.*
 .parcel-cache
 .cache
 
