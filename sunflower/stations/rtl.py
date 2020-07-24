@@ -272,8 +272,10 @@ class RTL2(URLStation, RTLGroupMixin):
         broadcast_data.update(station=self.station_info, **show_data)
         return Step(start=start, end=end, broadcast=Broadcast(**broadcast_data))
 
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
-        track_metadata = (metadata.get("artist"), metadata.get("title"))
-        show_title = metadata.get("show_title", "")
-        title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
-        return StreamMetadata(title=title, artist=self.name, album=show_title)
+    def format_stream_metadata(self, broadcast) -> Optional[StreamMetadata]:
+        title, album = {
+            BroadcastType.MUSIC: (broadcast.title, broadcast.show_title),
+            BroadcastType.PROGRAMME: (broadcast.show_title, ""),
+            BroadcastType.ADS: (broadcast.title, ""),
+        }[broadcast.type]
+        return StreamMetadata(title=title, artist=self.name, album=album)
