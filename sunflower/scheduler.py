@@ -23,7 +23,7 @@ def launch_scheduler():
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
     
     # rotate
-    file_handler = logging.handlers.RotatingFileHandler("/tmp/scheduler.log", "a", 1000000, 1)
+    file_handler = logging.handlers.RotatingFileHandler("/tmp/beta-scheduler.log", "a", 1000000, 1)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -60,6 +60,6 @@ def launch_scheduler():
 
 
 if __name__ == "__main__":
-    pid = "/tmp/sunflower-radio-scheduler.pid"
-    daemon = Daemonize(app="sunflower-radio-scheduler", pid=pid, action=launch_scheduler)
+    pid = "/tmp/beta-sunflower-radio-scheduler.pid"
+    daemon = Daemonize(app="beta-sunflower-radio-scheduler", pid=pid, action=launch_scheduler)
     daemon.start()
