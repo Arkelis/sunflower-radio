@@ -124,9 +124,11 @@ class RadioFranceStation(URLStation):
         start = int(dt.timestamp())
         fetched_data = self._fetch_metadata(dt)
         if "API Timeout" in fetched_data.values():
-            return self._get_error_metadata("API Timeout", 90) 
+            logger.error("API Timeout")
+            return Step.empty_until(start, start + 90, self)
         if "API rate limit exceeded" in fetched_data.values():
-            return self._get_error_metadata("Radio France API rate limit exceeded", 90)
+            logger.error("Radio France API rate limit exceeded")
+            return Step.empty_until(start, start + 90, self)
         try:
             # on récupère la première émission trouvée
             first_show_in_grid = fetched_data["data"]["grid"][0]
@@ -239,10 +241,10 @@ class RadioFranceStation(URLStation):
             # on RENVOIE alors les métadonnées
             return Step(start=start, end=current_show_end, broadcast=Broadcast(**metadata))
         except Exception as err:
-            if for_schedule:
-                raise RuntimeError("An error occurred during making schedule")
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
+            if for_schedule:
+                raise RuntimeError("An error occurred during making schedule")
             return Step.empty_until(start, start+90, self)
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:

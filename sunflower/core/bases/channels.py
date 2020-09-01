@@ -216,7 +216,12 @@ class Channel:
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
         ][start > self.current_station_end]
-        return station.get_step(logger, start, self, for_schedule=True)
+        next_step = station.get_step(logger, start, self, for_schedule=True)
+        if self.current_step is None:
+            return next_step
+        while next_step.broadcast == self.current_step.broadcast:
+            next_step = station.get_step(logger, datetime.fromtimestamp(next_step.end), self, for_schedule=True)
+        return next_step
 
     def get_schedule(self, logger: Logger) -> List[Step]:
         """Get list of steps which is the schedule of current day"""
