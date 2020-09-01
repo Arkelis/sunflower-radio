@@ -229,8 +229,10 @@ class Channel:
                 start_dt = datetime.combine(today, time.fromisoformat(start))
                 end_dt = datetime.combine(today, time.fromisoformat(end))
                 end_timestamp = int(end_dt.timestamp())
+                # cas de minuit
                 if end_dt < start_dt:
                     end_dt = end_dt + timedelta(days=1)
+                # on stocke dans une variable la fin provisoire des programme
                 tmp_end = start_dt
                 while tmp_end < end_dt:
                     new_step = station_cls().get_step(logger, tmp_end, self, for_schedule=True)
@@ -241,6 +243,7 @@ class Channel:
                         if new_step.end - new_step.start < 300:
                             break
                     schedule.append(new_step)
+                    # on met à jour la fin provisoire
                     tmp_end = datetime.fromtimestamp(new_step.end)
         return schedule
 
