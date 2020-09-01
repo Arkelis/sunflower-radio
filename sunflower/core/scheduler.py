@@ -50,7 +50,7 @@ class Scheduler:
         channels_using_next: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels
                       if (channel.current_station_end - now).seconds < 10
-                      if channel.following_station is station]
+                      if channel.next_station is station]
             for station in self.stations
         }
         return {
