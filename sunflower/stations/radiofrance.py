@@ -292,10 +292,13 @@ class RadioFranceStation(URLStation):
         
         dt_timestamp = dt.timestamp()
 
+        # on trie dans l'ordre inverse
+        children = sorted(children, key=lambda x: x.get("start"), reverse=True)
+
         # on initialise l'enfant suivant (par défaut le dernier)
         next_child = children[-1]
         # et on parcourt la liste des enfants à l'envers
-        for child in reversed(children):
+        for child in children:
             # dans certains cas, le type de step ne nous intéresse pas
             # et est donc vide, on passe directement au suivant
             # (c'est le cas des TrackSteps)
