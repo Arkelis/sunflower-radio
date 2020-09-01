@@ -79,8 +79,8 @@ def get_channel(channel, request: Request):
         "endpoint": channel.endpoint,
         "name": channel.endpoint.capitalize(),
         "audio_stream": settings.ICECAST_SERVER_URL + channel.endpoint,
-        "current_step": channel.current_step,
-        "next_step": channel.next_step,
+        "current_step": request.url_for("get_current_broadcast_of", channel=channel.endpoint),
+        "next_step": request.url_for("get_next_broadcast_of", channel=channel.endpoint),
         "schedule": request.url_for("get_schedule_of", channel=channel.endpoint),
     }
 
