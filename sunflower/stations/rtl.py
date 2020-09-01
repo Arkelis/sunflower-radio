@@ -175,12 +175,13 @@ class RTL2(URLStation, RTLGroupMixin):
         self.show_data = {}
 
     def _fetch_show_metadata(self, dt: datetime):
-        start_str = dt.isoformat(sep=" ", timespec="seconds")
-        end_str = (dt + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
+        start_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
+        end_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
         req = requests.get(self._show_grid_url.format(start_str, end_str))
         data = json.loads(req.text).get(self.formatted_station_name)
         if not data:
             return {}
+        print(data)
         show = data[0]
         end_of_show = datetime.strptime(show["diffusion_end_date"], "%Y-%m-%d %H:%M:%S")
         end_of_show_timestamp = int(end_of_show.timestamp())
@@ -189,20 +190,6 @@ class RTL2(URLStation, RTLGroupMixin):
             "summary": show["description"],
             "show_end": end_of_show_timestamp,
         }
-
-    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-    #     current_broadcast_title = {
-    #         BroadcastType.ADS: "Publicité",
-    #         BroadcastType.MUSIC: "{} • {}".format(metadata.get("artist"), metadata.get("title")),
-    #     }.get(metadata["type"], self.station_slogan)
-    #
-    #     return CardMetadata(
-    #         current_thumbnail=metadata["thumbnail_src"],
-    #         current_show_title=metadata.get("show_title", ""),
-    #         current_broadcast_summary=metadata.get("show_summary", ""),
-    #         current_station=self.html_formatted_station_name,
-    #         current_broadcast_title=current_broadcast_title,
-    #     )
 
     def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
         """Returns mapping containing info about current song.
@@ -224,7 +211,7 @@ class RTL2(URLStation, RTLGroupMixin):
         start = int(dt.timestamp())
 
         # first, update show info if needed
-        if self.show_data.get("show_end") is None or self.show_data.get("show_end") < start:
+        if self.show_data.get("show_end") is None or self.show_data.get("show_end") <= start:
             self.show_data = self._fetch_show_metadata(dt)
 
         show_data = self.show_data.copy()
@@ -277,3 +264,9 @@ class RTL2(URLStation, RTLGroupMixin):
         show_title = metadata.get("show_title", "")
         title = " • ".join(track_metadata) if all(track_metadata) else self.station_slogan
         return StreamMetadata(title=title, artist=self.name, album=show_title)
+
+
+if __name__ == "__main__":
+    show_test = RTL2()._fetch_show_metadata(datetime.combine(datetime.today(), time(6, 0, 0)))
+    show_end = datetime.fromtimestamp(show_test["show_end"])
+    print(show_end)

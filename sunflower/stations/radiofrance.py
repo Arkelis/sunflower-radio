@@ -133,7 +133,7 @@ class RadioFranceStation(URLStation):
 
             # si celle-ci est terminée et la suivante n'a pas encore démarrée
             # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
-            # suivante
+            # suivante (sauf dans le cas où on demande le programme)
             if first_show_in_grid["end"] < start:
                 next_show = fetched_data["data"]["grid"][1]
                 if for_schedule:
@@ -240,7 +240,7 @@ class RadioFranceStation(URLStation):
             return Step(start=start, end=current_show_end, broadcast=Broadcast(**metadata))
         except Exception as err:
             if for_schedule:
-                raise RuntimeError("An error occured during making schedule")
+                raise RuntimeError("An error occurred during making schedule")
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
             return Step.empty_until(start, start+90, self)

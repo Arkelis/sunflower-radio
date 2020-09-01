@@ -1,7 +1,6 @@
 # This file is part of sunflower package. Radio app.
 
 """Module containing radio metadata fetching related functions."""
-import logging
 
 from sunflower.core.bases import Channel
 from sunflower.handlers import AdsHandler
@@ -82,6 +81,3 @@ music = Channel("musique", handlers=(AdsHandler,),
                     ("22:00", "00:00", PycolorePlaylistStation),
                 ]})
 
-if __name__ == "__main__":
-    tournesol.get_schedule(logging.Logger(""))
-    
