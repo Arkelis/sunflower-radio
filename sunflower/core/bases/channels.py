@@ -233,10 +233,10 @@ class Channel:
             for start, end, station_cls in L: # type: str, str, Type[Station]
                 start_dt = datetime.combine(today, time.fromisoformat(start))
                 end_dt = datetime.combine(today, time.fromisoformat(end))
-                end_timestamp = int(end_dt.timestamp())
                 # cas de minuit
                 if end_dt < start_dt:
                     end_dt = end_dt + timedelta(days=1)
+                end_timestamp = int(end_dt.timestamp())
                 # on stocke dans une variable la fin provisoire des programme
                 tmp_end = start_dt
                 while tmp_end < end_dt:

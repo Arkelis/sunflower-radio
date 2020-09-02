@@ -357,11 +357,14 @@ class FranceInfo(RadioFranceStation):
             if not time(19, 55) < dt.time() < time(21, 0):
                 return Step.empty_until(start=start, end=start, station=self)
             else:
-                return Step(start=start, end=start, broadcast=Broadcast(
-                    title="Les Informés de France Info",
-                    type=BroadcastType.PROGRAMME,
-                    station=self.station_info,
-                    thumbnail_src="https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
+                return Step(
+                    start=int(datetime.combine(dt.date(), time(20, 0)).timestamp()),
+                    end=int(datetime.combine(dt.date(), time(21, 0)).timestamp()),
+                    broadcast=Broadcast(
+                        title="Les Informés de France Info",
+                        type=BroadcastType.PROGRAMME,
+                        station=self.station_info,
+                        thumbnail_src="https://cdn.radiofrance.fr/s3/cruiser-production/2019/08/8eff949c-a7a7-4e1f-b3c0-cd6ad1a2eabb/1400x1400_rf_omm_0000022892_ite.jpg",
                 ))
         return super().get_step(logger, dt, channel, for_schedule)
 
