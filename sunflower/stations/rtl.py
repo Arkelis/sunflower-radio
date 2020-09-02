@@ -169,6 +169,7 @@ class RTL2(URLStation, RTLGroupMixin):
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
     _show_grid_url = ("https://pc.middleware.6play.fr/6play/v2/platforms/m6group_web/services/m6replay/guidetv?channel="
                       "rtl2&from={}&to={}&limit=1&offset=0&with=realdiffusiondates")
+    long_pull = True
 
     def __init__(self):
         super().__init__()

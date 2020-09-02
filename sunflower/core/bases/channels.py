@@ -38,6 +38,8 @@ class Channel:
         self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]
         self._liquidsoap_station: str = ""
         self._schedule_day: date = date(1970, 1, 1)
+        self._last_pull = datetime.today()
+        self.long_pull_interval = 10 # seconds between long pulls
         if len(self.stations) == 1:
             self._current_station_instance: Optional[Station] = self.stations[0]()
             self._following_station_instance: Optional[Station] = None
@@ -211,15 +213,13 @@ class Channel:
         """
         return self.current_station.get_step(logger, now, self)
 
-    def get_next_step(self, logger: Logger, start: datetime) -> Step:
+    def get_next_step(self, logger: Logger, start: datetime, current_broadcast: Broadcast) -> Step:
         station = [
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
         ][start > self.current_station_end]
         next_step = station.get_step(logger, start, self, for_schedule=True)
-        if self.current_step is None:
-            return next_step
-        while next_step.broadcast == self.current_step.broadcast:
+        while next_step.broadcast == current_broadcast:
             next_step = station.get_step(logger, datetime.fromtimestamp(next_step.end), self, for_schedule=True)
         return next_step
 
@@ -294,14 +294,19 @@ class Channel:
         # check if we must retrieve new metadata
         if (
             current_step is not None
+            and not self.current_station.long_pull
             and now.timestamp() < current_step.end
             and current_step.broadcast.station.name == self.current_station.name
+        ) or (
+            self.current_station.long_pull
+            and (now - self._last_pull).seconds < self.long_pull_interval
         ):
             self.current_step = None # notify unchanged
             return
+        self._last_pull = now
         # get current info and new metadata and info
         current_step = self.get_current_step(logger, now)
-        self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end))
+        self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end), current_step.broadcast)
         # apply handlers if needed
         for handler in self.handlers:
             current_step = handler.process(current_step, logger, now)

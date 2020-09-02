@@ -46,6 +46,11 @@ class Station(HTMLMixin, metaclass=StationMeta):
     station_website_url: str = ""
     station_slogan: str = ""
 
+    # By default, station data is retrieved when current broadcast/step is ended. Sometimes, station external API is not
+    # very reliable, and long pull is needed (regular retrieval instead of strategic pull). In this case, turn this
+    # attribute True in child class.
+    long_pull = False
+
     @property
     def station_info(self):
         info = StationInfo(name=self.name)
