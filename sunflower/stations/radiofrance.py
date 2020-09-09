@@ -294,6 +294,8 @@ class RadioFranceStation(URLStation):
         
         dt_timestamp = dt.timestamp()
 
+        # on enlève les enfants vides (les TrackStep que l'on ne prend pas en compte)
+        children = filter(lambda x: x != {}, children)
         # on trie dans l'ordre inverse
         children = sorted(children, key=lambda x: x.get("start"), reverse=True)
 

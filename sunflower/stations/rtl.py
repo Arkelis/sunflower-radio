@@ -132,6 +132,7 @@ class RTL(Station, RTLGroupMixin):
                 return Step(start=dt_timestamp, end=dt_timestamp, broadcast=self._grosses_tetes_broadcast)
             return Step.ads(dt_timestamp, self)
         # pour l'instant uniquement Les Grosses Têtes
+        self._last_grosses_tetes_diffusion_date = dt.date()
         podcast_url = self._grosses_tetes_podcast_url
         broadcast_metadata = self._fetch_last_podcast_metadata(podcast_url)
         self._grosses_tetes_duration = broadcast_metadata.pop("duration")

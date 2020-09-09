@@ -18,7 +18,7 @@ from sunflower.settings import RADIO_NAME
 app = FastAPI(title=RADIO_NAME, docs_url="/", redoc_url=None, version="1.0.0-beta1")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:1234", "http://0.0.0.0:1234"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

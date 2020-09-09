@@ -13,7 +13,7 @@ from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs, p
 
 class PycolorePlaylistStation(DynamicStation):
     name = "Radio Pycolore"
-    station_thumbnail = "https://upload.wikimedia.org/wikipedia/commons/c/ce/Sunflower_clip_art.svg"
+    station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
     endpoint = "pycolore"
 
     public_playlist = PersistentAttribute("playlist", expiration_delay=172800)

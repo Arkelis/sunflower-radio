@@ -217,10 +217,12 @@ class Channel:
         station = [
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
-        ][start > self.current_station_end]
+        ][start >= self.current_station_end]
         next_step = station.get_step(logger, start, self, for_schedule=True)
-        while next_step.broadcast == current_broadcast:
-            next_step = station.get_step(logger, datetime.fromtimestamp(next_step.end), self, for_schedule=True)
+        if next_step.end == next_step.start:
+            next_step.end = int(self.current_station_end.timestamp())
+        while (next_step.broadcast.show_title or next_step.broadcast.title) == current_broadcast.show_title:
+            next_step = self.get_next_step(logger, datetime.fromtimestamp(next_step.end), current_broadcast)
         return next_step
 
     def get_schedule(self, logger: Logger) -> List[Step]:
