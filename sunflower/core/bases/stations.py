@@ -141,7 +141,7 @@ class DynamicStation(Station):
     def __init_subclass__(cls):
         REVERSE_STATIONS[cls.endpoint] = cls
 
-    def process(self, logger, channels_using, now, **kwargs):
+    def process(self, logger, channels_using, channels_using_next, now, **kwargs):
         raise NotImplementedError("process() must be implemented")
 
 

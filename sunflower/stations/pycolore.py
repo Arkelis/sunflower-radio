@@ -46,12 +46,12 @@ class PycolorePlaylistStation(DynamicStation):
         """Get next song in current playlist.
 
         Check if its length is not greater than remaining time before end of use
-        of this station.
+        of this station. Set max_length to -1 if you want to skip this behaviour.
         """
         if len(self._songs_to_play) <= 5:
             self._populate_songs_to_play()
         for (i, song) in enumerate(self._songs_to_play):
-            if song.length < max_length:
+            if song.length < max_length or max_length == -1:
                 return self._songs_to_play.pop(i)
         return None
 
@@ -70,6 +70,7 @@ class PycolorePlaylistStation(DynamicStation):
         """Play next song in playlist.
         
         Call _get_next_song() for getting next song to play.
+        If max_length == -1, _get_next_song does not care about max length.
         Send a request to liquidsoap telnet server telling it to play the song.
         """
         self._current_song = self._get_next_song(max_length)
@@ -120,7 +121,7 @@ class PycolorePlaylistStation(DynamicStation):
             )
         )
 
-    def process(self, logger: Logger, channels_using: Dict, now: datetime, **kwargs):
+    def process(self, logger: Logger, channels_using: Dict, channels_using_next: Dict, now: datetime, **kwargs):
         """Play new song if needed.
         
         Compute end of use time of this station.
@@ -129,14 +130,20 @@ class PycolorePlaylistStation(DynamicStation):
         Call _play() to trigger next song.
         """
 
-        # if station is not used, return
+        # if station is not used, check if a channel will soon use it
         channels_using_self = channels_using[self]
         if not channels_using_self:
+            # in this case, anticipate and launch a song
+            for channel in channels_using_next[self]: # type: Channel
+                delay = max((channel.current_station_end - now).seconds, 0)
+                max_length = -1
+                self._play(delay, max_length, logger, now)
+                break
             return
 
         # compute end of use
-        for channel in channels_using_self:
-            end_of_current_station = channel.get_station_info(now)[1]
+        for channel in channels_using_self: # type: Channel
+            end_of_current_station = channel.current_station_end
             if self._end_of_use < end_of_current_station:
                 self._end_of_use = end_of_current_station
 
