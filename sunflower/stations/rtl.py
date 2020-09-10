@@ -1,7 +1,9 @@
 import json
 import locale
+from contextlib import suppress
 from datetime import date, datetime, time, timedelta
 from logging import Logger
+from telnetlib import Telnet
 from typing import Optional
 from xml.etree import ElementTree
 
@@ -10,7 +12,7 @@ from bs4 import BeautifulSoup
 
 from sunflower.core.bases import Station, URLStation
 from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata
-from sunflower.core.liquidsoap import open_telnet_session
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -143,8 +145,9 @@ class RTL(Station, RTLGroupMixin):
             **broadcast_metadata)
         if for_schedule:
             return Step(start=dt_timestamp, end=dt_timestamp, broadcast=self._grosses_tetes_broadcast)
-        with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.push {self._grosses_tetes_audio_stream}\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.push {self._grosses_tetes_audio_stream}\n".encode())
         return Step(start=dt_timestamp, end=dt_timestamp + self._grosses_tetes_duration, broadcast=self._grosses_tetes_broadcast)
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:

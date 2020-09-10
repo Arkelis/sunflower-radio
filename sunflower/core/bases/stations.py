@@ -1,14 +1,15 @@
 # This file is part of sunflower package. radio
 # bases.py contains base classes
-
+from contextlib import suppress
 from datetime import datetime, timedelta
 from logging import Logger
+from telnetlib import Telnet
 from typing import Dict, Optional
 
 from sunflower.core.custom_types import Broadcast, BroadcastType, StationInfo, Step, StreamMetadata
 from sunflower.core.decorators import classproperty
-from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.core.mixins import HTMLMixin
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
@@ -171,12 +172,14 @@ class URLStation(Station):
                 f'"{cls.station_url}")))\n')
 
     def start_liquidsoap_source(self):
-        with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.start\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.start\n".encode())
 
     def stop_liquidsoap_source(self):
-        with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.stop\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.stop\n".encode())
 
     def process(self, logger, channels_using, channels_using_next, **kwargs):
         if any(channels_using_next[self]) or any(channels_using[self]):

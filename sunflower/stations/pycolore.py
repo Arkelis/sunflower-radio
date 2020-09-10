@@ -1,13 +1,15 @@
 import random
+from contextlib import suppress
 from datetime import datetime, timedelta
 from logging import Logger
+from telnetlib import Telnet
 from typing import Dict, List, Optional
 
 from sunflower import settings
 from sunflower.core.bases import Channel, DynamicStation
 from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step
 from sunflower.core.descriptors import PersistentAttribute
-from sunflower.core.liquidsoap import open_telnet_session
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
 
 
@@ -78,8 +80,9 @@ class PycolorePlaylistStation(DynamicStation):
             f"station={self.formatted_station_name} Playing {self._current_song.artist} - {self._current_song.title} ({len(self._songs_to_play)} songs remaining in current list)."
         )
         self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
-        with open_telnet_session(logger=logger) as session:
-            session.write(f"{self.formatted_station_name}.push {self._current_song.path}\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.push {self._current_song.path}\n".encode())
 
     def get_step(self, logger: Logger, dt: datetime, channel: Channel, for_schedule: bool = False) -> Step:
         dt_timestamp = int(dt.timestamp())
@@ -89,7 +92,7 @@ class PycolorePlaylistStation(DynamicStation):
                 end=dt_timestamp,
                 broadcast=Broadcast(
                     title="La playlist Pycolore",
-                    type=BroadcastType.MUSIC,
+                    type=BroadcastType.PROGRAMME,
                     station=self.station_info,
                     thumbnail_src=self.station_thumbnail,
                 )

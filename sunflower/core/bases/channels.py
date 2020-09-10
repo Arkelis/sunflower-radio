@@ -1,6 +1,8 @@
 import functools
+from contextlib import suppress
 from datetime import date, datetime, time, timedelta
 from logging import Logger
+from telnetlib import Telnet
 from typing import Dict, Iterable, List, Optional, Type
 
 from pydantic import ValidationError
@@ -9,8 +11,8 @@ from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.custom_types import (Broadcast, MetadataEncoder, Step, as_metadata_type)
 from sunflower.core.descriptors import PersistentAttribute
-from sunflower.core.liquidsoap import open_telnet_session
 from sunflower.handlers import Handler
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 
 
 class Channel:
@@ -260,9 +262,10 @@ class Channel:
         if new_stream_metadata is None:
             logger.debug(f"channel={self.endpoint} StreamMetadata is empty")
             return
-        with open_telnet_session(logger=logger) as session:
-            metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
-            session.write(f'{self.endpoint}.insert {metadata_string}\n'.encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
+                session.write(f'{self.endpoint}.insert {metadata_string}\n'.encode())
         logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
 
     def process(self, logger: Logger, now: datetime, **context):
@@ -285,11 +288,12 @@ class Channel:
             self._schedule_day = now.date()
         # make sure current station is used by liquidsoap
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
-            with open_telnet_session() as session:
-                session.write(f'var.set {current_station_name}_on_{self.endpoint} = true\n'.encode())
-                if self._liquidsoap_station:
-                    session.read_until(b"\n")
-                    session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
+            with suppress(ConnectionRefusedError):
+                with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                    session.write(f'var.set {current_station_name}_on_{self.endpoint} = true\n'.encode())
+                    if self._liquidsoap_station:
+                        session.read_until(b"\n")
+                        session.write(f'var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n'.encode())
             self._liquidsoap_station = current_station_name
         # first retrieve current step
         current_step = self.current_step
