@@ -1,14 +1,13 @@
 import json
 import locale
 from contextlib import suppress
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from logging import Logger
 from telnetlib import Telnet
 from typing import Optional
 from xml.etree import ElementTree
 
 import requests
-from bs4 import BeautifulSoup
 
 from sunflower.core.bases import Station, URLStation
 from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata
@@ -37,52 +36,52 @@ class RTLGroupMixin:
                 raise requests.exceptions.Timeout from None
             return self._fetch_song_metadata(retry + 1)
 
-    def _fetch_metadata(self, dt: datetime, retry=0):
-        """Fetch data from timeline.rtl.fr.
-
-        Scrap from items page. If song object detected, get data from songs endpoint.
-        Else return BroadcastType object.
-        """
-        try:
-            rep = requests.get(self._main_data_url, timeout=1)
-            soup = BeautifulSoup(rep.text, "html.parser")
-            try:
-                first_row: BeautifulSoup = soup.find_all("tr")[2]
-                diffusion_type: str = first_row.find_all("td")[1].text
-                start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
-                start_time, end_time = map(time.fromisoformat, start_end_text[:start_end_text.index("(")].split("⇾")) # type: time, time
-                start = int(datetime.combine(dt.date(), start_time).timestamp())
-                end = int(datetime.combine(dt.date(), end_time).timestamp())
-            except IndexError:
-                previous_url = (
-                    "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[8].attrs["href"]
-                )
-                rep = requests.get(previous_url, timeout=1)
-                soup = BeautifulSoup(rep.content.decode(), "html.parser")
-                try:
-                    first_row: BeautifulSoup = soup.find_all("tr")[2]
-                    diffusion_type: str = first_row.find_all("td")[1].text
-                    start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
-                    start_time, end_time = map(
-                        time.fromisoformat,
-                        start_end_text[:start_end_text.index("(")].split("⇾")
-                    )  # type: time, time
-                    start = int(datetime.combine(dt.date(), start_time).timestamp())
-                    end = int(datetime.combine(dt.date(), end_time).timestamp())
-                except KeyError:
-                    raise RuntimeError("Le titre de la chanson oupne peut pas être trouvé.")
-        except requests.exceptions.Timeout:
-            if retry == 11:
-                raise requests.exceptions.Timeout from None
-            return self._fetch_metadata(dt, retry + 1)
-        if diffusion_type == "Pubs":
-            return {"type": BroadcastType.ADS, "end": 0}
-        elif diffusion_type == "Emissions":
-            return {"type": BroadcastType.PROGRAMME, "start": start, "end": end}
-        elif diffusion_type != "Musique" or end < dt.timestamp():
-            return {"type": BroadcastType.NONE, "end": 0}
-        else:
-            return self._fetch_song_metadata()
+    # def _fetch_metadata(self, dt: datetime, retry=0):
+    #     """Fetch data from timeline.rtl.fr.
+    #
+    #     Scrap from items page. If song object detected, get data from songs endpoint.
+    #     Else return BroadcastType object.
+    #     """
+    #     try:
+    #         rep = requests.get(self._main_data_url, timeout=1)
+    #         soup = BeautifulSoup(rep.text, "html.parser")
+    #         try:
+    #             first_row: BeautifulSoup = soup.find_all("tr")[2]
+    #             diffusion_type: str = first_row.find_all("td")[1].text
+    #             start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
+    #             start_time, end_time = map(time.fromisoformat, start_end_text[:start_end_text.index("(")].split("⇾")) # type: time, time
+    #             start = int(datetime.combine(dt.date(), start_time).timestamp())
+    #             end = int(datetime.combine(dt.date(), end_time).timestamp())
+    #         except IndexError:
+    #             previous_url = (
+    #                 "/".join(self._main_data_url.split("/")[:3]) + soup.find_all("a")[8].attrs["href"]
+    #             )
+    #             rep = requests.get(previous_url, timeout=1)
+    #             soup = BeautifulSoup(rep.content.decode(), "html.parser")
+    #             try:
+    #                 first_row: BeautifulSoup = soup.find_all("tr")[2]
+    #                 diffusion_type: str = first_row.find_all("td")[1].text
+    #                 start_end_text: str = first_row.find_all("td")[-1].text.replace(" ", "").replace("\n", "")
+    #                 start_time, end_time = map(
+    #                     time.fromisoformat,
+    #                     start_end_text[:start_end_text.index("(")].split("⇾")
+    #                 )  # type: time, time
+    #                 start = int(datetime.combine(dt.date(), start_time).timestamp())
+    #                 end = int(datetime.combine(dt.date(), end_time).timestamp())
+    #             except KeyError:
+    #                 raise RuntimeError("Le titre de la chanson oupne peut pas être trouvé.")
+    #     except requests.exceptions.Timeout:
+    #         if retry == 11:
+    #             raise requests.exceptions.Timeout from None
+    #         return self._fetch_metadata(dt, retry + 1)
+    #     if diffusion_type == "Pubs":
+    #         return {"type": BroadcastType.ADS, "end": 0}
+    #     elif diffusion_type == "Emissions":
+    #         return {"type": BroadcastType.PROGRAMME, "start": start, "end": end}
+    #     elif diffusion_type != "Musique" or end < dt.timestamp():
+    #         return {"type": BroadcastType.NONE, "end": 0}
+    #     else:
+    #         return self._fetch_song_metadata()
 
 
 class RTL(Station, RTLGroupMixin):
@@ -236,14 +235,9 @@ class RTL2(URLStation, RTLGroupMixin):
 
         # next, update song info
         try:
-            fetched_data = self._fetch_metadata(dt)
+            fetched_data = self._fetch_song_metadata()
         except requests.exceptions.Timeout:
             return Step.empty_until(start, start+90, self)
-        fetched_data_type = fetched_data.get("type")
-
-        if fetched_data_type == BroadcastType.ADS:
-            Step.ads(start, self)
-
         end = fetched_data["end"]
         if start > end:
             if not show_data:
