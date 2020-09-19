@@ -102,7 +102,7 @@ class Step(BaseModel):
 
     @classmethod
     def none(cls) -> "Step":
-        cls(start=0, end=0, broadcast=Broadcast.none())
+        return cls(start=0, end=0, broadcast=Broadcast.none())
 
 
 class Song(BaseModel):
