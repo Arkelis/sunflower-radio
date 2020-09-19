@@ -170,7 +170,7 @@ class Channel:
         try:
             return Step(**data)
         except (TypeError, ValidationError) as err:
-            return None
+            return Step.none()
 
     def _pre_set_hook_step(self, value: Optional[Step]):
         if value is None:
@@ -312,6 +312,8 @@ class Channel:
         self._last_pull = now
         # get current info and new metadata and info
         current_step = self.get_current_step(logger, now)
+        if self.current_step.broadcast == current_step.broadcast:
+            return
         self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end), current_step.broadcast)
         # apply handlers if needed
         for handler in self.handlers:

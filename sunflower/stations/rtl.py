@@ -180,7 +180,7 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def _fetch_show_metadata(self, dt: datetime):
         start_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
-        end_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
+        end_str = (dt + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
         req = requests.get(self._show_grid_url.format(start_str, end_str))
         data = json.loads(req.text).get(self.formatted_station_name)
         if not data:

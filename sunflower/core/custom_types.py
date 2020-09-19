@@ -72,6 +72,10 @@ class Broadcast(BaseModel):
             thumbnail_src=station.station_thumbnail
         )
 
+    @classmethod
+    def none(cls) -> "Broadcast":
+        return cls(title="", type=BroadcastType.NONE, station=StationInfo(name=""), thumbnail_src="")
+
 
 class Step(BaseModel):
     start: int
@@ -93,8 +97,12 @@ class Step(BaseModel):
         return cls(start=start, end=0, broadcast=Broadcast.empty(station))
 
     @classmethod
-    def empty_until(cls, start: int, end: int, station: "Station"):
+    def empty_until(cls, start: int, end: int, station: "Station") -> "Step":
         return cls(start=start, end=end, broadcast=Broadcast.empty(station))
+
+    @classmethod
+    def none(cls) -> "Step":
+        cls(start=0, end=0, broadcast=Broadcast.none())
 
 
 class Song(BaseModel):
