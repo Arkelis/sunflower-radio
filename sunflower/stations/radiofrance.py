@@ -123,12 +123,13 @@ class RadioFranceStation(URLStation):
     def get_step(self, logger: Logger, dt: datetime, channel, for_schedule=False) -> Step:
         start = int(dt.timestamp())
         fetched_data = self._fetch_metadata(dt)
+        end_if_error = start if for_schedule else start + 90
         if "API Timeout" in fetched_data.values():
             logger.error("API Timeout")
-            return Step.empty_until(start, start + 90, self)
+            return Step.empty_until(start, end_if_error, self)
         if "API rate limit exceeded" in fetched_data.values():
             logger.error("Radio France API rate limit exceeded")
-            return Step.empty_until(start, start + 90, self)
+            return Step.empty_until(start, end_if_error, self)
         try:
             # on récupère la première émission trouvée
             first_show_in_grid = fetched_data["data"]["grid"][0]
