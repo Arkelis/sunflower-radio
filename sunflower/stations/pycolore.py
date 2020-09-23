@@ -133,6 +133,9 @@ class PycolorePlaylistStation(DynamicStation):
         # if station is not used, check if a channel will soon use it
         channels_using_self = channels_using[self]
         if not channels_using_self:
+            # in case we already anticipated, return
+            if self._current_song is not None:
+                return
             # in this case, anticipate and launch a song
             for channel in channels_using_next[self]: # type: Channel
                 delay = max((channel.current_station_end - now).seconds, 0)
