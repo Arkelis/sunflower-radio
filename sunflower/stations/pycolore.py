@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 from sunflower import settings
 from sunflower.core.bases import Channel, DynamicStation
-from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step
+from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step, StreamMetadata, UpdateInfo
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
@@ -31,7 +31,7 @@ class PycolorePlaylistStation(DynamicStation):
     def __init__(self):
         super().__init__()
         self._songs_to_play: List[Song] = []
-        self._populate_songs_to_play()
+        # self._populate_songs_to_play()
         self._current_song: Optional[Song] = None
         self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
@@ -85,27 +85,19 @@ class PycolorePlaylistStation(DynamicStation):
             with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
                 session.write(f"{self.formatted_station_name}.push {self._current_song.path}\n".encode())
 
-    def get_step(self, logger: Logger, dt: datetime, channel: Channel, for_schedule: bool = False) -> Step:
+    def get_step(self, logger: Logger, dt: datetime, channel: Channel) -> UpdateInfo:
         dt_timestamp = int(dt.timestamp())
-        if for_schedule:
-            return Step(
-                start=dt_timestamp,
-                end=dt_timestamp,
-                broadcast=Broadcast(
-                    title="La playlist Pycolore",
-                    type=BroadcastType.PROGRAMME,
-                    station=self.station_info,
-                    thumbnail_src=self.station_thumbnail,
-                )
-            )
         if self._current_song is None:
             next_station_name = channel.next_station.name
             next_station_start = int(channel.current_station_end.timestamp())
-            return Step.waiting_for_next_station(dt_timestamp, next_station_start, self, next_station_name)
+            return UpdateInfo(
+                should_notify_update=True,
+                step=Step.waiting_for_next_station(dt_timestamp, next_station_start, self, next_station_name)
+            )
         artists_list = tuple(self._artists)
         artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
         thumbnail_src, link = fetch_cover_and_link_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title)
-        return Step(
+        return UpdateInfo(should_notify_update=True, step=Step(
             start=dt_timestamp,
             end=int(self._current_song_end),
             broadcast=Broadcast(
@@ -119,7 +111,29 @@ class PycolorePlaylistStation(DynamicStation):
                 summary=(f"Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : "
                          f"{artists_str}."),
             )
+        ))
+
+    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        return Step(
+            start=int(dt.timestamp()),
+            end=int(dt.timestamp()),
+            broadcast=Broadcast(
+                title="La Playlist Pycolore",
+                type=BroadcastType.PROGRAMME,
+                station=self.station_info,
+                thumbnail_src=self.station_thumbnail)
         )
+
+    def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
+        return [Step(
+            start=int(start.timestamp()),
+            end=int(end.timestamp()),
+            broadcast=Broadcast(
+                title="La Playlist Pycolore",
+                type=BroadcastType.PROGRAMME,
+                station=self.station_info,
+                thumbnail_src=self.station_thumbnail)
+        )]
 
     def process(self, logger: Logger, channels_using: Dict, channels_using_next: Dict, now: datetime, **kwargs):
         """Play new song if needed.
@@ -154,6 +168,9 @@ class PycolorePlaylistStation(DynamicStation):
             delay = max(self._current_song_end - now.timestamp(), 0)
             max_length = (self._end_of_use - now).seconds - delay
             self._play(delay, max_length, logger, now)
+
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
+        pass
 
     @classmethod
     def get_liquidsoap_config(cls):

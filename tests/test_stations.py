@@ -1,10 +1,5 @@
 from sunflower.core.bases import STATIONS_INSTANCES
-
-from sunflower.stations import (
-    RTL2,
-    FranceCulture, FranceInter, FranceMusique, FranceInfo,
-    PycolorePlaylistStation,
-)
+from sunflower.stations import (FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2)
 
 
 def test_instances_created():

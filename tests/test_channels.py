@@ -1,6 +1,9 @@
-from sunflower.channels import tournesol, music
-from sunflower.stations import FranceMusique, FranceInter, FranceInfo, FranceCulture, RTL, RTL2, PycolorePlaylistStation
+import logging
 from collections import Counter
+from datetime import datetime
+
+from sunflower.channels import music, tournesol
+from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2
 
 
 def test_tournesol_station_parsing():
@@ -10,4 +13,14 @@ def test_tournesol_station_parsing():
 
 
 def test_music_station_parsing():
-    assert Counter(music.stations) == Counter((RTL2, RTL, PycolorePlaylistStation))
+    assert Counter(music.stations) == Counter((RTL2, PycolorePlaylistStation))
+
+
+def _test_schedule():
+    logger = logging.Logger("test")
+    for step in music.get_schedule(logger):
+        print(datetime.fromtimestamp(step.start), datetime.fromtimestamp(step.end), step.broadcast.title)
+
+
+if __name__ == '__main__':
+    _test_schedule()
