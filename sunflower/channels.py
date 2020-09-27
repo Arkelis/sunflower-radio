@@ -16,9 +16,10 @@ tournesol = Channel(
             ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "12:00", FranceCulture), # Le Cours de l'Histoire, les chemins de la philosophie, Toute une vie
-            ("12:00", "14:00", FranceInter), # Le débat de midi, le journal, chacun sa route
-            ("14:00", "18:00", FranceCulture), # Les pieds sur terre, chambre jaune, musiue, compagnie des oeuvres, LSD (La série documentaire)
-            ("18:00", "20:00", FranceInter), # Soirée
+            ("12:00", "12:30", FranceInfo), # Info
+            ("12:30", "13:30", FranceInter), # Carnets de campagne, Jeu des mille, Journal
+            ("13:30", "18:00", FranceCulture), # Les pieds sur terre, Entendez vous l'éco, compagnie des oeuvres, la méthode scientifique, LSD (La série documentaire)
+            ("18:00", "20:00", FranceInter), # Le 18/20 de France Inter
             ("20:00", "00:00", FranceInfo), # Les informés, info
         ],
         (5,): [
@@ -38,7 +39,8 @@ tournesol = Channel(
             ("09:00", "11:00", FranceInfo),
             ("11:00", "14:00", FranceInter), # On va déguster, politique, journal
             ("14:00", "18:00", FranceMusique), # Aprem Musique
-            ("18:00", "21:00", FranceInter), # soirée, masque et la plume
+            ("18:00", "20:00", FranceCulture), # Soft power
+            ("20:00", "21:00", FranceInter), # soirée, masque et la plume
             ("21:00", "00:00", FranceInfo),
         ]
     },
