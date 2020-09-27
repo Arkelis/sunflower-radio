@@ -4,7 +4,7 @@
 
 from sunflower.core.bases import Channel
 from sunflower.handlers import AdsHandler
-from sunflower.stations import (FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2, )
+from sunflower.stations import (FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2)
 
 tournesol = Channel(
     endpoint="tournesol",

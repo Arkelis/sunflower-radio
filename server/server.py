@@ -1,4 +1,5 @@
 import asyncio
+from enum import Enum
 from typing import List
 
 import redis
@@ -155,13 +156,29 @@ def get_schedule_of(channel):
 
 # custom endpoints
 
+
+class ShapeEnum(str, Enum):
+    flat = 'flat'
+    groupartist = 'groupartist'
+
+
 @app.get(
     "/stations/pycolore/playlist/",
     summary="Get the playlist of Pycolore station",
     tags=["Endpoints specific to Radio Pycolore"],
-    response_description="List of songs of the playlist"
-)
-def get_pycolore_playlist():
-    """Get information about next broadcast on given channel"""
-    return PycoloreStationProxy().public_playlist
+    response_description="List of songs of the playlist",
 
+)
+def get_pycolore_playlist(shape: ShapeEnum = 'flat'):
+    """Get information about next broadcast on given channel"""
+    if shape == 'flat':
+        return PycoloreStationProxy().public_playlist
+    if shape == 'groupartist':
+        playlist = PycoloreStationProxy().public_playlist
+        sorted_playlist = {}
+        for song in playlist:
+            try:
+                sorted_playlist[song["artist"]].append({'title': song["title"], 'album': song["album"]})
+            except KeyError:
+                sorted_playlist[song["artist"]] = [{'title': song["title"], 'album': song["album"]}]
+        return sorted_playlist

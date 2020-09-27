@@ -9,6 +9,7 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from sunflower.core.bases import Station
 
+
 # Enums
 
 class NotifyChangeStatus(Enum):
@@ -103,6 +104,14 @@ class Step(BaseModel):
     @classmethod
     def none(cls) -> "Step":
         return cls(start=0, end=0, broadcast=Broadcast.none())
+
+
+class UpdateInfo(BaseModel):
+    should_notify_update: bool
+    step: Step
+
+    def __iter__(self):
+        return self.__dict__.values().__iter__()
 
 
 class Song(BaseModel):

@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from sunflower import settings
 from sunflower.core.bases.stations import Station
-from sunflower.core.custom_types import (Broadcast, MetadataEncoder, Step, as_metadata_type)
+from sunflower.core.custom_types import (Broadcast, MetadataEncoder, Step, UpdateInfo, as_metadata_type)
 from sunflower.core.descriptors import PersistentAttribute
 from sunflower.handlers import Handler
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
@@ -204,7 +204,7 @@ class Channel:
     def schedule(self, value: List[Step]):
         return [step.dict() for step in value]
 
-    def get_current_step(self, logger: Logger, now: datetime) -> Step:
+    def get_current_step(self, logger: Logger, now: datetime) -> UpdateInfo:
         """Get metadata of current broadcasted programm for current station.
 
         Param: current_metadata: current metadata stored in Redis
@@ -220,7 +220,7 @@ class Channel:
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
         ][start >= self.current_station_end]
-        next_step = station.get_step(logger, start, self, for_schedule=True)
+        next_step = station.get_next_step(logger, start, self)
         if next_step.end == next_step.start:
             next_step.end = int(self.current_station_end.timestamp())
         while (next_step.broadcast.show_title or next_step.broadcast.title) == current_broadcast.show_title:
@@ -240,20 +240,9 @@ class Channel:
                 # cas de minuit
                 if end_dt < start_dt:
                     end_dt = end_dt + timedelta(days=1)
-                end_timestamp = int(end_dt.timestamp())
                 # on stocke dans une variable la fin provisoire des programme
-                tmp_end = start_dt
-                while tmp_end < end_dt:
-                    new_step = station_cls().get_step(logger, tmp_end, self, for_schedule=True)
-                    if new_step.end == new_step.start:
-                        new_step.end = int(end_dt.timestamp())
-                    if new_step.end > end_timestamp:
-                        new_step.end = end_timestamp
-                        if new_step.end - new_step.start < 300:
-                            break
-                    schedule.append(new_step)
-                    # on met à jour la fin provisoire
-                    tmp_end = datetime.fromtimestamp(new_step.end)
+                schedule += station_cls().get_schedule(logger, start_dt, end_dt)
+                # on met à jour la fin provisoire
         return schedule
 
     def update_stream_metadata(self, broadcast: Broadcast, logger: Logger):
@@ -281,11 +270,11 @@ class Channel:
         Else return False.
         """
         # update schedule if needed
-        if now.date() != self._schedule_day:
-            logger.info(f"channel={self.endpoint} Updating schedule...")
-            self.schedule = self.get_schedule(logger)
-            logger.info(f"channel={self.endpoint} Schedule updated!")
-            self._schedule_day = now.date()
+        # if now.date() != self._schedule_day:
+        #     logger.info(f"channel={self.endpoint} Updating schedule...")
+        #     self.schedule = self.get_schedule(logger)
+        #     logger.info(f"channel={self.endpoint} Schedule updated!")
+        #     self._schedule_day = now.date()
         # make sure current station is used by liquidsoap
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
             with suppress(ConnectionRefusedError):
@@ -311,8 +300,8 @@ class Channel:
             return
         self._last_pull = now
         # get current info and new metadata and info
-        current_step = self.get_current_step(logger, now)
-        if self.current_step.broadcast == current_step.broadcast:
+        should_notify, current_step = self.get_current_step(logger, now)
+        if not should_notify:
             return
         self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end), current_step.broadcast)
         # apply handlers if needed

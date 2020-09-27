@@ -1,12 +1,13 @@
 # This file is part of sunflower package. radio
 # bases.py contains base classes
+from abc import ABC, ABCMeta, abstractmethod
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
 from logging import Logger
 from telnetlib import Telnet
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from sunflower.core.custom_types import Broadcast, BroadcastType, StationInfo, Step, StreamMetadata
+from sunflower.core.custom_types import Broadcast, StationInfo, Step, StreamMetadata, UpdateInfo
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
@@ -15,7 +16,7 @@ STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
 
 
-class StationMeta(type):
+class StationMeta(ABCMeta):
     """Station metaclass
 
     Station are singletons. This metaclass override Station classes instantiation mechanism:
@@ -74,26 +75,14 @@ class Station(HTMLMixin, metaclass=StationMeta):
     def html_formatted_station_name(self):
         return self._format_html_anchor_element(self.station_website_url, self.name)
 
-    def _get_error_metadata(self, message, seconds):
-        """Return general mapping containing a message and ERROR type.
-        
-        Paramaters:
-        - message: error description
-        - seconds: error duration
-        """
-        return {
-            "station": self.name,
-            "type": BroadcastType.ERROR,
-            "message": message,
-            "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
-            "thumbnail_src": self.station_thumbnail,
-        }
+    @abstractmethod
+    def get_step(self, logger: Logger, dt: datetime, channel: "Channel") -> UpdateInfo:
+        """Return UpdateInfo object for broadcast starting at dt.
 
-    def get_step(self, logger: Logger, dt: datetime, channel: "Channel", for_schedule: bool = False) -> Step:
-        """Return Step object for broadcast starting at dt.
-
-        For schedule purpose: return a Step with end=start for a step during until the end of the
-        time slot.
+        UpdateInfo object contains two attributs:
+        - should_notify_update (bool): depending on this value, the Channel object will decide if it must send a server
+        push to the client.
+        - step (Step): the new Step object
 
         Parameters:
 
@@ -103,18 +92,15 @@ class Station(HTMLMixin, metaclass=StationMeta):
         - for_schedule: bool - indicates if returned step is meant to be displayed in schedule or in player
         """
 
-    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-    #     """Format metadata for displaying in the card.
-    #
-    #     Return a CardMetadata namedtuple (see sunflower.core.types).
-    #     If empty, a given key should have "" (empty string) as value, and not None.
-    #
-    #     Data in returned CardMetadata must come from metadata mapping argument.
-    #
-    #     Don't support BroadcastType.NONE and BroadcastType.WAITNIG_FOR_FOLLOWING cases
-    #     as it is done in Channel class.
-    #     """
-    
+    @abstractmethod
+    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        ...
+
+    @abstractmethod
+    def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
+        ...
+
+    @abstractmethod
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         """For sending data to liquidsoap server.
 
@@ -124,14 +110,14 @@ class Station(HTMLMixin, metaclass=StationMeta):
         By default, return None (no data is sent)
         Otherwise return a StreamMetadata object.
         """
-        return None
 
     @classmethod
+    @abstractmethod
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
 
 
-class DynamicStation(Station):
+class DynamicStation(Station, ABC):
     """Base class for internally managed stations.
     
     Must implement process() method.
@@ -141,11 +127,12 @@ class DynamicStation(Station):
     def __init_subclass__(cls):
         REVERSE_STATIONS[cls.endpoint] = cls
 
+    @abstractmethod
     def process(self, logger, channels_using, channels_using_next, now, **kwargs):
-        raise NotImplementedError("process() must be implemented")
+        ...
 
 
-class URLStation(Station):
+class URLStation(Station, ABC):
     """Base class for external stations (basically relayed stream).
     
     URLStation object must have station_url str class attribute (audio stream url).
