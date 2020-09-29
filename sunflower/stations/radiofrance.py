@@ -297,7 +297,7 @@ class RadioFranceStation(URLStation):
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         api_data = self._fetch_metadata(dt, dt+timedelta(minutes=5))
-        if error_step := self._handle_api_exception(api_data, logger, int(dt.timestamp())) is not None:
+        if (error_step := self._handle_api_exception(api_data, logger, int(dt.timestamp()))) is not None:
             return error_step
         first_show_in_grid = api_data["data"]["grid"][0]
         return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
