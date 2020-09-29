@@ -100,60 +100,108 @@ class RadioFranceStation(URLStation):
                 raise RuntimeError("No token for Radio France API found.")
         return os.getenv("TOKEN")
 
-    # def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-    #     assert metadata["type"] == BroadcastType.PROGRAMME, "Type de métadonnées non gérée : {}".format(metadata["type"])
-    #     parent_title = metadata.get("parent_title")
-    #     if metadata.get("diffusion_title") is None:
-    #         current_broadcast_title = metadata["show_title"]
-    #         current_show_title = parent_title or ""
-    #     else:
-    #         show_title = metadata["show_title"]
-    #         if parent_title is not None and show_title.lower() != parent_title.lower():
-    #             show_title += " • " + parent_title
-    #         current_broadcast_title = self._format_html_anchor_element(metadata.get("diffusion_url"), metadata["diffusion_title"])
-    #         current_show_title = self._format_html_anchor_element(metadata.get("show_url"), show_title)
-    #     return CardMetadata(
-    #         current_thumbnail=metadata["thumbnail_src"],
-    #         current_station=self.html_formatted_station_name,
-    #         current_broadcast_title=current_broadcast_title,
-    #         current_show_title=current_show_title,
-    #         current_broadcast_summary=metadata.get("diffusion_summary") or "",
-    #     )
-
     @staticmethod
     def _notifying_update_info(step):
         return UpdateInfo(should_notify_update=True, step=step)
 
-    def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
-        start = int(dt.timestamp())
-        fetched_data = self._fetch_metadata(dt, dt+timedelta(minutes=120))
-        end_if_error = start + 90
-        if "API Timeout" in fetched_data.values():
-            logger.error("API Timeout")
-            return self._notifying_update_info(Step.empty_until(start, end_if_error, self))
-        if "API rate limit exceeded" in fetched_data.values():
-            logger.error("Radio France API rate limit exceeded")
-            return self._notifying_update_info(Step.empty_until(start, end_if_error, self))
+    def _fetch_metadata(self, start: datetime, end: datetime, retry=0, current=0, raise_exc=False) -> Dict[Any, Any]:
+        """Fetch metadata from radiofrance open API."""
+        query = self._grid_template.format(
+            start=int(start.timestamp()),
+            end=int(end.timestamp()),
+            station=self._station_api_name
+        )
         try:
-            # on récupère la première émission trouvée
-            first_show_in_grid = fetched_data["data"]["grid"][0]
-            # si celle-ci est terminée et la suivante n'a pas encore démarrée
-            # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
-            # suivante
-            if first_show_in_grid["end"] < start:
-                next_show = fetched_data["data"]["grid"][1]
-                return self._notifying_update_info(Step.empty_until(start, int(next_show["start"]), self))
-            # si l'émission n'est pas encore démarrée, on RENVOIE une métaonnée neutre
-            # jusqu'au démarrage de celle-ci
-            if first_show_in_grid["start"] > dt.timestamp():
-                return self._notifying_update_info(Step.empty_until(start, int(first_show_in_grid['start']), self))
-            return self._notifying_update_info(self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=True))
-        except Exception as err:
-            logger.error(traceback.format_exc())
-            logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
-            return self._notifying_update_info(Step.empty_until(start, start+90, self))
+            rep = requests.post(
+                url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
+                json={"query": query},
+                timeout=4,
+            )
+        except requests.exceptions.Timeout:
+            if current < retry:
+                return self._fetch_metadata(start, end, retry, current + 1, raise_exc)
+            if raise_exc:
+                raise TimeoutError("Radio France API Timeout")
+            return {"message": "API Timeout"}
+        data = json.loads(rep.text)
+        return data
 
-    def _get_detailed_metadata(self, metadata: dict, parent: dict, child: dict, is_child: bool) -> dict:
+    @staticmethod
+    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime):
+        """Return current show among children and its end timestamp.
+
+        Sometimes, current timestamp is between 2 children. In this case,
+        return parent show and next child start as end.
+
+        Parameters:
+        - children: list of dict representing radiofrance steps
+        - parent: dict representing radiofrance step
+        - dt: datetime object representing asked timestamp
+
+        Return a tuple containing:
+        - dict representing a step
+        - end timestamp
+        """
+
+        dt_timestamp = dt.timestamp()
+
+        # on enlève les enfants vides (les TrackStep que l'on ne prend pas en compte)
+        children = filter(lambda x: x != {}, children)
+        # on trie dans l'ordre inverse
+        children = sorted(children, key=lambda x: x.get("start"), reverse=True)
+
+        # on initialise l'enfant suivant (par défaut le dernier)
+        next_child = children[-1]
+        # et on parcourt la liste des enfants à l'envers
+        for child in children:
+            # dans certains cas, le type de step ne nous intéresse pas
+            # et est donc vide, on passe directement au suivant
+            # (c'est le cas des TrackSteps)
+            if child.get("start") is None:
+                continue
+
+            # si le début du programme est à venir, on passe au précédent
+            if child["start"] > dt_timestamp:
+                next_child = child
+                continue
+
+            # au premier programme dont le début est avant la date courante
+            # on sait qu'on est potentiellement dans le programme courant.
+            # Il faut vérifier que l'on est encore dedans en vérifiant :
+            if child["end"] > dt_timestamp:
+                return child, int(child["end"])
+
+            # sinon, on est dans un "trou" : on utilise donc le parent
+            # et le début de l'enfant suivant. Cas particulier : si on est
+            # entre la fin du dernier enfant et la fin du parent (càd l'enfant
+            # suivant est égal à l'enfant courant), on prend la fin du parent.
+            elif next_child == child:
+                return parent, int(parent["end"])
+            else:
+                return parent, int(next_child["start"])
+        else:
+            # si on est ici, c'est que la boucle a parcouru tous les enfants
+            # sans valider child["start"] < now. Autrement dit, le premier
+            # enfant n'a pas encore commencé. On renvoie donc le parent et le
+            # début du premier enfant (stocké dans next_child) comme end
+            return parent, int(next_child.get("start")) or parent["end"]
+
+    def _handle_api_exception(self, api_data, logger, start) -> Optional[Step]:
+        """Return a step if an error in API response was detected. Else return None."""
+        end_if_error = start + 90
+        if "API Timeout" in api_data.values():
+            logger.error("API Timeout")
+            return Step.empty_until(start, end_if_error, self)
+        if "API rate limit exceeded" in api_data.values():
+            logger.error("Radio France API rate limit exceeded")
+            return Step.empty_until(start, end_if_error, self)
+        if api_data.get("data") is None:
+            logger.error("No data provided by Radio France API")
+            return Step.empty_until(start, end_if_error, self)
+        return None
+
+    @staticmethod
+    def _get_detailed_metadata(metadata: dict, parent: dict, child: dict, is_child: bool) -> dict:
         """Alter (add detailed information to) a copy of metadata and return it
 
         :param metadata: metadata to update (this method creates a copy and alter it)
@@ -201,7 +249,7 @@ class RadioFranceStation(URLStation):
         children = (api_data.get("children") or []) if child_precision else []
         broadcast, broadcast_end = (
             self._find_current_child_show(children, api_data, dt) if children
-            else api_data, int(api_data["end"])
+            else (api_data, int(api_data["end"]))
         )
         diffusion = broadcast.get("diffusion")
         if diffusion is None:
@@ -223,13 +271,39 @@ class RadioFranceStation(URLStation):
             metadata = self._get_detailed_metadata(metadata, api_data, broadcast, is_child=bool(children))
         return Step(start=start, end=broadcast_end, broadcast=Broadcast(**metadata))
 
+    def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
+        start = int(dt.timestamp())
+        fetched_data = self._fetch_metadata(dt, dt+timedelta(minutes=120))
+        if (error_step := self._handle_api_exception(fetched_data, logger, start)) is not None:
+            return self._notifying_update_info(error_step)
+        try:
+            # on récupère la première émission trouvée
+            first_show_in_grid = fetched_data["data"]["grid"][0]
+            # si celle-ci est terminée et la suivante n'a pas encore démarrée
+            # alors on RENVOIE une métadonnées neutre jusqu'au démarrage de l'émission
+            # suivante
+            if first_show_in_grid["end"] < start:
+                next_show = fetched_data["data"]["grid"][1]
+                return self._notifying_update_info(Step.empty_until(start, int(next_show["start"]), self))
+            # si l'émission n'est pas encore démarrée, on RENVOIE une métaonnée neutre
+            # jusqu'au démarrage de celle-ci
+            if first_show_in_grid["start"] > dt.timestamp():
+                return self._notifying_update_info(Step.empty_until(start, int(first_show_in_grid['start']), self))
+            return self._notifying_update_info(self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=True))
+        except Exception as err:
+            logger.error(traceback.format_exc())
+            logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
+            return self._notifying_update_info(Step.empty_until(start, start+90, self))
+
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         api_data = self._fetch_metadata(dt, dt+timedelta(minutes=5))
+        if error_step := self._handle_api_exception(api_data, logger, int(dt.timestamp())) is not None:
+            return error_step
         first_show_in_grid = api_data["data"]["grid"][0]
         return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
-        api_data = self._fetch_metadata(start, end, retry=5)
+        api_data = self._fetch_metadata(start, end, retry=5, raise_exc=True)
         temp_end, end = start, end
         steps = []
         grid = api_data["data"]["grid"]
@@ -248,85 +322,7 @@ class RadioFranceStation(URLStation):
         }[any(broadcast.show_title)]
         return StreamMetadata(title=title, artist=artist, album=album)
 
-    def _fetch_metadata(self, start: datetime, end: datetime, retry=0, current=0) -> Dict[Any, Any]:
-        """Fetch metadata from radiofrance open API."""
-        query = self._grid_template.format(
-            start=int(start.timestamp()),
-            end=int(end.timestamp()),
-            station=self._station_api_name
-        )
-        try:
-            rep = requests.post(
-                url="https://openapi.radiofrance.fr/v1/graphql?x-token={}".format(self.token),
-                json={"query": query},
-                timeout=4,
-            )
-        except requests.exceptions.Timeout:
-            if current < retry:
-                return self._fetch_metadata(start, end, retry, current+1)
-            return {"message": "API Timeout"}
-        data = json.loads(rep.text)
-        return data
-    
-    @staticmethod
-    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime):
-        """Return current show among children and its end timestamp.
 
-        Sometimes, current timestamp is between 2 children. In this case,
-        return parent show and next child start as end.
-
-        Parameters:
-        - children: list of dict representing radiofrance steps
-        - parent: dict representing radiofrance step
-        - dt: datetime object representing asked timestamp
-
-        Return a tuple containing:
-        - dict representing a step
-        - end timestamp
-        """
-        
-        dt_timestamp = dt.timestamp()
-
-        # on enlève les enfants vides (les TrackStep que l'on ne prend pas en compte)
-        children = filter(lambda x: x != {}, children)
-        # on trie dans l'ordre inverse
-        children = sorted(children, key=lambda x: x.get("start"), reverse=True)
-
-        # on initialise l'enfant suivant (par défaut le dernier)
-        next_child = children[-1]
-        # et on parcourt la liste des enfants à l'envers
-        for child in children:
-            # dans certains cas, le type de step ne nous intéresse pas
-            # et est donc vide, on passe directement au suivant
-            # (c'est le cas des TrackSteps)
-            if child.get("start") is None:
-                continue
-
-            # si le début du programme est à venir, on passe au précédent
-            if child["start"] > dt_timestamp:
-                next_child = child
-                continue
-            
-            # au premier programme dont le début est avant la date courante
-            # on sait qu'on est potentiellement dans le programme courant.
-            # Il faut vérifier que l'on est encore dedans en vérifiant :
-            if child["end"] > dt_timestamp:
-                return child, int(child["end"])
-
-            # sinon, on est dans un "trou" : on utilise donc le parent
-            # et le début de l'enfant suivant. Cas particulier : si on est
-            # entre la fin du dernier enfant et la fin du parent (càd l'enfant
-            # suivant est égal à l'enfant courant), on prend la fin du parent.
-            elif next_child == child:
-                return parent, int(parent["end"])
-            else:
-                return parent, int(next_child["start"])
-        else:
-            # si on est ici, c'est que la boucle a parcouru tous les enfants
-            # sans valider child["start"] < now. Autrement dit, le premier
-            # enfant n'a pas encore commencé. On renvoie donc le parent et le
-            # début du premier enfant (stocké dans next_child) comme end
-            return parent, int(next_child.get("start")) or parent["end"]
     
 
 class FranceInter(RadioFranceStation):
