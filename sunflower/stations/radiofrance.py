@@ -127,7 +127,7 @@ class RadioFranceStation(URLStation):
         return data
 
     @staticmethod
-    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime):
+    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime) -> Tuple[Dict, int, bool]:
         """Return current show among children and its end timestamp.
 
         Sometimes, current timestamp is between 2 children. In this case,
@@ -141,6 +141,7 @@ class RadioFranceStation(URLStation):
         Return a tuple containing:
         - dict representing a step
         - end timestamp
+        - True if the current show is child or not
         """
 
         dt_timestamp = dt.timestamp()
@@ -169,22 +170,22 @@ class RadioFranceStation(URLStation):
             # on sait qu'on est potentiellement dans le programme courant.
             # Il faut vérifier que l'on est encore dedans en vérifiant :
             if child["end"] > dt_timestamp:
-                return child, int(child["end"])
+                return child, int(child["end"]), True
 
             # sinon, on est dans un "trou" : on utilise donc le parent
             # et le début de l'enfant suivant. Cas particulier : si on est
             # entre la fin du dernier enfant et la fin du parent (càd l'enfant
             # suivant est égal à l'enfant courant), on prend la fin du parent.
             elif next_child == child:
-                return parent, int(parent["end"])
+                return parent, int(parent["end"]), False
             else:
-                return parent, int(next_child["start"])
+                return parent, int(next_child["start"]), False
         else:
             # si on est ici, c'est que la boucle a parcouru tous les enfants
             # sans valider child["start"] < now. Autrement dit, le premier
             # enfant n'a pas encore commencé. On renvoie donc le parent et le
             # début du premier enfant (stocké dans next_child) comme end
-            return parent, int(next_child.get("start")) or parent["end"]
+            return parent, int(next_child.get("start")) or parent["end"], False
 
     def _handle_api_exception(self, api_data, logger, start) -> Optional[Step]:
         """Return a step if an error in API response was detected. Else return None."""
@@ -214,7 +215,7 @@ class RadioFranceStation(URLStation):
         diffusion = child.get("diffusion") or {}
         show = diffusion.get("show") or {}
         if not is_child:
-            diffusion_summary = diffusion.get("standFirst", "")
+            diffusion_summary = diffusion.get("standFirst", "") or ""
             if len(diffusion_summary.strip()) == 1:
                 diffusion_summary = ""
             detailed_metadata.update({
@@ -225,7 +226,7 @@ class RadioFranceStation(URLStation):
             return detailed_metadata
         parent_diffusion = parent.get("diffusion") or {}
         parent_show = parent_diffusion.get("show") or {}
-        diffusion_summary = diffusion.get("standFirst", "") or parent_diffusion.get("standFirst", "")
+        diffusion_summary = diffusion.get("standFirst", "") or parent_diffusion.get("standFirst", "") or ""
         if len(diffusion_summary.strip()) == 1:
             diffusion_summary = ""
         detailed_metadata.update({
@@ -247,9 +248,9 @@ class RadioFranceStation(URLStation):
         start = int(dt.timestamp())
         metadata = {"station": self.station_info, "type": BroadcastType.PROGRAMME}
         children = (api_data.get("children") or []) if child_precision else []
-        broadcast, broadcast_end = (
-            self._find_current_child_show(children, api_data, dt) if children
-            else (api_data, int(api_data["end"]))
+        broadcast, broadcast_end, is_child = (
+            self._find_current_child_show(children, api_data, dt) if any(children)
+            else (api_data, int(api_data["end"]), False)
         )
         diffusion = broadcast.get("diffusion")
         if diffusion is None:
@@ -258,7 +259,7 @@ class RadioFranceStation(URLStation):
             thumbnail_src = self.station_thumbnail
         else:
             show = diffusion.get("show", {})
-            title = show.get("title", "") or diffusion.get("title")
+            title = diffusion.get("title") or show.get("title", "")
             show_title = show.get("title", "") if title != show.get("title", "") else ""
             podcast_link = (show.get("podcast") or {}).get("itunes")
             thumbnail_src = fetch_apple_podcast_cover(podcast_link, self.station_thumbnail)
@@ -268,7 +269,7 @@ class RadioFranceStation(URLStation):
             "thumbnail_src": thumbnail_src,
         })
         if detailed:
-            metadata = self._get_detailed_metadata(metadata, api_data, broadcast, is_child=bool(children))
+            metadata = self._get_detailed_metadata(metadata, api_data, broadcast, is_child)
         return Step(start=start, end=broadcast_end, broadcast=Broadcast(**metadata))
 
     def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
@@ -323,8 +324,6 @@ class RadioFranceStation(URLStation):
         return StreamMetadata(title=title, artist=artist, album=album)
 
 
-    
-
 class FranceInter(RadioFranceStation):
     name = "France Inter"
     station_website_url = "https://www.franceinter.fr"
@@ -342,22 +341,51 @@ class FranceInfo(RadioFranceStation):
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo-carre.svg"
     station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
 
+    WEEKEND_TIME_SLOTS = [
+        (time(6, 0, 0), "France Info la nuit"),
+        (time(10, 0, 0), "Le 6/10"),
+        (time(14, 0, 0), "Le 10/14"),
+        (time(17, 0, 0), "Le 14/17"),
+        (time(20, 0, 0), "Le 17/20"),
+        (time(21, 0, 0), "Les Informés de France Info"),
+        (time(23, 59, 59), "Le 21/minuit"),
+    ]
+
+    WEEK_TIME_SLOTS = [
+        (time(5, 0, 0), "Minuit/5h"),
+        (time(7, 0, 0), "Le 5/7"),
+        (time(9, 0, 0), "Le 7/9"),
+        (time(9, 30, 0), "Les Informés du matin"),
+        (time(12, 0, 0), "Le 9h30/Midi"),
+        (time(14, 0, 0), "Le 12/14"),
+        (time(17, 0, 0), "Le 14/17"),
+        (time(20, 0, 0), "Le 17/20"),
+        (time(21, 0, 0), "Les Informés de France Info"),
+        (time(23, 59, 59), "Le 21/Minuit"),
+    ]
+
     def _get_franceinfo_slot(self, start: datetime) -> Tuple[str, datetime]:
         start_time = start.time()
-        for end_time, title in [
-            (time(6, 0, 0), "France Info la nuit"),
-            (time(10, 0, 0), "Le 6/10"),
-            (time(14, 0, 0), "Le 10/14"),
-            (time(17, 0, 0), "Le 14/17"),
-            (time(20, 0, 0), "Le 17/20"),
-            (time(21, 0, 0), "Les Informés de France Info"),
-            (time(23, 59, 59), "Le 21/minuit"),
-        ]:
+        slots = self.WEEKEND_TIME_SLOTS if start.weekday() in (5, 6) else self.WEEK_TIME_SLOTS
+        for end_time, title in slots:
             if start_time >= end_time:
                 continue
             return title, datetime.combine(start.date(), end_time)
         else:
-            return "France Info la nuit", datetime.combine(start.date(), time(6, 0, 0)) + timedelta(days=1)
+            return slots[0][1], datetime.combine(start.date(), time(6, 0, 0)) + timedelta(days=1)
+
+    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        show_title, end_of_show = self._get_franceinfo_slot(dt)
+        return Step(
+            start=int(dt.timestamp()),
+            end=int(end_of_show.timestamp()),
+            broadcast=Broadcast(
+                title=show_title,
+                type=BroadcastType.PROGRAMME,
+                station=self.station_info,
+                thumbnail_src=self.station_thumbnail
+            )
+        )
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
         temp_end, end = start, end

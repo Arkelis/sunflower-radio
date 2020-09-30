@@ -18,14 +18,24 @@ def test_instances_unique():
                 assert inst is station_cls()
 
 
-def test_radiofrance_step():
-    now = datetime.now()
-    logger = logging.Logger("test")
-    assert FranceInter().get_step(logger, now, tournesol) is not None
-    assert FranceCulture().get_step(logger, now, tournesol) is not None
-    assert FranceInfo().get_step(logger, now, tournesol) is not None
-    assert FranceMusique().get_step(logger, now, tournesol) is not None
-    assert FranceInter().get_next_step(logger, now, tournesol) is not None
-    assert FranceCulture().get_next_step(logger, now, tournesol) is not None
-    assert FranceInfo().get_next_step(logger, now, tournesol) is not None
-    assert FranceMusique().get_next_step(logger, now, tournesol) is not None
+# def test_radiofrance_step():
+#     now = datetime.now()
+#     logger = logging.Logger("test")
+#     assert FranceInter().get_step(logger, now, tournesol) is not None
+#     assert FranceCulture().get_step(logger, now, tournesol) is not None
+#     assert FranceInfo().get_step(logger, now, tournesol) is not None
+#     assert FranceMusique().get_step(logger, now, tournesol) is not None
+#     assert FranceInter().get_next_step(logger, now, tournesol) is not None
+#     assert FranceCulture().get_next_step(logger, now, tournesol) is not None
+#     assert FranceInfo().get_next_step(logger, now, tournesol) is not None
+#     assert FranceMusique().get_next_step(logger, now, tournesol) is not None
+#
+#
+# if __name__ == '__main__':
+#     from pprint import pprint
+#     now = datetime.now()
+#     logger = logging.Logger("test")
+#     pprint(FranceInter().get_step(logger, now, tournesol))
+#     pprint(FranceInfo().get_step(logger, now, tournesol))
+#     pprint(FranceMusique().get_step(logger, now, tournesol))
+#     pprint(FranceCulture().get_step(logger, now, tournesol))
