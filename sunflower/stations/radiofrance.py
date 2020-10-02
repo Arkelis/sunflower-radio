@@ -300,8 +300,14 @@ class RadioFranceStation(URLStation):
         api_data = self._fetch_metadata(dt, dt+timedelta(minutes=5))
         if (error_step := self._handle_api_exception(api_data, logger, int(dt.timestamp()))) is not None:
             return error_step
-        first_show_in_grid = api_data["data"]["grid"][0]
-        return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
+        try:
+            first_show_in_grid = api_data["data"]["grid"][0]
+            return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
+        except Exception as err:
+            start = int(dt.timestamp())
+            logger.error(traceback.format_exc())
+            logger.error("Données récupérées avant l'exception : {}".format(api_data))
+            return Step.empty_until(start, start+90, self)
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
         api_data = self._fetch_metadata(start, end, retry=5, raise_exc=True)
@@ -374,18 +380,18 @@ class FranceInfo(RadioFranceStation):
         else:
             return slots[0][1], datetime.combine(start.date(), time(6, 0, 0)) + timedelta(days=1)
 
-    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        show_title, end_of_show = self._get_franceinfo_slot(dt)
-        return Step(
-            start=int(dt.timestamp()),
-            end=int(end_of_show.timestamp()),
-            broadcast=Broadcast(
-                title=show_title,
-                type=BroadcastType.PROGRAMME,
-                station=self.station_info,
-                thumbnail_src=self.station_thumbnail
-            )
-        )
+    # def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+    #     show_title, end_of_show = self._get_franceinfo_slot(dt)
+    #     return Step(
+    #         start=int(dt.timestamp()),
+    #         end=int(end_of_show.timestamp()),
+    #         broadcast=Broadcast(
+    #             title=show_title,
+    #             type=BroadcastType.PROGRAMME,
+    #             station=self.station_info,
+    #             thumbnail_src=self.station_thumbnail
+    #         )
+    #     )
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
         temp_end, end = start, end
