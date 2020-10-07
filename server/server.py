@@ -1,9 +1,8 @@
-import asyncio
 from enum import Enum
 from typing import List
 
-import redis
-from fastapi import FastAPI
+import aredis
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import AnyHttpUrl
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -44,7 +43,7 @@ class Channel:
 #     return RedirectResponse(request.url_for("channels_list"))
 
 
-@app.get("/channels/", tags=["Channels-related endpoints"], summary="Channels list", response_description="List of channels URLs.")
+@app.get("/channels/", tags=["Channel-related endpoints"], summary="Channels list", response_description="List of channels URLs.")
 def channels_list(request: Request):
     """Get the list of the channels: their endpoints and a link to their resource."""
     return {endpoint: request.url_for("get_channel", channel=endpoint)
@@ -62,7 +61,7 @@ def channels_list(request: Request):
     summary="Channel information",
     response_description="Channel information and related links",
     # response_model=Channel,
-    tags=["Channels-related endpoints"]
+    tags=["Channel-related endpoints"]
 )
 @get_channel_or_404
 def get_channel(channel, request: Request):
@@ -95,33 +94,38 @@ def get_channel(channel, request: Request):
 #     }
 
 
-async def updates_generator(endpoint):
-    pubsub = redis.Redis().pubsub()
-    pubsub.subscribe("sunflower:channel:" + endpoint)
+async def updates_generator(*endpoints):
+    pubsub = aredis.StrictRedis().pubsub()
+    for endpoint in endpoints:
+        await pubsub.subscribe("sunflower:channel:" + endpoint)
     while True:
-        await asyncio.sleep(4)
-        message = pubsub.get_message()
+        message = await pubsub.get_message()
         if message is None:
             continue
         redis_data = message.get("data")
-        data_to_send = {
-            str(NotifyChangeStatus.UNCHANGED.value).encode(): "unchanged",
-            str(NotifyChangeStatus.UPDATED.value).encode(): "updated"
-        }.get(redis_data)
-        if data_to_send is None:
+        if redis_data == str(NotifyChangeStatus.UNCHANGED.value).encode():
+            yield ":"
+        if redis_data != str(NotifyChangeStatus.UPDATED.value).encode():
             continue
+        redis_channel = message.get("channel").decode()
+        channel_endpoint = redis_channel.split(":")[-1]
+        data_to_send = {"channel": channel_endpoint, "status": "updated"}
         yield f"data: {data_to_send}\n\n"
 
 
-@app.get("/channels/{channel}/events/", include_in_schema=False)
-async def update_broadcast_info_stream(channel):
-    return StreamingResponse(updates_generator(channel), media_type="text/event-stream", headers={"access-control-allow-origin": "*"})
+@app.get("/events", tags=["Server-sent events"])
+async def update_broadcast_info_stream(channel: List[str] = Query(None)):
+    if channel is None:
+        channel = ['musique', 'tournesol']
+    return StreamingResponse(updates_generator(*channel),
+                             media_type="text/event-stream",
+                             headers={"access-control-allow-origin": "*"})
 
 
 @app.get(
     "/channels/{channel}/current/",
     summary="Get current broadcast",
-    tags=["Channels-related endpoints"],
+    tags=["Channel-related endpoints"],
     response_model=Step,
     response_description="Information about current broadcast"
 )
@@ -133,7 +137,7 @@ def get_current_broadcast_of(channel):
 @app.get(
     "/channels/{channel}/next/",
     summary="Get next broadcast",
-    tags=["Channels-related endpoints"],
+    tags=["Channel-related endpoints"],
     response_model=Step,
     response_description="Information about next broadcast"
 )
@@ -145,7 +149,7 @@ def get_next_broadcast_of(channel):
 @app.get(
     "/channels/{channel}/schedule/",
     summary="Get schedule of given channel",
-    tags=["Channels-related endpoints"],
+    tags=["Channel-related endpoints"],
     response_model=List[Step],
     response_description="List of steps containing start and end timestamps, and broadcasts"
 )

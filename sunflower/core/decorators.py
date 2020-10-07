@@ -1,3 +1,6 @@
+import asyncio
+import functools
+
 class classproperty(property):
     """Create a class-accessible property.
     
@@ -13,3 +16,23 @@ class classproperty(property):
     """
     def __get__(self, obj, owner):
         return self.fget(owner)
+
+
+def async_to_sync(func):
+    """Make func synchrone.
+
+    Available syntaxes
+
+    @async_to_sync
+    def f(*args, **kwargs):
+        ...
+
+    result = async_to_sync(f)(*args, **kwargs)
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if asyncio.iscoroutine(result):
+            result = asyncio.get_event_loop().run_until_complete(result)
+        return result
+    return wrapper
