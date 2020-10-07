@@ -24,7 +24,7 @@ def async_to_sync(func):
     Available syntaxes
 
     @async_to_sync
-    def f(*args, **kwargs):
+    async def f(*args, **kwargs):
         ...
 
     result = async_to_sync(f)(*args, **kwargs)
@@ -33,6 +33,6 @@ def async_to_sync(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if asyncio.iscoroutine(result):
-            result = asyncio.get_event_loop().run_until_complete(result)
+            result = asyncio.run(result)
         return result
     return wrapper

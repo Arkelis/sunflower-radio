@@ -259,7 +259,7 @@ class RTL2(URLStation, RTLGroupMixin):
         return UpdateInfo(should_notify_update=should_notify, step=step)
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        show_data = self._fetch_show_metadata(self.current_show_data.get("show_end"))
+        show_data = self._fetch_show_metadata(self.current_show_data.get("show_end") or dt)
         return self._step_from_show_data(dt, show_data)
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
