@@ -14,8 +14,8 @@ tournesol = Channel(
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
             ("00:00", "05:00", FranceCulture), # Les nuits de France Culture
-            ("06:00", "09:00", FranceInter), # Matinale
-            ("09:00", "12:00", FranceCulture), # Le Cours de l'Histoire, les chemins de la philosophie, Toute une vie
+            ("06:00", "10:00", FranceInter), # Matinale, Boomerang, l'instant M
+            ("10:00", "12:00", FranceCulture), # Les chemins de la philosophie, Culture monde
             ("12:00", "12:30", FranceInfo), # Info
             ("12:30", "13:30", FranceInter), # Carnets de campagne, Jeu des mille, Journal
             ("13:30", "18:00", FranceCulture), # Les pieds sur terre, Entendez vous l'éco, compagnie des oeuvres, la méthode scientifique, LSD (La série documentaire)
