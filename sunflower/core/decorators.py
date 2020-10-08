@@ -33,6 +33,11 @@ def async_to_sync(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if asyncio.iscoroutine(result):
-            result = asyncio.run(result)
-        return result
+            try:
+                event_loop = asyncio.get_event_loop()
+                result = event_loop.run_until_complete(result)
+            except RuntimeError:
+                result = asyncio.run(result)
+            finally:
+                return result
     return wrapper
