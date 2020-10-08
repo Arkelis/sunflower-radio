@@ -1,9 +1,11 @@
 from datetime import datetime
 from json import JSONEncoder
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, TYPE_CHECKING, Type
 
 from sunflower.core.custom_types import NotifyChangeStatus
-from sunflower.core.repositories import RedisRepository, Repository
+
+if TYPE_CHECKING:
+    from sunflower.core.repositories import Repository
 
 
 class PersistentAttribute:
@@ -46,10 +48,13 @@ class PersistentAttribute:
 
     def __init__(self, key: str = "", doc: str = "",
                  json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
-                 repository_cls: Type[Repository] = RedisRepository, expiration_delay: int = 86400,
+                 repository_cls: Type["Repository"] = None, expiration_delay: int = 86400,
                  notify_change: bool = False,
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
         super().__init__()
+        if repository_cls is None:
+            from sunflower.core.repositories import RedisRepository
+            repository_cls = RedisRepository
         self.repository = repository_cls()
         self.key = key
         self.__doc__ = doc

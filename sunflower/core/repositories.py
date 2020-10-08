@@ -5,7 +5,7 @@ from typing import Any, Optional, Type
 import aredis
 
 from sunflower import settings
-from sunflower.core.decorators import async_to_sync
+from sunflower.core.functions import run_coroutine_synchronously
 
 
 class Repository(ABC):
@@ -43,7 +43,7 @@ class RedisRepository(Repository):
         Data got from Redis is loaded from json with given object_hook.
         If no data is found, return None.
         """
-        raw_data = async_to_sync(self._redis.get)(key)
+        raw_data = run_coroutine_synchronously(self._redis.get(key))
         if raw_data is None:
             return None
         return json.loads(raw_data.decode(), object_hook=object_hook)
@@ -55,7 +55,7 @@ class RedisRepository(Repository):
         value is dumped as json with given json_encoder_cls.
         """
         json_data = json.dumps(value, cls=json_encoder_cls)
-        return async_to_sync(self._redis.set)(key, json_data, ex=expiration_delay)
+        return run_coroutine_synchronously(self._redis.set(key, json_data, ex=expiration_delay))
 
     def publish(self, channel, data):
         """publish a message to a redis channel.
@@ -69,4 +69,4 @@ class RedisRepository(Repository):
         assert channel in self.REDIS_CHANNELS, "Channel not defined in settings."
         if not isinstance(data, str):
             data = json.dumps(data)
-        async_to_sync(self._redis.publish)(self.REDIS_CHANNELS[channel], data)
+        run_coroutine_synchronously(self._redis.publish(self.REDIS_CHANNELS[channel], data))

@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import List
 
@@ -104,13 +105,14 @@ async def updates_generator(*endpoints):
             continue
         redis_data = message.get("data")
         if redis_data == str(NotifyChangeStatus.UNCHANGED.value).encode():
-            yield ":"
+            yield ":\n\n"
+            continue
         if redis_data != str(NotifyChangeStatus.UPDATED.value).encode():
             continue
         redis_channel = message.get("channel").decode()
         channel_endpoint = redis_channel.split(":")[-1]
         data_to_send = {"channel": channel_endpoint, "status": "updated"}
-        yield f"data: {data_to_send}\n\n"
+        yield f'data: {json.dumps(data_to_send)}\n\n'
 
 
 @app.get("/events", tags=["Server-sent events"])
