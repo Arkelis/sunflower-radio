@@ -223,7 +223,7 @@ class RadioFranceStation(URLStation):
         # on vérifie que les infos parents ne sont pas redondantes avec les infos enfantes
         if (
             parent_show_link == child_show_link
-            or parent_show_title.upper() == metadata.get("title", "").upper()
+            or parent_show_title.upper() in (metadata.get("title", "").upper(), metadata.get("show_title", "").upper())
         ):
             parent_show_link = ""
             parent_show_title = ""
@@ -245,7 +245,7 @@ class RadioFranceStation(URLStation):
         child_precision: bool -- if True, search current child if current broadcast contains any
         detailed: bool -- if True, return more info in step such as summary, external links, parent broadcast
         """
-        start = api_data["start"]
+        start = api_data["start"] if dt.timestamp() <= api_data["start"] else int(dt.timestamp())
         metadata = {"station": self.station_info, "type": BroadcastType.PROGRAMME}
         children = (api_data.get("children") or []) if child_precision else []
         broadcast, broadcast_end, is_child = (
