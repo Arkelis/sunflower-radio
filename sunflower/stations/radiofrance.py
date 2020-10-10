@@ -245,7 +245,7 @@ class RadioFranceStation(URLStation):
         child_precision: bool -- if True, search current child if current broadcast contains any
         detailed: bool -- if True, return more info in step such as summary, external links, parent broadcast
         """
-        start = int(dt.timestamp())
+        start = api_data["start"]
         metadata = {"station": self.station_info, "type": BroadcastType.PROGRAMME}
         children = (api_data.get("children") or []) if child_precision else []
         broadcast, broadcast_end, is_child = (
@@ -297,7 +297,7 @@ class RadioFranceStation(URLStation):
             return self._notifying_update_info(Step.empty_until(start, start+90, self))
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        api_data = self._fetch_metadata(dt, dt+timedelta(minutes=5))
+        api_data = self._fetch_metadata(dt, dt+timedelta(minutes=60))
         if (error_step := self._handle_api_exception(api_data, logger, int(dt.timestamp()))) is not None:
             return error_step
         try:
