@@ -187,17 +187,18 @@ class RTL2(URLStation, RTLGroupMixin):
         show = data[0]
         end_of_show = datetime.strptime(show["diffusion_end_date"], "%Y-%m-%d %H:%M:%S")
         end_of_show_timestamp = int(end_of_show.timestamp())
+        start_of_show = datetime.strptime(show["diffusion_start_date"], "%Y-%m-%d %H:%M:%S")
+        start_of_show_timestamp = int(start_of_show.timestamp())
         return {
             "show_title": show["title"],
             "summary": show["description"],
             "show_end": end_of_show_timestamp,
+            "show_start": start_of_show_timestamp,
         }
 
-    def _step_from_show_data(self, start: Union[datetime, int], show_data: dict):
-        if isinstance(start, datetime):
-            start = int(start.timestamp())
+    def _step_from_show_data(self, show_data: dict):
         return Step(
-            start=start,
+            start=show_data.get("show_start"),
             end=show_data.get("show_end"),
             broadcast=Broadcast(
                 title=show_data.get("show_title", self.station_slogan),
@@ -260,14 +261,14 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         show_data = self._fetch_show_metadata(self.current_show_data.get("show_end") or dt)
-        return self._step_from_show_data(dt, show_data)
+        return self._step_from_show_data(show_data)
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
         temp_end, end = int(start.timestamp()), int(end.timestamp())
         steps = []
         while temp_end <= end:
             show_data = self._fetch_show_metadata(temp_end)
-            steps.append(self._step_from_show_data(temp_end, show_data))
+            steps.append(self._step_from_show_data(show_data))
             temp_end = show_data["show_end"]
         return steps
 

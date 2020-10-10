@@ -223,8 +223,11 @@ class Channel:
         next_step = station.get_next_step(logger, start, self)
         if next_step.end == next_step.start:
             next_step.end = int(self.current_station_end.timestamp())
-        if next_step.end > (self.current_station_end.timestamp() + 300):
-            next_step = self.get_next_step(logger, self.current_station_end)
+        if (
+            next_step.end > (self.current_station_end.timestamp() + 300)\
+            and next_step.broadcast.station == self.current_station.station_info
+        ):
+            next_step = self.next_station.get_next_step(logger, self.current_station_end, self)
         return next_step
 
     def get_schedule(self, logger: Logger) -> List[Step]:
