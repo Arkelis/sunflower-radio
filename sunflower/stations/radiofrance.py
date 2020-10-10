@@ -47,11 +47,6 @@ RADIO_FRANCE_GRID_TEMPLATE = """
                         }}
                     }}
                 }}
-                ... on BlankStep {{
-                    start
-                    end
-                    title
-                }}
             }}
         }}
         ... on BlankStep {{
@@ -74,11 +69,6 @@ RADIO_FRANCE_GRID_TEMPLATE = """
                             title
                         }}
                     }}
-                }}
-                ... on BlankStep {{
-                    start
-                    end
-                    title
                 }}
             }}
         }}
@@ -147,7 +137,7 @@ class RadioFranceStation(URLStation):
         dt_timestamp = dt.timestamp()
 
         # on enlève les enfants vides (les TrackStep que l'on ne prend pas en compte)
-        children = filter(lambda x: x != {}, children)
+        children = filter(bool, children)
         # on trie dans l'ordre inverse
         children = sorted(children, key=lambda x: x.get("start"), reverse=True)
 
@@ -227,14 +217,24 @@ class RadioFranceStation(URLStation):
         parent_diffusion = parent.get("diffusion") or {}
         parent_show = parent_diffusion.get("show") or {}
         diffusion_summary = diffusion.get("standFirst", "") or parent_diffusion.get("standFirst", "") or ""
+        child_show_link = diffusion.get("url", "") or parent_diffusion.get("url", "")
+        parent_show_link = parent_show.get("url") or ""
+        parent_show_title = parent_show.get("title") or parent["title"]
+        # on vérifie que les infos parents ne sont pas redondantes avec les infos enfantes
+        if (
+            parent_show_link == child_show_link
+            or parent_show_title.upper() == metadata.get("title", "").upper()
+        ):
+            parent_show_link = ""
+            parent_show_title = ""
         if len(diffusion_summary.strip()) == 1:
             diffusion_summary = ""
         detailed_metadata.update({
             "show_link": show.get("url", ""),
             "link": diffusion.get("url", "") or parent_diffusion.get("url", ""),
             "summary": diffusion_summary.strip(),
-            "parent_show_title": parent_show.get("title") or parent["title"],
-            "parent_show_link": parent_show.get("url") or "",
+            "parent_show_title": parent_show_title,
+            "parent_show_link": parent_show_link,
         })
         return detailed_metadata
 
