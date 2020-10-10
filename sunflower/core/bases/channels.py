@@ -215,7 +215,7 @@ class Channel:
         """
         return self.current_station.get_step(logger, now, self)
 
-    def get_next_step(self, logger: Logger, start: datetime, current_broadcast: Broadcast) -> Step:
+    def get_next_step(self, logger: Logger, start: datetime) -> Step:
         station = [
             self.current_station, # current station if start > self.current_station_end == False
             self.next_station, # next station if start > self.current_station_end == True
@@ -223,8 +223,8 @@ class Channel:
         next_step = station.get_next_step(logger, start, self)
         if next_step.end == next_step.start:
             next_step.end = int(self.current_station_end.timestamp())
-        while (next_step.broadcast.show_title or next_step.broadcast.title) == current_broadcast.show_title:
-            next_step = self.get_next_step(logger, datetime.fromtimestamp(next_step.end), current_broadcast)
+        if next_step.end > (self.current_station_end.timestamp() + 300):
+            next_step = self.get_next_step(logger, self.current_station_end)
         return next_step
 
     def get_schedule(self, logger: Logger) -> List[Step]:
@@ -303,7 +303,7 @@ class Channel:
         should_notify, current_step = self.get_current_step(logger, now)
         if not should_notify:
             return
-        self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end), current_step.broadcast)
+        self.next_step = self.get_next_step(logger, datetime.fromtimestamp(current_step.end))
         # apply handlers if needed
         for handler in self.handlers:
             current_step = handler.process(current_step, logger, now)
