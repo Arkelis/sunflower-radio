@@ -48,14 +48,13 @@ class RedisRepository(Repository):
             return None
         return json.loads(raw_data.decode(), object_hook=object_hook)
 
-    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None,
-                expiration_delay: int = 86400):
+    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
         """Set new value for given key in Redis.
 
         value is dumped as json with given json_encoder_cls.
         """
         json_data = json.dumps(value, cls=json_encoder_cls)
-        return run_coroutine_synchronously(self._redis.set(key, json_data, ex=expiration_delay))
+        return run_coroutine_synchronously(self._redis.set(key, json_data))
 
     def publish(self, channel, data):
         """publish a message to a redis channel.

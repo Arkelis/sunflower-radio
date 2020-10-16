@@ -18,7 +18,7 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
     endpoint = "pycolore"
 
-    public_playlist = PersistentAttribute("playlist", expiration_delay=172800)
+    public_playlist = PersistentAttribute("playlist")
 
     @public_playlist.pre_set_hook
     def public_playlist(self, songs: List[Song]):
