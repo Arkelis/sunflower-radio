@@ -1,7 +1,7 @@
 # This file is part of sunflower package. radio
 # This module contains core functions.
 import asyncio
-from collections import Coroutine
+from collections.abc import Coroutine
 
 from sunflower.core.descriptors import PersistentAttribute
 

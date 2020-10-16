@@ -1,7 +1,3 @@
-import logging
-from datetime import datetime
-
-from sunflower.channels import tournesol
 from sunflower.core.bases import STATIONS_INSTANCES
 from sunflower.stations import (FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2)
 
@@ -16,26 +12,3 @@ def test_instances_unique():
         for station_cls in (RTL2, FranceInfo, FranceInter, FranceMusique, FranceCulture, PycolorePlaylistStation):
             if cls == station_cls:
                 assert inst is station_cls()
-
-
-# def test_radiofrance_step():
-#     now = datetime.now()
-#     logger = logging.Logger("test")
-#     assert FranceInter().get_step(logger, now, tournesol) is not None
-#     assert FranceCulture().get_step(logger, now, tournesol) is not None
-#     assert FranceInfo().get_step(logger, now, tournesol) is not None
-#     assert FranceMusique().get_step(logger, now, tournesol) is not None
-#     assert FranceInter().get_next_step(logger, now, tournesol) is not None
-#     assert FranceCulture().get_next_step(logger, now, tournesol) is not None
-#     assert FranceInfo().get_next_step(logger, now, tournesol) is not None
-#     assert FranceMusique().get_next_step(logger, now, tournesol) is not None
-#
-#
-# if __name__ == '__main__':
-#     from pprint import pprint
-#     now = datetime.now()
-#     logger = logging.Logger("test")
-#     pprint(FranceInter().get_step(logger, now, tournesol))
-#     pprint(FranceInfo().get_step(logger, now, tournesol))
-#     pprint(FranceMusique().get_step(logger, now, tournesol))
-#     pprint(FranceCulture().get_step(logger, now, tournesol))

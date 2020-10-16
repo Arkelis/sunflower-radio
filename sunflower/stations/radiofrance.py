@@ -117,7 +117,7 @@ class RadioFranceStation(URLStation):
         return data
 
     @staticmethod
-    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], dt: datetime) -> Tuple[Dict, int, bool]:
+    def _find_current_child_show(children: List[Any], parent: Dict[str, Any], start: int) -> Tuple[Dict, int, bool]:
         """Return current show among children and its end timestamp.
 
         Sometimes, current timestamp is between 2 children. In this case,
@@ -126,7 +126,7 @@ class RadioFranceStation(URLStation):
         Parameters:
         - children: list of dict representing radiofrance steps
         - parent: dict representing radiofrance step
-        - dt: datetime object representing asked timestamp
+        - start: datetime object representing asked timestamp
 
         Return a tuple containing:
         - dict representing a step
@@ -134,15 +134,13 @@ class RadioFranceStation(URLStation):
         - True if the current show is child or not
         """
 
-        dt_timestamp = dt.timestamp()
-
         # on enlève les enfants vides (les TrackStep que l'on ne prend pas en compte)
         children = filter(bool, children)
         # on trie dans l'ordre inverse
         children = sorted(children, key=lambda x: x.get("start"), reverse=True)
 
         # on initialise l'enfant suivant (par défaut le dernier)
-        next_child = children[-1]
+        next_child = children[0]
         # et on parcourt la liste des enfants à l'envers
         for child in children:
             # dans certains cas, le type de step ne nous intéresse pas
@@ -152,14 +150,14 @@ class RadioFranceStation(URLStation):
                 continue
 
             # si le début du programme est à venir, on passe au précédent
-            if child["start"] > dt_timestamp:
+            if child["start"] > start:
                 next_child = child
                 continue
 
             # au premier programme dont le début est avant la date courante
             # on sait qu'on est potentiellement dans le programme courant.
             # Il faut vérifier que l'on est encore dedans en vérifiant :
-            if child["end"] > dt_timestamp:
+            if child["end"] > start:
                 return child, int(child["end"]), True
 
             # sinon, on est dans un "trou" : on utilise donc le parent
@@ -245,11 +243,11 @@ class RadioFranceStation(URLStation):
         child_precision: bool -- if True, search current child if current broadcast contains any
         detailed: bool -- if True, return more info in step such as summary, external links, parent broadcast
         """
-        start = api_data["start"] if dt.timestamp() <= api_data["start"] else int(dt.timestamp())
+        start = max(int(api_data["start"]), int(dt.timestamp()))
         metadata = {"station": self.station_info, "type": BroadcastType.PROGRAMME}
         children = (api_data.get("children") or []) if child_precision else []
         broadcast, broadcast_end, is_child = (
-            self._find_current_child_show(children, api_data, dt) if any(children)
+            self._find_current_child_show(children, api_data, start) if any(children)
             else (api_data, int(api_data["end"]), False)
         )
         diffusion = broadcast.get("diffusion")
