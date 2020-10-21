@@ -114,6 +114,8 @@ class PycolorePlaylistStation(DynamicStation):
         ))
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        if self == channel.current_station:
+            return Step.none()
         return Step(
             start=int(dt.timestamp()),
             end=int(dt.timestamp()),
