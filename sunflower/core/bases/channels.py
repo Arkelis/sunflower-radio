@@ -227,7 +227,7 @@ class Channel:
         next_step = station.get_next_step(logger, start, self)
         if next_step.end == next_step.start:
             next_step.end = int(self.current_station_end.timestamp())
-        if (next_step == Step.none()) or (
+        if (next_step.is_none()) or (
             next_step.end > (self.current_station_end.timestamp() + 300)
             and next_step.broadcast.station == self.current_station.station_info
         ):

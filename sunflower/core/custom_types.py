@@ -105,6 +105,9 @@ class Step(BaseModel):
     def none(cls) -> "Step":
         return cls(start=0, end=0, broadcast=Broadcast.none())
 
+    def is_none(self):
+        return self.broadcast == Broadcast.none()
+
 
 class UpdateInfo(BaseModel):
     should_notify_update: bool

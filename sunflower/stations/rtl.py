@@ -177,7 +177,9 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def _fetch_show_metadata(self, dt: Union[datetime, int]):
         if isinstance(dt, int): # convert dt to datetime object if a timestamp is given
-            dt = datetime.fromtimestamp(dt)
+            dt_timestamp, dt = dt, datetime.fromtimestamp(dt)
+        else:
+            dt_timestamp = int(dt.timestamp())
         start_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
         end_str = (dt + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
         req = requests.get(self._show_grid_url.format(start_str, end_str))
@@ -193,7 +195,7 @@ class RTL2(URLStation, RTLGroupMixin):
             "show_title": show["title"],
             "summary": show["description"],
             "show_end": end_of_show_timestamp,
-            "show_start": start_of_show_timestamp,
+            "show_start": max(start_of_show_timestamp, dt_timestamp),
         }
 
     def _step_from_show_data(self, show_data: dict):
