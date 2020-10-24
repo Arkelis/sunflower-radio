@@ -106,7 +106,7 @@ class PycolorePlaylistStation(DynamicStation):
                 thumbnail_src=thumbnail_src,
                 station=self.station_info,
                 type=BroadcastType.MUSIC,
-                show_link="/pycolore/playlist",
+                show_link="https://beta.radio.pycolore.fr/pages/playlist-pycolore",
                 show_title="La playlist Pycolore",
                 summary=(f"Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : "
                          f"{artists_str}."),
