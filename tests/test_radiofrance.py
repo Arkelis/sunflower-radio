@@ -338,7 +338,7 @@ def test_basic_radiofrance_diffusion_step():
         broadcast=Broadcast(title="Gaël Perdriau - Aurélien Rousseau",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             show_title="Le 7/9",)
     )
     assert parsed_step == expected_step
@@ -362,7 +362,7 @@ def test_detailed_radiofrance_diffusion_step_without_child_precision():
                             summary="Gaël Perdriau, maire LR de Saint-Etienne, et Aurélien Rousseau, directeur général de l'Agence régional de santéd'Île-de-France, sont les invités du 7/9 de France Inter.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
                             show_link="https://www.franceinter.fr/emissions/le-7-9")
@@ -388,7 +388,7 @@ def test_detailed_radiofrance_diffusion_step_beore_first_child():
                             summary="Gaël Perdriau, maire LR de Saint-Etienne, et Aurélien Rousseau, directeur général de l'Agence régional de santéd'Île-de-France, sont les invités du 7/9 de France Inter.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
                             show_link="https://www.franceinter.fr/emissions/le-7-9")
@@ -414,7 +414,7 @@ def test_detailed_radiofrance_diffusion_step_first_child():
                             summary="Le chef de l'Etat a annoncé hier soir l'instauration d'un couvre feu en Ile de France et dans 8 métropoles à partir de samedi et pour 6 semaines. Emmanuel Macron en appelle à la responsabilité de chacun pour lutter contre l'épidémie qui a fait plus de 33 000 morts.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/fc/74/e8/fc74e883-1a69-3b9d-70f4-43e185f57db6/mza_6895079223603784045.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/fc/74/e8/fc74e883-1a69-3b9d-70f4-43e185f57db6/mza_6895079223603784045.jpg/626x0w.webp",
                             link="https://www.franceinter.fr/emissions/journal-de-7h/journal-de-7h-15-octobre-2020",
                             show_title="Journal de 7h",
                             show_link="https://www.franceinter.fr/emissions/le-journal-de-7h",
@@ -442,7 +442,7 @@ def test_detailed_radiofrance_diffusion_step_between_first_and_second_child():
                             summary="Gaël Perdriau, maire LR de Saint-Etienne, et Aurélien Rousseau, directeur général de l'Agence régional de santéd'Île-de-France, sont les invités du 7/9 de France Inter.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
                             show_link="https://www.franceinter.fr/emissions/le-7-9")
@@ -468,7 +468,7 @@ def test_detailed_radiofrance_diffusion_step_second_child():
                             summary="Le thème, et l’anathème, de \"l’américanisation\" de la France sont anciens. Autrefois on parlait de \"coca-colonisation\" des modes de vie.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/9f/7c/81/9f7c81de-7d7d-6d54-27a2-c0e52509cb43/mza_3524174555840859685.jpg/626x0w.jpg",                            link="https://www.franceinter.fr/emissions/les-80-de/les-80-de-15-octobre-2020",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/9f/7c/81/9f7c81de-7d7d-6d54-27a2-c0e52509cb43/mza_3524174555840859685.jpg/626x0w.webp",                            link="https://www.franceinter.fr/emissions/les-80-de/les-80-de-15-octobre-2020",
                             show_title="Les 80\" de...",
                             show_link="https://www.franceinter.fr/emissions/les-80-de-nicolas-demorand",
                             parent_show_title="Le 7/9",
@@ -495,7 +495,7 @@ def test_detailed_radiofrance_diffusion_step_after_last_child():
                             summary="Gaël Perdriau, maire LR de Saint-Etienne, et Aurélien Rousseau, directeur général de l'Agence régional de santéd'Île-de-France, sont les invités du 7/9 de France Inter.",
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.jpg",
+                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
                             show_link="https://www.franceinter.fr/emissions/le-7-9")
