@@ -1,8 +1,11 @@
+from datetime import datetime
 from json import JSONEncoder
-from typing import Callable, Type
+from typing import Callable, TYPE_CHECKING, Type
 
 from sunflower.core.custom_types import NotifyChangeStatus
-from sunflower.core.repositories import RedisRepository, Repository
+
+if TYPE_CHECKING:
+    from sunflower.core.repositories import Repository
 
 
 class PersistentAttribute:
@@ -45,16 +48,17 @@ class PersistentAttribute:
 
     def __init__(self, key: str = "", doc: str = "",
                  json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
-                 repository_cls: Type[Repository] = RedisRepository, expiration_delay: int = None,
-                 notify_change: bool = False,
+                 repository_cls: Type["Repository"] = None, notify_change: bool = False,
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
         super().__init__()
+        if repository_cls is None:
+            from sunflower.core.repositories import RedisRepository
+            repository_cls = RedisRepository
         self.repository = repository_cls()
         self.key = key
         self.__doc__ = doc
         self.json_encoder_cls = json_encoder_cls
         self.object_hook = object_hook
-        self.expiration_delay = expiration_delay
         self.notify_change = notify_change
         self.pre_set_hook_func = pre_set_hook
         self.post_get_hook_func = post_get_hook
@@ -78,19 +82,19 @@ class PersistentAttribute:
         data = self.pre_set_hook_func(obj, value) must be serializable.
         if value is None, notify unchanged or do nothing.
         """
+        now = datetime.now().timestamp()
         data = self.pre_set_hook_func(obj, value) if value is not None else value
         if self._cache == data or data is None:
             if self.notify_change:
                 self.repository.publish(obj.endpoint, NotifyChangeStatus.UNCHANGED.value)
             return
-        self.repository.persist(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", data, self.json_encoder_cls, self.expiration_delay)
+        self.repository.persist(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", data, self.json_encoder_cls)
         self._cache = data
         if self.notify_change:
             self.repository.publish(obj.endpoint, NotifyChangeStatus.UPDATED.value)
 
     def __delete__(self, obj):
-        raise AttributeError(f"Can't delete attribute 'f{self.name}'. " 
-                             f"It expires {self.expiration_delay} seconds after its last assignment.")
+        raise AttributeError(f"Can't delete attribute 'f{self.name}'.")
 
     def pre_set_hook(self, pre_set_hook_func):
         """Method for adding pre_set_hook_func() with a decorator.
@@ -107,7 +111,7 @@ class PersistentAttribute:
         ```
         """
         return type(self)(
-            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository), self.expiration_delay,
+            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository),
             self.notify_change, pre_set_hook_func, self.post_get_hook_func
         )
     
@@ -126,6 +130,6 @@ class PersistentAttribute:
         ```
         """
         return type(self)(
-            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository), self.expiration_delay,
+            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository),
             self.notify_change, self.pre_set_hook_func, post_get_hook_func
         )

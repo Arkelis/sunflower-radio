@@ -1,20 +1,22 @@
 # This file is part of sunflower package. radio
 # bases.py contains base classes
-
-from datetime import datetime, timedelta
+from abc import ABC, ABCMeta, abstractmethod
+from contextlib import suppress
+from datetime import datetime
 from logging import Logger
-from typing import Dict, Optional
+from telnetlib import Telnet
+from typing import Dict, List, Optional
 
-from sunflower.core.custom_types import CardMetadata, MetadataDict, MetadataType, StreamMetadata
+from sunflower.core.custom_types import Broadcast, StationInfo, Step, StreamMetadata, UpdateInfo
 from sunflower.core.decorators import classproperty
-from sunflower.core.liquidsoap import open_telnet_session
-from sunflower.core.mixins import HTMLMixin, ProvideViewMixin
+from sunflower.core.mixins import HTMLMixin
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
 
 
-class StationMeta(type):
+class StationMeta(ABCMeta):
     """Station metaclass
 
     Station are singletons. This metaclass override Station classes instantiation mechanism:
@@ -41,10 +43,22 @@ class Station(HTMLMixin, metaclass=StationMeta):
     """
 
     data_type = "station"
-    station_name: str = ""
+    name: str = ""
     station_thumbnail: str = ""
     station_website_url: str = ""
     station_slogan: str = ""
+
+    # By default, station data is retrieved when current broadcast/step is ended. Sometimes, station external API is not
+    # very reliable, and long pull is needed (regular retrieval instead of strategic pull). In this case, turn this
+    # attribute True in child class.
+    long_pull = False
+
+    @property
+    def station_info(self):
+        info = StationInfo(name=self.name)
+        if self.station_website_url:
+            info.website = self.station_website_url
+        return info
 
     @classproperty
     def formatted_station_name(cls) -> str:
@@ -55,57 +69,39 @@ class Station(HTMLMixin, metaclass=StationMeta):
 
         The parameter `cls` refers to the class and not to the instance.
         """
-        return cls.station_name.lower().replace(" ", "")
+        return cls.name.lower().replace(" ", "")
 
     @property
     def html_formatted_station_name(self):
-        return self._format_html_anchor_element(self.station_website_url, self.station_name)
+        return self._format_html_anchor_element(self.station_website_url, self.name)
 
-    def _get_error_metadata(self, message, seconds):
-        """Return general mapping containing a message and ERROR type.
-        
-        Paramaters:
-        - message: error description
-        - seconds: error duration
-        """
-        return {
-            "station": self.station_name,
-            "type": MetadataType.ERROR,
-            "message": message,
-            "end": int((datetime.now() + timedelta(seconds=seconds)).timestamp()),
-            "thumbnail_src": self.station_thumbnail,
-        }
+    @abstractmethod
+    def get_step(self, logger: Logger, dt: datetime, channel: "Channel") -> UpdateInfo:
+        """Return UpdateInfo object for broadcast starting at dt.
 
-    def get_metadata(self, current_metadata: MetadataDict, logger: Logger, dt: datetime):
-        """Return mapping containing new metadata about current broadcast.
-        
-        current_metadata is metadata stored in Redis and known by
-        Channel object. This method can use currant_metadata provided
-        by channel for partial updates. 
+        UpdateInfo object contains two attributs:
+        - should_notify_update (bool): depending on this value, the Channel object will decide if it must send a server
+        push to the client.
+        - step (Step): the new Step object
 
-        Returned data is data meant to be exposed as json and used by format_info() method.
-        
-        Mandatory fields in returned mapping:
-        - type: element of MetadataType enum (see sunflower.core.types module);
-        - end: timestamp (int) telling Channel object when to call this method for updating
-        metadata;
-        
-        and other metadata fields required by format_info().
+        Parameters:
+
+        - logger: Logger - for logging and debug purpose
+        - dt: datetime which should be the beginning of broadcast
+        - channel: Channel object calling this method, it can contains useful information
+        - for_schedule: bool - indicates if returned step is meant to be displayed in schedule or in player
         """
 
-    def format_info(self, current_info: CardMetadata, metadata: MetadataDict, logger: Logger) -> CardMetadata:
-        """Format metadata for displaying in the card.
+    @abstractmethod
+    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        ...
 
-        Return a CardMetadata namedtuple (see sunflower.core.types).
-        If empty, a given key should have "" (empty string) as value, and not None.
+    @abstractmethod
+    def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
+        ...
 
-        Data in returned CardMetadata must come from metadata mapping argument.
-
-        Don't support MetadataType.NONE and MetadataType.WAITNIG_FOR_FOLLOWING cases
-        as it is done in Channel class.
-        """
-    
-    def format_stream_metadata(self, metadata) -> Optional[StreamMetadata]:
+    @abstractmethod
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         """For sending data to liquidsoap server.
 
         These metadata will be attached to stream file and can be readen by
@@ -114,14 +110,14 @@ class Station(HTMLMixin, metaclass=StationMeta):
         By default, return None (no data is sent)
         Otherwise return a StreamMetadata object.
         """
-        return None
 
     @classmethod
+    @abstractmethod
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
 
 
-class DynamicStation(Station, ProvideViewMixin):
+class DynamicStation(Station, ABC):
     """Base class for internally managed stations.
     
     Must implement process() method.
@@ -131,11 +127,12 @@ class DynamicStation(Station, ProvideViewMixin):
     def __init_subclass__(cls):
         REVERSE_STATIONS[cls.endpoint] = cls
 
-    def process(self, logger, channels_using, now, **kwargs):
-        raise NotImplementedError("process() must be implemented")
+    @abstractmethod
+    def process(self, logger, channels_using, channels_using_next, now, **kwargs):
+        ...
 
 
-class URLStation(Station):
+class URLStation(Station, ABC):
     """Base class for external stations (basically relayed stream).
     
     URLStation object must have station_url str class attribute (audio stream url).
@@ -162,12 +159,14 @@ class URLStation(Station):
                 f'"{cls.station_url}")))\n')
 
     def start_liquidsoap_source(self):
-        with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.start\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.start\n".encode())
 
     def stop_liquidsoap_source(self):
-        with open_telnet_session() as session:
-            session.write(f"{self.formatted_station_name}.stop\n".encode())
+        with suppress(ConnectionRefusedError):
+            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+                session.write(f"{self.formatted_station_name}.stop\n".encode())
 
     def process(self, logger, channels_using, channels_using_next, **kwargs):
         if any(channels_using_next[self]) or any(channels_using[self]):

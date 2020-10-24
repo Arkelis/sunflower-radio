@@ -1,37 +1,123 @@
 # This file is part of sunflower package. radio
 
 import json
-from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Tuple, Union
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
-from sunflower.core.repositories import RedisRepository
+from pydantic import BaseModel
 
-# Types
+if TYPE_CHECKING:
+    from sunflower.core.bases import Station
 
-ChannelView = StationView = namedtuple("ViewObject", ["data_type", "endpoint"])
 
+# Enums
 
 class NotifyChangeStatus(Enum):
     UNCHANGED = 0
     UPDATED = 1
 
 
-class MetadataType(Enum):
+class BroadcastType(Enum):
     MUSIC = "Track"
     PROGRAMME = "Programme"
     NONE = ""
     ADS = "Ads"
     ERROR = "Error"
-    WAITING_FOR_FOLLOWING = "Transition"
+    WAITING_FOR_NEXT = "Transition"
 
 
-MetadataDict = Dict[str, Union[str, int, MetadataType]]
+# Dataclasses
+
+class StationInfo(BaseModel):
+    name: str
+    website: Optional[str] = ""
 
 
-# Custom named tuples
+class Broadcast(BaseModel):
+    title: str
+    type: BroadcastType
+    station: StationInfo
+    thumbnail_src: str
+    link: Optional[str] = ""
+    show_title: Optional[str] = ""
+    show_link: Optional[str] = ""
+    summary: Optional[str] = ""
+    parent_show_title: Optional[str] = ""
+    parent_show_link: Optional[str] = ""
 
-class Song(NamedTuple):
+    @classmethod
+    def waiting_for_next(cls, station: "Station", next_station_name: str) -> "Broadcast":
+        """Factory method for broadcast just waiting for next station"""
+        return cls(
+            title=f"Dans un instant : {next_station_name}.",
+            type=BroadcastType.WAITING_FOR_NEXT,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail,
+        )
+
+    @classmethod
+    def ads(cls, station) -> "Broadcast":
+        return cls(
+            title=f"Publicité",
+            type=BroadcastType.ADS,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail,
+        )
+
+    @classmethod
+    def empty(cls, station) -> "Broadcast":
+        return cls(
+            title=station.station_slogan,
+            type=BroadcastType.NONE,
+            station=station.station_info,
+            thumbnail_src=station.station_thumbnail
+        )
+
+    @classmethod
+    def none(cls) -> "Broadcast":
+        return cls(title="", type=BroadcastType.NONE, station=StationInfo(name=""), thumbnail_src="")
+
+
+class Step(BaseModel):
+    start: int
+    end: int
+    broadcast: Broadcast
+
+    @classmethod
+    def waiting_for_next_station(cls, start: int, end: int, station: "Station", next_station_name: str) -> "Step":
+        """Generic step indicating next station."""
+        return cls(start=start, end=end, broadcast=Broadcast.waiting_for_next(station, next_station_name))
+
+    @classmethod
+    def ads(cls, start: int, station: "Station") -> "Step":
+        """Generic ads step."""
+        return cls(start=start, end=0, broadcast=Broadcast.ads(station))
+
+    @classmethod
+    def empty(cls, start: int, station: "Station") -> "Step":
+        return cls(start=start, end=0, broadcast=Broadcast.empty(station))
+
+    @classmethod
+    def empty_until(cls, start: int, end: int, station: "Station") -> "Step":
+        return cls(start=start, end=end, broadcast=Broadcast.empty(station))
+
+    @classmethod
+    def none(cls) -> "Step":
+        return cls(start=0, end=0, broadcast=Broadcast.none())
+
+    def is_none(self):
+        return self.broadcast == Broadcast.none()
+
+
+class UpdateInfo(BaseModel):
+    should_notify_update: bool
+    step: Step
+
+    def __iter__(self):
+        return self.__dict__.values().__iter__()
+
+
+class Song(BaseModel):
     path: str
     artist: str
     album: str
@@ -39,62 +125,29 @@ class Song(NamedTuple):
     length: float
 
 
-class CardMetadata(NamedTuple):
-    current_thumbnail: str
-    current_station: str
-    current_broadcast_title: str
-    current_show_title: str
-    current_broadcast_summary: str
-
-
-class StreamMetadata(NamedTuple):
+class StreamMetadata(BaseModel):
     title: str
     artist: str
     album: str = ""
 
 
-# Views objects (not in web meaning but more in dict_view meaning)
-
-class BaseView(RedisRepository):
-    """Object referencing Redis-stored data of an object of given type.
-    
-    All or almost all attributes are fetched dynamically with calls to
-    Redis database. Views are used by the server for getting stored data
-    of Channel and Station objects without having to deal with these big
-    objects. Instead, it uses these view objects which are only exposing
-    Redis-stored data.
-    """
-    __slots__ = ()
-    fields: Tuple[str, ...] = ()
-
-    def __getattr__(self, name):
-        raise AttributeError(
-            f"'{name}' attribute is not readable. "
-            "Only following attributes are readable: " + ", ".join(self.fields) + "."
-        )
-    
-    def __repr__(self):
-        attrs = ", ".join(f"{name}={getattr(self, name)}" for name in self.__slots__ + self.fields)
-        return f"<{type(self).__name__}({attrs})>"
-
-
-# MetadataType utils for json (de)serialization
+# BroadcastType utils for json (de)serialization
 
 class MetadataEncoder(json.JSONEncoder):
-    """Subclass of json.JSONEncoder supporting MetadataType serialization."""
+    """Subclass of json.JSONEncoder supporting BroadcastType serialization."""
     def default(self, obj):
-        if isinstance(obj, MetadataType):
+        if isinstance(obj, BroadcastType):
             return obj.value
         return json.JSONEncoder.default(self, obj)
 
 
 def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
-    """object_hook for supporting MetadataType at json deserialization."""
+    """object_hook for supporting BroadcastType at json deserialization."""
     type_ = mapping.get("type")
     if type_ is None:
         return mapping
-    for member in MetadataType:
+    for member in BroadcastType:
         if type_ == member.value:
-            mapping["type"] = MetadataType(type_)
+            mapping["type"] = BroadcastType(type_)
             break
     return mapping

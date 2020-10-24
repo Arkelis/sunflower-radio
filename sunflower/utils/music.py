@@ -46,11 +46,11 @@ def parse_songs(glob_pattern: str) -> List[Song]:
         file = mutagen.File(path)
         try:
             songs.append(Song(
-                path,
-                file.get("artist", [None])[0],
-                file.get("album", [None])[0],
-                file.get("title", [None])[0],
-                file.info.length,
+                path=path,
+                artist=file.get("artist", [""])[0],
+                album=file.get("album", [""])[0],
+                title=file.get("title", [""])[0],
+                length=file.info.length,
             ))
         except KeyError as err:
             raise KeyError("Song file {} must have an artist and a title in metadata.".format(path)) from err
@@ -133,12 +133,12 @@ def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, t
     return data or (backup_cover, "")
 
 
-def fetch_apple_podcast_cover(podcast_link: str, fallback: str):
+def fetch_apple_podcast_cover(podcast_link: str, fallback: str) -> str:
     """Scrap cover url from provided Apple Podcast link."""
     if not podcast_link:
         return fallback
     req = requests.get(podcast_link)
     bs = BeautifulSoup(req.content.decode(), "html.parser")
     sources = bs.find_all("source")
-    cover_url = sources[0].attrs["srcset"].split(",")[1].replace(" 2x", "")
-    return cover_url
+    cover_url: str = sources[0].attrs["srcset"].split(",")[1].replace("2x", "")
+    return cover_url.strip()

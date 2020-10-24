@@ -1,6 +1,11 @@
+<p align="center">
+   <img src="https://www.pycolore.fr/assets/img/sunflower-logo-min.png" alt="Logo" width=200 height=200>
+</p>
+
+
 # Radio Tournesol
 
-[![Python 3.8](https://img.shields.io/badge/Python-3.8-blue)](https://python.org) [![Tests](https://github.com/Arkelis/sunflower-radio/workflows/Tests/badge.svg?branch=master)](https://github.com/Arkelis/sunflower-radio/actions?query=workflow%3ATests)
+[![Python 3.8](https://img.shields.io/badge/Python-3.8-blue)](https://python.org) [![Tests](https://github.com/Arkelis/sunflower-radio/workflows/Tests/badge.svg?branch=devel)](https://github.com/Arkelis/sunflower-radio/actions?query=workflow%3ATests)
 
 ## Principe
 
@@ -80,37 +85,45 @@ Dans cet exemple, `tournesol` fait appel à un `Handler`, une classe qui altère
 
 #### Station
 
-Une station représente une station diffusée sur une plage horaire. Elle doit implémenter trois méthodes  pour alimenter la radio et le serveur Flask.
+Une station représente une station diffusée sur une plage horaire. Elle doit implémenter quatre méthodes pour alimenter la radio et l'API.
 
-* `get_metadata()` : cette méthode va chercher les informations sur le programme en cours de diffusion. Par exemple
+* `get_step()` : cette méthode va chercher les informations sur le programme en cours de diffusion. Par exemple
   , pour une station telle que France Inter, elle va utiliser l'API de Radio France.
+* `get_next_step()` : idem, mais pour le programme suivant.
+* `get_schedule()` : renvoie une liste de programme pour une plage de temps donnée.
 * `format_stream_metadata()` : cette méthode formate des métadonnées pour les envoyer à l'encodeur qui va les inclure
   dans le flux audio. Elles sont lues par les lecteurs audio.
-* `format_info()` : cette méthode formate les données pour les afficher dans le client de lecture.
 
 ### Client de lecture
 
 Si l'on peut écouter la radio simplement à partir du flux généré par Liquidsoap, `sunflower-radio` possède également
-un client de lecture, une application web [Flask](https://flask.palletsprojects.com/en/1.1.x/) qui met à disposition
-une page avec un lecteur, et une API exposant des données.
+un client de lecture Vue qui consomme une API développée avec FastAPI.
 
-## Installation
+## Contribuer
 
-Il faut avoir [poetry](https://github.com/sdispater/poetry) installé sur le système. Puis :
+Vous pouvez cloner le projet pour le tester ou proposer des modifications:
+
+```
+$ git clone https://github.com/Arkelis/sunflower-radio
+```
+
+### Installation des dépendances
+
+Le projet utilise [poetry](https://github.com/sdispater/poetry) pour gérer ses dépendances.
 
 ```
 $ poetry install 
 ```
 
 
-## Configuration
+### Configuration
 
 Le fichier `settings.py` contient trois éléments :
-- l'url du serveur icecast
+- l'url du serveur icecast ;
 - le chemin vers le dossier contenant les musiques à jouer en cas de pub ;
-- les noms des chaînes créées dans `channels.py`
+- les noms des chaînes créées dans `channels.py`.
 
-## Lancer la radio pour la première fois
+### Lancer la radio pour la première fois
 
 Dépendances :
 
@@ -126,13 +139,14 @@ $ poetry run python manage.py generate-liquidsoap-config
 Cela crée un fichier `sunflower.liq` dans le répertoire actuel. Puis on lance Liquidsoap, en mode démon. Enfin, il ne
  reste plus qu'à lancer le planificateur :
 
+### Lancer le serveur
+
+Avec poetry ou simplement dans l'environnement virtuel:
+
 ```
 $ poetry run python manage.py start scheduler
-$ poetry run flask run
+$ poetry run uvicorn server:server
 ```
-
-- Aller à `localhost:8080` pour accéder au client de lecture.
-- Aller à `localhost:8080/api` pour accéder aux données exposées en JSON.
 
 ### Service Liquidsoap
 
@@ -155,11 +169,13 @@ ExecStart=<chemin vers liquidsoap> <chemin vers le fichier de config>
 Dans `settings.py`, on peut renseigner le nom du service dans la variable `LIQUIDSOAP_SERVICE`.
 
 ## Feuille de route
+
+Voir les [milestones](https://github.com/Arkelis/sunflower-radio/milestones).
  
 - [x] Mise à jour des champs en temps réel
-- [ ] Jingles horaires et de transition
+- [ ] ~Jingles horaires et de transition~
 - [x] Mettre une musique à la place de la pub pour RTL 2
 - [x] Rendre la page du lecteur responsive
 - [x] Thème sombre
-- [ ] Faire de la page du lecteur une PWA
+- [ ] ~Faire de la page du lecteur une PWA~
 - [ ] Faire du projet une lib

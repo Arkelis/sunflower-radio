@@ -60,7 +60,7 @@ def start_scheduler(restart=False):
 
 def stop_scheduler():
     click.secho("Killing current scheduler", bold=True, fg="cyan")
-    os.system("kill $(cat /tmp/sunflower-radio-scheduler.pid)")
+    os.system("kill $(cat /tmp/beta-sunflower-radio-scheduler.pid)")
 
 
 def stop_liquidsoap():

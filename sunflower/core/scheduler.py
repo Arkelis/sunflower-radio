@@ -18,12 +18,10 @@ class Scheduler:
         self.stations: Set[Station] = {station_cls() for channel in channels for station_cls in channel.stations}
         # get objects to process at each iteration
         objects_to_process: List[Union[Channel, Station]] = []
+        # add stations with process() method to objects to process
+        objects_to_process.extend([station for station in self.stations if hasattr(station, "process")])
         # add channels to objects to process
         objects_to_process.extend(self.channels)
-        # add stations with process() method to objects to process
-        for station in self.stations:
-            if hasattr(station, "process"):
-                objects_to_process.append(station)
         self.objects_to_process = objects_to_process
 
     @property
@@ -50,7 +48,7 @@ class Scheduler:
         channels_using_next: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels
                       if (channel.current_station_end - now).seconds < 10
-                      if channel.following_station is station]
+                      if channel.next_station is station]
             for station in self.stations
         }
         return {
