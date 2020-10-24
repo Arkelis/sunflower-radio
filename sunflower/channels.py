@@ -26,11 +26,12 @@ tournesol = Channel(
             ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
             ("06:00", "09:00", FranceInter), # Matinale
             ("09:00", "11:00", FranceInfo), # Info
-            ("11:00", "14:00", FranceInter), # On va déguster
+            ("11:00", "12:00", FranceCulture), # Affaires étrangères
+            ("12:00", "14:00", FranceInter), # Le grand face à face
             ("14:00", "17:00", FranceCulture), # Plan large, Toute une vie, La Conversation scientifique
-            ("17:00", "18:00", FranceInter), # La preuve par Z avec JF Zygel
-            ("18:00", "20:00", FranceInter), # Tel sonne spécial corona
-            ("20:00", "21:00", FranceInfo), # Les informés
+            ("17:00", "18:00", FranceInter), # La preuve par Z
+            ("18:00", "19:00", FranceCulture), # Débat
+            ("19:00", "21:00", FranceInfo), # Les informés
             ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
         ],
         (6,): [
@@ -40,7 +41,7 @@ tournesol = Channel(
             ("11:00", "14:00", FranceInter), # On va déguster, politique, journal
             ("14:00", "18:00", FranceMusique), # Aprem Musique
             ("18:00", "20:00", FranceCulture), # Soft power
-            ("20:00", "21:00", FranceInter), # soirée, masque et la plume
+            ("20:00", "21:00", FranceInter), # Le masque et la plume
             ("21:00", "00:00", FranceInfo),
         ]
     },
@@ -68,7 +69,7 @@ music = Channel("musique", handlers=(AdsHandler,),
                 ],
                 (6,): [
                     ("00:00", "01:00", PycolorePlaylistStation),
-                    ("00:00", "09:00", RTL2),
+                    ("01:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
                     ("12:00", "22:00", RTL2),
                     ("22:00", "00:00", PycolorePlaylistStation),
