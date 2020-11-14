@@ -172,7 +172,11 @@ class PycolorePlaylistStation(DynamicStation):
             self._play(delay, max_length, logger, now)
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
-        pass
+        if broadcast.type == BroadcastType.NONE:
+            return StreamMetadata(title=broadcast.title, artist=self.name, album="")
+        return StreamMetadata(title=self._current_song.title,
+                              artist=self._current_song.artist,
+                              album="La playlist Pyolore")
 
     @classmethod
     def get_liquidsoap_config(cls):

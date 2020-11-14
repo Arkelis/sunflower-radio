@@ -2,7 +2,7 @@ import json
 import locale
 from datetime import datetime, timedelta
 from logging import Logger
-from typing import List, Optional, Union, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, Union
 
 import requests
 
@@ -176,6 +176,8 @@ class RTL2(URLStation, RTLGroupMixin):
         super().__init__()
         self.current_show_data = {}
         self.current_step = Step.none()
+        self._artist = ""
+        self._title = ""
 
     def _fetch_show_metadata(self, dt: Union[datetime, int]):
         if isinstance(dt, int): # convert dt to datetime object if a timestamp is given
@@ -250,8 +252,10 @@ class RTL2(URLStation, RTLGroupMixin):
                 "title": self.station_slogan,
             }
         else:
+            self._artist = fetched_data['singer']
+            self._title = fetched_data['title']
             broadcast_data = {
-                "title": f"{fetched_data['singer']} • {fetched_data['title']}",
+                "title": f"{self._artist} • {self._title}",
                 "type": BroadcastType.MUSIC,
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
             }
@@ -280,9 +284,9 @@ class RTL2(URLStation, RTLGroupMixin):
         return steps
 
     def format_stream_metadata(self, broadcast) -> Optional[StreamMetadata]:
-        title, album = {
-            BroadcastType.MUSIC: (broadcast.title, broadcast.show_title),
-            BroadcastType.PROGRAMME: (broadcast.show_title, ""),
-            BroadcastType.ADS: (broadcast.title, ""),
+        title, artist, album = {
+            BroadcastType.MUSIC: (self._title, self._artist, f"{broadcast.show_title} sur {self.name}"),
+            BroadcastType.PROGRAMME: (broadcast.show_title, self.name, ""),
+            BroadcastType.ADS: (broadcast.title, self.name, ""),
         }[broadcast.type]
-        return StreamMetadata(title=title, artist=self.name, album=album)
+        return StreamMetadata(title=title, artist=artist, album=album)
