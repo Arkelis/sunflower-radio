@@ -8,7 +8,7 @@ def write_liquidsoap_config(*channels, filename):
         f.write("# activate telnet server\n")
         f.write('set("server.telnet", true)\n\n')
         f.write("# default source\n")
-        f.write('default = drop_metadata(single("~/radio/franceinfo-long.ogg"))\n\n')
+        f.write('default = single("~/radio/franceinfo-long.ogg")\n\n')
         f.write("# streams\n")
 
         # configuration des chaînes

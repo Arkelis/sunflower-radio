@@ -348,7 +348,8 @@ class Channel:
             + str(self.endpoint)
             + "_radio])\n"
         )
-        source_str += f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", {self.endpoint}_radio)\n\n'
+        source_str += (f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", '
+                       f'drop_metadata({self.endpoint}_radio))\n\n')
 
         output_str = "output.icecast(%vorbis(quality=0.6),\n"
         output_str += '    host="localhost", port=3333, password="Arkelis77",\n'

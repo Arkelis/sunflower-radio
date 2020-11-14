@@ -155,8 +155,7 @@ class URLStation(Station, ABC):
     @classmethod
     def get_liquidsoap_config(cls):
         return (f'{cls.formatted_station_name} = '
-                f'mksafe(drop_metadata(input.http(id="{cls.formatted_station_name}", autostart=false, '
-                f'"{cls.station_url}")))\n')
+                f'mksafe(input.http(id="{cls.formatted_station_name}", autostart=false, "{cls.station_url}"))\n')
 
     def start_liquidsoap_source(self):
         with suppress(ConnectionRefusedError):
