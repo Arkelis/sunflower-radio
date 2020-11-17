@@ -172,7 +172,7 @@ class PycolorePlaylistStation(DynamicStation):
             self._play(delay, max_length, logger, now)
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
-        if broadcast.type == BroadcastType.NONE:
+        if broadcast.type != BroadcastType.MUSIC:
             return StreamMetadata(title=broadcast.title, artist=self.name, album="")
         return StreamMetadata(title=self._current_song.title,
                               artist=self._current_song.artist,
