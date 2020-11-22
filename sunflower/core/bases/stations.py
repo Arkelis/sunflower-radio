@@ -5,12 +5,15 @@ from contextlib import suppress
 from datetime import datetime
 from logging import Logger
 from telnetlib import Telnet
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING, Type
 
 from sunflower.core.custom_types import Broadcast, StationInfo, Step, StreamMetadata, UpdateInfo
 from sunflower.core.decorators import classproperty
 from sunflower.core.mixins import HTMLMixin
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
+
+if TYPE_CHECKING:
+    from sunflower.core.bases.channels import Channel
 
 STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
