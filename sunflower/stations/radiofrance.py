@@ -1,16 +1,32 @@
 import json
 import os
 import traceback
-from datetime import datetime, time, timedelta
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from logging import Logger
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Tuple
 
 import requests
 from dotenv import load_dotenv
 
 from sunflower.core.bases import URLStation
-from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata, UpdateInfo
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import StreamMetadata
+from sunflower.core.custom_types import UpdateInfo
+from sunflower.utils import music
 from sunflower.utils.music import fetch_apple_podcast_cover
+
+if TYPE_CHECKING:
+    from sunflower.core.bases import Channel
+
 
 RADIO_FRANCE_GRID_TEMPLATE = """
 {{
@@ -70,6 +86,16 @@ RADIO_FRANCE_GRID_TEMPLATE = """
                         }}
                     }}
                 }}
+            }}
+        }}
+        ... on TrackStep {{
+            start
+            end
+            track {{
+                title
+                albumTitle
+                mainArtists
+                performers
             }}
         }}
     }}
@@ -236,7 +262,7 @@ class RadioFranceStation(URLStation):
         })
         return detailed_metadata
 
-    def _get_radiofrance_step(self, api_data: dict, dt: datetime, child_precision: bool, detailed: bool):
+    def _get_radiofrance_programme_step(self, api_data: dict, dt: datetime, child_precision: bool, detailed: bool):
         """Return radio france step starting at dt.
 
         Parameters:
@@ -270,6 +296,26 @@ class RadioFranceStation(URLStation):
             metadata = self._get_detailed_metadata(metadata, api_data, broadcast, is_child)
         return Step(start=start, end=broadcast_end, broadcast=Broadcast(**metadata))
 
+    def _get_radiofrance_track_step(self, api_data: dict, dt: datetime):
+        start = max(int(api_data["start"]), int(dt.timestamp()))
+        track_data = api_data["track"]
+        artists = ", ".join(api_data.get("mainArtists") or api_data.get("performers"))
+        cover_link, deezer_link = music.fetch_cover_and_link_on_deezer(self.station_thumbnail,
+                                                                       artists,
+                                                                       track_data.get("albumTitle"))
+        return Step(
+            start=start,
+            end=api_data["end"],
+            broadcast=Broadcast(
+                title=f"{artists} • {track_data['title']}",
+                type=BroadcastType.MUSIC,
+                station=self.station_info,
+                link=deezer_link,
+                summary=self.station_slogan,
+                thumbnail_src=cover_link,
+            ),
+        )
+
     def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
         start = int(dt.timestamp())
         fetched_data = self._fetch_metadata(dt, dt+timedelta(minutes=120))
@@ -288,7 +334,14 @@ class RadioFranceStation(URLStation):
             # jusqu'au démarrage de celle-ci
             if first_show_in_grid["start"] > dt.timestamp():
                 return self._notifying_update_info(Step.empty_until(start, int(first_show_in_grid['start']), self))
-            return self._notifying_update_info(self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=True))
+            # si l'émission est en fait une piste musicale, on RENVOIE une métadonnée spéciale musique
+            if first_show_in_grid.get("track"):
+                return self._notifying_update_info(self._get_radiofrance_track_step(first_show_in_grid, dt))
+            # cas où on est dans un programme, on RENVOIE les métadonnées de ce programme
+            return self._notifying_update_info(self._get_radiofrance_programme_step(first_show_in_grid,
+                                                                                    dt,
+                                                                                    child_precision=True,
+                                                                                    detailed=True,))
         except Exception as err:
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
@@ -300,7 +353,7 @@ class RadioFranceStation(URLStation):
             return error_step
         try:
             first_show_in_grid = api_data["data"]["grid"][0]
-            return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
+            return self._get_radiofrance_programme_step(first_show_in_grid, dt, child_precision=True, detailed=False)
         except Exception as err:
             start = int(dt.timestamp())
             logger.error(traceback.format_exc())
@@ -314,7 +367,7 @@ class RadioFranceStation(URLStation):
         grid = api_data["data"]["grid"]
         while grid:
             step_data = grid.pop(0)
-            new_step = self._get_radiofrance_step(step_data, temp_end, child_precision=False, detailed=False)
+            new_step = self._get_radiofrance_programme_step(step_data, temp_end, child_precision=False, detailed=False)
             steps.append(new_step)
             temp_end = datetime.fromtimestamp(new_step.end)
         return steps
@@ -424,3 +477,12 @@ class FranceCulture(RadioFranceStation):
     _station_api_name = "FRANCECULTURE"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/france-culture-numerique.svg"
     station_url = "http://icecast.radiofrance.fr/franceculture-hifi.aac"
+
+
+class FranceInterParis(RadioFranceStation):
+    name = "FIP"
+    station_website_url = "https://fip.fr"
+    station_slogan = "La radio musicale la plus éclectique"
+    _station_api_name = "FIP"
+    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/fip-numerique.svg"
+    station_url = "http://icecast.radiofrance.fr/fip-hifi.aac"

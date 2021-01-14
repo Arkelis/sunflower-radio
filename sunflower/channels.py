@@ -4,7 +4,13 @@
 
 from sunflower.core.bases import Channel
 from sunflower.handlers import AdsHandler
-from sunflower.stations import (FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2)
+from sunflower.stations import FranceCulture
+from sunflower.stations import FranceInfo
+from sunflower.stations import FranceInter
+from sunflower.stations import FranceInterParis
+from sunflower.stations import FranceMusique
+from sunflower.stations import PycolorePlaylistStation
+from sunflower.stations import RTL2
 
 tournesol = Channel(
     endpoint="tournesol",
@@ -49,29 +55,40 @@ tournesol = Channel(
 
 music = Channel("musique", handlers=(AdsHandler,),
                 timetable={(0, 1, 2, 3,): [
-                    ("00:00", "09:00", RTL2),
+                    ("00:00", "06:00", FranceInterParis),
+                    ("06:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
-                    ("12:00", "22:00", RTL2),
+                    ("12:00", "13:30", RTL2),
+                    ("13:30", "18:00", FranceInterParis),
+                    ("18:00", "22:00", RTL2),
                     ("22:00", "00:00", PycolorePlaylistStation),
                 ],
                 (4,): [
-                    ("00:00", "09:00", RTL2),
+                    ("00:00", "06:00", FranceInterParis),
+                    ("06:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
-                    ("12:00", "22:00", RTL2),
+                    ("12:00", "13:30", RTL2),
+                    ("13:30", "18:00", FranceInterParis),
+                    ("18:00", "22:00", RTL2),
                     ("22:00", "01:00", PycolorePlaylistStation),
                 ],
                 (5,): [
                     ("00:00", "01:00", PycolorePlaylistStation),
-                    ("01:00", "09:00", RTL2),
+                    ("01:00", "06:00", FranceInterParis),
+                    ("06:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
-                    ("12:00", "22:00", RTL2),
+                    ("12:00", "13:30", RTL2),
+                    ("13:30", "18:00", FranceInterParis),
+                    ("18:00", "22:00", RTL2),
                     ("22:00", "01:00", PycolorePlaylistStation),
                 ],
                 (6,): [
                     ("00:00", "01:00", PycolorePlaylistStation),
-                    ("01:00", "09:00", RTL2),
+                    ("01:00", "06:00", FranceInterParis),
+                    ("06:00", "09:00", RTL2),
                     ("09:00", "12:00", PycolorePlaylistStation),
-                    ("12:00", "22:00", RTL2),
+                    ("12:00", "13:30", RTL2),
+                    ("13:30", "22:00", FranceInterParis),
                     ("22:00", "00:00", PycolorePlaylistStation),
                 ]})
 
