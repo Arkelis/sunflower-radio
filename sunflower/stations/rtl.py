@@ -1,13 +1,21 @@
 import json
 import locale
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from logging import Logger
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 import requests
 
 from sunflower.core.bases import URLStation
-from sunflower.core.custom_types import Broadcast, BroadcastType, Step, StreamMetadata, UpdateInfo
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import StreamMetadata
+from sunflower.core.custom_types import UpdateInfo
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -165,7 +173,7 @@ class RTL2(URLStation, RTLGroupMixin):
     station_slogan = "Le son Pop-Rock"
     station_website_url = "https://www.rtl2.fr"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
-    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-48-192"
+    station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
     _main_data_url = "https://timeline.rtl.fr/RTL2/items"
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
     _show_grid_url = ("https://pc.middleware.6play.fr/6play/v2/platforms/m6group_web/services/m6replay/guidetv?channel="
