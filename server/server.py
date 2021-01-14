@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from enum import Enum
 from typing import List
@@ -95,11 +96,15 @@ def get_channel(channel, request: Request):
 #     }
 
 
-async def updates_generator(*endpoints):
+async def updates_generator(request, *endpoints):
     pubsub = aredis.StrictRedis().pubsub()
     for endpoint in endpoints:
         await pubsub.subscribe("sunflower:channel:" + endpoint)
     while True:
+        client_disconnected = await request.is_disconnected()
+        if client_disconnected:
+            print(datetime.now(), "Disconnected")
+            break
         message = await pubsub.get_message()
         if message is None:
             continue
@@ -116,10 +121,10 @@ async def updates_generator(*endpoints):
 
 
 @app.get("/events", tags=["Server-sent events"])
-async def update_broadcast_info_stream(channel: List[str] = Query(None)):
+async def update_broadcast_info_stream(request: Request, channel: List[str] = Query(None)):
     if channel is None:
         channel = ['musique', 'tournesol']
-    return StreamingResponse(updates_generator(*channel),
+    return StreamingResponse(updates_generator(request, *channel),
                              media_type="text/event-stream",
                              headers={"access-control-allow-origin": "*"})
 
