@@ -2,7 +2,10 @@
 
 import json
 from enum import Enum
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -44,6 +47,7 @@ class Broadcast(BaseModel):
     summary: Optional[str] = ""
     parent_show_title: Optional[str] = ""
     parent_show_link: Optional[str] = ""
+    metadata: Any = None  # useful for storing some payload
 
     @classmethod
     def waiting_for_next(cls, station: "Station", next_station_name: str) -> "Broadcast":
@@ -129,6 +133,11 @@ class StreamMetadata(BaseModel):
     title: str
     artist: str
     album: str = ""
+
+
+# alias for StreamMetadata
+class SongPayload(StreamMetadata):
+    pass
 
 
 # BroadcastType utils for json (de)serialization

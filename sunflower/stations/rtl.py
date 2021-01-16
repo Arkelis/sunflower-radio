@@ -13,6 +13,7 @@ import requests
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import SongPayload
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
@@ -184,8 +185,6 @@ class RTL2(URLStation, RTLGroupMixin):
         super().__init__()
         self.current_show_data = {}
         self.current_step = Step.none()
-        self._artist = ""
-        self._title = ""
 
     def _fetch_show_metadata(self, dt: Union[datetime, int]):
         if isinstance(dt, int): # convert dt to datetime object if a timestamp is given
@@ -260,12 +259,13 @@ class RTL2(URLStation, RTLGroupMixin):
                 "title": self.station_slogan,
             }
         else:
-            self._artist = fetched_data['singer']
-            self._title = fetched_data['title']
+            title = fetched_data['title']
+            artist = fetched_data['singer']
             broadcast_data = {
-                "title": f"{self._artist} • {self._title}",
+                "title": f"{artist} • {title}",
                 "type": BroadcastType.MUSIC,
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
+                "metadata": SongPayload(title=title, artist=artist)
             }
         broadcast_data.update(station=self.station_info, **self.current_show_data)
         return self._update_info(Step(start=start, end=end, broadcast=Broadcast(**broadcast_data)))
@@ -291,9 +291,9 @@ class RTL2(URLStation, RTLGroupMixin):
             temp_end = show_data["show_end"]
         return steps
 
-    def format_stream_metadata(self, broadcast) -> Optional[StreamMetadata]:
+    def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         title, artist, album = {
-            BroadcastType.MUSIC: (self._title, self._artist, f"{broadcast.show_title} sur {self.name}"),
+            BroadcastType.MUSIC: (broadcast.metadata.title, broadcast.metadata.artist, broadcast.metadata.album),
             BroadcastType.PROGRAMME: (broadcast.show_title, self.name, ""),
             BroadcastType.ADS: (broadcast.title, self.name, ""),
         }[broadcast.type]

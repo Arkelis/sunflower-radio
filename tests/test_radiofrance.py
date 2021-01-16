@@ -2,7 +2,10 @@
 # API data that will be used in tests
 from datetime import datetime
 
-from sunflower.core.custom_types import Broadcast, BroadcastType, Step
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import SongPayload
+from sunflower.core.custom_types import Step
 from sunflower.stations import FranceInfo
 from sunflower.stations import FranceInter
 from sunflower.stations import FranceInterParis
@@ -557,6 +560,7 @@ def test_radiofrance_track_step():
             station=FranceInterParis().station_info,
             thumbnail_src=FranceInterParis.station_thumbnail,
             summary=FranceInterParis.station_slogan,
+            metadata=SongPayload(title='Jamileh', artist='Ihsan Al-Munzer', album=''),
         )
     )
 
@@ -582,6 +586,7 @@ def test_radiofrance_track_step_without_artist():
             station=FranceInterParis().station_info,
             thumbnail_src=FranceInterParis.station_thumbnail,
             summary=FranceInterParis.station_slogan,
+            metadata=SongPayload(title='ENFANT LIVRE', artist='HENRI TEXIER', album=''),
         )
     )
 

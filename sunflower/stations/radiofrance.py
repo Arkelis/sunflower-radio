@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import SongPayload
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
@@ -203,17 +204,18 @@ class RadioFranceStation(URLStation):
 
     def _handle_api_exception(self, api_data, logger, start) -> Optional[Step]:
         """Return a step if an error in API response was detected. Else return None."""
-        end_if_error = start + 90
+        error_message: Optional[str] = None
         if "API Timeout" in api_data.values():
-            logger.error("API Timeout")
-            return Step.empty_until(start, end_if_error, self)
-        if "API rate limit exceeded" in api_data.values():
-            logger.error("Radio France API rate limit exceeded")
-            return Step.empty_until(start, end_if_error, self)
-        if api_data.get("data") is None:
-            logger.error("No data provided by Radio France API")
-            return Step.empty_until(start, end_if_error, self)
-        return None
+            error_message = "API Timeout"
+        elif "API rate limit exceeded" in api_data.values():
+            error_message = "Radio France API rate limit exceeded"
+        elif api_data.get("data") is None:
+            error_message = "No data provided by Radio France API"
+        elif not api_data["data"]["grid"]:
+            error_message = "Grid provided by Radio France API is empty"
+        if error_message:
+            logger.error(error_message)
+        return Step.empty_until(start, start+90, self) if error_message else None
 
     @staticmethod
     def _get_detailed_metadata(metadata: dict, parent: dict, child: dict, is_child: bool) -> dict:
@@ -313,6 +315,7 @@ class RadioFranceStation(URLStation):
                 link=deezer_link,
                 summary=self.station_slogan,
                 thumbnail_src=cover_link,
+                metadata=SongPayload(title=track_data["title"], artist=artists, album=track_data.get("album", ""))
             ),
         )
 
@@ -373,12 +376,17 @@ class RadioFranceStation(URLStation):
         return steps
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
-        artist = self.name
-        title, album = {
-            True: (broadcast.show_title, broadcast.title),
-            False: (broadcast.title, ""),
-        }[any(broadcast.show_title)]
-        return StreamMetadata(title=title, artist=artist, album=album)
+        if broadcast.type == BroadcastType.PROGRAMME:
+            artist = self.name
+            title, album = (
+                (broadcast.show_title, broadcast.title)
+                if any(broadcast.show_title)
+                else (broadcast.title, "")
+            )
+            return StreamMetadata(title=title, artist=artist, album=album)
+        elif broadcast.type == BroadcastType.MUSIC:
+            # for RadioFrance, a track step has metadata already filled, see _get_radiofrance_track_step()
+            return broadcast.metadata
 
 
 class FranceInter(RadioFranceStation):
@@ -431,19 +439,6 @@ class FranceInfo(RadioFranceStation):
         else:
             return slots[0][1], datetime.combine(start.date(), time(6, 0, 0)) + timedelta(days=1)
 
-    # def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-    #     show_title, end_of_show = self._get_franceinfo_slot(dt)
-    #     return Step(
-    #         start=int(dt.timestamp()),
-    #         end=int(end_of_show.timestamp()),
-    #         broadcast=Broadcast(
-    #             title=show_title,
-    #             type=BroadcastType.PROGRAMME,
-    #             station=self.station_info,
-    #             thumbnail_src=self.station_thumbnail
-    #         )
-    #     )
-
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
         temp_end, end = start, end
         steps = []
@@ -486,3 +481,16 @@ class FranceInterParis(RadioFranceStation):
     _station_api_name = "FIP"
     station_thumbnail = "https://charte.dnm.radiofrance.fr/images/fip-numerique.svg"
     station_url = "http://icecast.radiofrance.fr/fip-hifi.aac"
+
+    def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
+        if self == channel.current_station:
+            return Step.none()
+        return Step(
+            start=int(dt.timestamp()),
+            end=int(dt.timestamp()),
+            broadcast=Broadcast(
+                title=self.station_slogan,
+                type=BroadcastType.PROGRAMME,
+                station=self.station_info,
+                thumbnail_src=self.station_thumbnail)
+        )

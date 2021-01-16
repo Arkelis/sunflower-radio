@@ -1,16 +1,29 @@
 import random
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from logging import Logger
 from telnetlib import Telnet
-from typing import Dict, List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from sunflower import settings
-from sunflower.core.bases import Channel, DynamicStation
-from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step, StreamMetadata, UpdateInfo
+from sunflower.core.bases import Channel
+from sunflower.core.bases import DynamicStation
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import Song
+from sunflower.core.custom_types import SongPayload
+from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import StreamMetadata
+from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.descriptors import PersistentAttribute
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
-from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs, prevent_consecutive_artists
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST
+from sunflower.settings import LIQUIDSOAP_TELNET_PORT
+from sunflower.utils.music import fetch_cover_and_link_on_deezer
+from sunflower.utils.music import parse_songs
+from sunflower.utils.music import prevent_consecutive_artists
 
 
 class PycolorePlaylistStation(DynamicStation):
@@ -96,7 +109,12 @@ class PycolorePlaylistStation(DynamicStation):
             )
         artists_list = tuple(self._artists)
         artists_str = ", ".join(artists_list[:-1]) + " et " + artists_list[-1]
-        thumbnail_src, link = fetch_cover_and_link_on_deezer(self.station_thumbnail, self._current_song.artist, self._current_song.album, self._current_song.title)
+        thumbnail_src, link = fetch_cover_and_link_on_deezer(
+            self.station_thumbnail,
+            self._current_song.artist,
+            self._current_song.album,
+            self._current_song.title
+        )
         return UpdateInfo(should_notify_update=True, step=Step(
             start=dt_timestamp,
             end=int(self._current_song_end),
@@ -110,6 +128,9 @@ class PycolorePlaylistStation(DynamicStation):
                 show_title="La playlist Pycolore",
                 summary=(f"Une sélection aléatoire de chansons parmi les musiques stockées sur Pycolore. À suivre : "
                          f"{artists_str}."),
+                metadata=SongPayload(title=self._current_song.title,
+                                     artist=self._current_song.artist,
+                                     album="La Playlist Pycolore")
             )
         ))
 
@@ -174,9 +195,7 @@ class PycolorePlaylistStation(DynamicStation):
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         if broadcast.type != BroadcastType.MUSIC:
             return StreamMetadata(title=broadcast.title, artist=self.name, album="")
-        return StreamMetadata(title=self._current_song.title,
-                              artist=self._current_song.artist,
-                              album="La playlist Pyolore")
+        return broadcast.metadata
 
     @classmethod
     def get_liquidsoap_config(cls):
