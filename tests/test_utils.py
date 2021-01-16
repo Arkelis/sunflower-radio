@@ -10,6 +10,7 @@ def test_parse_songs():
     songs_number = len(glob.glob(pattern))
     assert songs_number == len(songs), "La liste ne prend pas en compte toutes les chansons"
 
+
 def test_prevent_consecutive_artists():
     # Check that length is preserved
     pattern = "/home/guillaume/backup-songs/*.opus"

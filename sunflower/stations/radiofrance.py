@@ -299,7 +299,7 @@ class RadioFranceStation(URLStation):
     def _get_radiofrance_track_step(self, api_data: dict, dt: datetime):
         start = max(int(api_data["start"]), int(dt.timestamp()))
         track_data = api_data["track"]
-        artists = ", ".join(api_data.get("mainArtists") or api_data.get("performers"))
+        artists = ", ".join(track_data.get("mainArtists") or track_data.get("performers"))
         cover_link, deezer_link = music.fetch_cover_and_link_on_deezer(self.station_thumbnail,
                                                                        artists,
                                                                        track_data.get("albumTitle"))

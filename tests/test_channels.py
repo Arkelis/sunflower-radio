@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sunflower.channels import music, tournesol
 from sunflower.stations import FranceCulture, FranceInfo, FranceInter, FranceMusique, PycolorePlaylistStation, RTL2
+from sunflower.stations import FranceInterParis
 
 
 def test_tournesol_station_parsing():
@@ -13,7 +14,7 @@ def test_tournesol_station_parsing():
 
 
 def test_music_station_parsing():
-    assert Counter(music.stations) == Counter((RTL2, PycolorePlaylistStation))
+    assert Counter(music.stations) == Counter((RTL2, FranceInterParis, PycolorePlaylistStation))
 
 
 def _test_schedule():
