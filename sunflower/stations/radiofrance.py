@@ -264,6 +264,14 @@ class RadioFranceStation(URLStation):
         })
         return detailed_metadata
 
+    def _get_radiofrance_step(self, api_data: dict, dt: datetime, child_precision: bool, detailed: bool) -> Step:
+        """Return a track step or a programme step from Radio France depending of contained metadata"""
+        return (
+            self._get_radiofrance_track_step(api_data, dt)
+            if api_data.get("track")
+            else self._get_radiofrance_programme_step(api_data, dt, child_precision, detailed)
+        )
+
     def _get_radiofrance_programme_step(self, api_data: dict, dt: datetime, child_precision: bool, detailed: bool):
         """Return radio france step starting at dt.
 
@@ -337,14 +345,11 @@ class RadioFranceStation(URLStation):
             # jusqu'au démarrage de celle-ci
             if first_show_in_grid["start"] > dt.timestamp():
                 return self._notifying_update_info(Step.empty_until(start, int(first_show_in_grid['start']), self))
-            # si l'émission est en fait une piste musicale, on RENVOIE une métadonnée spéciale musique
-            if first_show_in_grid.get("track"):
-                return self._notifying_update_info(self._get_radiofrance_track_step(first_show_in_grid, dt))
             # cas où on est dans un programme, on RENVOIE les métadonnées de ce programme
-            return self._notifying_update_info(self._get_radiofrance_programme_step(first_show_in_grid,
-                                                                                    dt,
-                                                                                    child_precision=True,
-                                                                                    detailed=True,))
+            return self._notifying_update_info(
+                self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=True)
+            )
+
         except Exception as err:
             logger.error(traceback.format_exc())
             logger.error("Données récupérées avant l'exception : {}".format(fetched_data))
@@ -356,7 +361,7 @@ class RadioFranceStation(URLStation):
             return error_step
         try:
             first_show_in_grid = api_data["data"]["grid"][0]
-            return self._get_radiofrance_programme_step(first_show_in_grid, dt, child_precision=True, detailed=False)
+            return self._get_radiofrance_step(first_show_in_grid, dt, child_precision=True, detailed=False)
         except Exception as err:
             start = int(dt.timestamp())
             logger.error(traceback.format_exc())
@@ -485,12 +490,7 @@ class FranceInterParis(RadioFranceStation):
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         if self == channel.current_station:
             return Step.none()
-        return Step(
-            start=int(dt.timestamp()),
-            end=int(dt.timestamp()),
-            broadcast=Broadcast(
-                title=self.station_slogan,
-                type=BroadcastType.PROGRAMME,
-                station=self.station_info,
-                thumbnail_src=self.station_thumbnail)
-        )
+        return Step(start=int(dt.timestamp()), end=int(dt.timestamp()), broadcast=Broadcast.empty(self))
+
+    def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
+        return [Step(start=int(start.timestamp()), end=int(end.timestamp()), broadcast=Broadcast.empty(self))]
