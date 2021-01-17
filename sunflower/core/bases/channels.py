@@ -278,11 +278,11 @@ class Channel:
         Else return False.
         """
         # update schedule if needed
-        # if now.date() != self._schedule_day:
-        #     logger.info(f"channel={self.endpoint} Updating schedule...")
-        #     self.schedule = self.get_schedule(logger)
-        #     logger.info(f"channel={self.endpoint} Schedule updated!")
-        #     self._schedule_day = now.date()
+        if now.date() != self._schedule_day:
+            logger.info(f"channel={self.endpoint} Updating schedule...")
+            self.schedule = self.get_schedule(logger)
+            logger.info(f"channel={self.endpoint} Schedule updated!")
+            self._schedule_day = now.date()
         # make sure current station is used by liquidsoap
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
             with suppress(ConnectionRefusedError):

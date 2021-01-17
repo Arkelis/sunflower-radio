@@ -14,7 +14,6 @@ from sunflower.stations import RTL2
 
 tournesol = Channel(
     endpoint="tournesol",
-    handlers=(AdsHandler,),
     timetable={
         # (weekday1, weekday2, ...)
         (0, 1, 2, 3, 4): [
@@ -41,14 +40,15 @@ tournesol = Channel(
             ("21:00", "00:00", FranceCulture), # Soirée Culture (Fiction, Mauvais Genre, rediff Toute une vie)
         ],
         (6,): [
-            ("00:00", "06:00", FranceCulture), # Les nuits de France Culture
-            ("06:00", "09:00", FranceInter), # Matinale
-            ("09:00", "11:00", FranceInfo),
+            ("00:00", "07:00", FranceCulture), # Les nuits de France Culture
+            ("07:00", "09:00", FranceMusique), # Bach
+            ("09:00", "10:00", FranceInter), # Interception
+            ("10:00", "11:00", FranceInfo),
             ("11:00", "14:00", FranceInter), # On va déguster, politique, journal
             ("14:00", "18:00", FranceMusique), # Aprem Musique
-            ("18:00", "20:00", FranceCulture), # Soft power
-            ("20:00", "21:00", FranceInter), # Le masque et la plume
-            ("21:00", "00:00", FranceInfo),
+            ("18:00", "19:00", FranceInfo), # Le masque et la plume
+            ("19:00", "22:00", FranceInter), # Le masque et la plume, Autant en emporte l'histoire
+            ("22:00", "00:00", FranceInterParis),
         ]
     },
 )
