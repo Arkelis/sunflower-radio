@@ -18,7 +18,7 @@ Une webradio est composé de divers éléments :
 Radio Tournesol s'insère dans deux de ces éléments :
 
 - l'encodage : le programme génère, à partir d'un planning, la configuration pour liquidsoap qui changer de chaîne en fonction des horaires. De plus un *scheduler* surveille les publicités et demande à liquidsoap de jouer de la musique à la place de la station s'il en détecte ;
-- le client de lecture : Radio Tournesol propose sa propre interface web ainsi qu'une API exposant des données.
+- le client de lecture : Radio Tournesol propose [sa propre interface web](https://github.com/Arkelis/sunflower-webapp) ainsi qu'une API exposant des données.
 
 ## Fonctionnement de Radio Tournesol
 
@@ -96,8 +96,10 @@ Une station représente une station diffusée sur une plage horaire. Elle doit i
 
 ### Client de lecture
 
-Si l'on peut écouter la radio simplement à partir du flux généré par Liquidsoap, `sunflower-radio` possède également
-un client de lecture Vue qui consomme une API développée avec FastAPI.
+Si l'on peut écouter la radio simplement à partir du flux généré par Liquidsoap,
+il existe aussiun projet d'interface web pour écouter les radios et accéder aux
+différents programmes depuis le navigateur&nbsp;: 
+[Sunflower Webapp](https://github.com/Arkelis/sunflower-webapp).
 
 ## Contribuer
 

@@ -1,3 +1,0 @@
-[submodule "webapp"]
-	path = webapp
-	url = git@github.com:Arkelis/sunflower-webapp.git
