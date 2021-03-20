@@ -60,6 +60,7 @@ def launch_scheduler():
 
 
 if __name__ == "__main__":
-    pid = "/tmp/beta-sunflower-radio-scheduler.pid"
-    daemon = Daemonize(app="beta-sunflower-radio-scheduler", pid=pid, action=launch_scheduler)
-    daemon.start()
+    launch_scheduler()
+    # pid = "/tmp/beta-sunflower-radio-scheduler.pid"
+    # daemon = Daemonize(app="beta-sunflower-radio-scheduler", pid=pid, action=launch_scheduler)
+    # daemon.start()
