@@ -2,6 +2,7 @@
 # This module contains core functions.
 import asyncio
 from collections.abc import Coroutine
+from concurrent.futures import ThreadPoolExecutor
 
 from sunflower.core.descriptors import PersistentAttribute
 
@@ -25,19 +26,19 @@ def check_obj_integrity(obj):
     return errors
 
 
-def run_coroutine_synchronously(coro: Coroutine):
+def run_coroutine_synchronously(coroutine_function, *args, **kwargs):
     """Run coroutine syncronously.
 
-    If asyncio.get_event_loop() returns None, use asyncio.run()
-    Else use loop.run_until_complete()
     """
 
-    if not asyncio.iscoroutine(coro):
-        raise TypeError('"coro" must be a coroutine.')
+    if not asyncio.iscoroutinefunction(coroutine_function):
+        raise TypeError('"coroutine_function" must be a coroutine_function.')
     try:
-        event_loop = asyncio.get_event_loop()
-        result = event_loop.run_until_complete(coro)
-        return result
-    except RuntimeError:
+        coro = coroutine_function(*args, **kwargs)
         result = asyncio.run(coro)
         return result
+    except:
+        coro = coroutine_function(*args, **kwargs)
+        with ThreadPoolExecutor() as executor:
+            result = executor.submit(asyncio.run, coro).result()
+            return result
