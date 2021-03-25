@@ -10,6 +10,6 @@ CHANNELS = ["tournesol", "musique"]
 # all stations that are not URLStations
 STATIONS = ["pycolore"]
 
-LIQUIDSOAP_SERVICE = "radio"
+# LIQUIDSOAP_SERVICE = "radio"
 LIQUIDSOAP_TELNET_PORT = 1234
 LIQUIDSOAP_TELNET_HOST = "localhost"

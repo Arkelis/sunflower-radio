@@ -111,64 +111,13 @@ $ git clone https://github.com/Arkelis/sunflower-radio
 
 ### Installation des dépendances
 
-Le projet utilise [poetry](https://github.com/sdispater/poetry) pour gérer ses dépendances.
+Les différents composants à installer sur sa machine pour démarrer le projet
+sont détaillés dans la page [INSTALL.md](docs/INSTALL.md).
 
-```
-$ poetry install 
-```
+## Déploiement
 
-
-### Configuration
-
-Le fichier `settings.py` contient trois éléments :
-- l'url du serveur icecast ;
-- le chemin vers le dossier contenant les musiques à jouer en cas de pub ;
-- les noms des chaînes créées dans `channels.py`.
-
-### Lancer la radio pour la première fois
-
-Dépendances :
-
-* [Redis](https://redis.io/)
-* [Liquidsoap](https://www.liquidsoap.info/)
-
-Une fois que Liquidsoap est installé, on génère la configuration adéquate :
-
-```
-$ poetry run python manage.py generate-liquidsoap-config
-```
-
-Cela crée un fichier `sunflower.liq` dans le répertoire actuel. Puis on lance Liquidsoap, en mode démon. Enfin, il ne
- reste plus qu'à lancer le planificateur :
-
-### Lancer le serveur
-
-Avec poetry ou simplement dans l'environnement virtuel:
-
-```
-$ poetry run python manage.py start scheduler
-$ poetry run uvicorn server:server
-```
-
-### Service Liquidsoap
-
-Exemple de service pour Liquidsoap :
-
-```
-[Unit]
-Description=Pycolore Radio generation by liquidsoap
-
-[Service]
-Type=simple
-
-User=<user>
-Group=<group>
-UMask=007
-
-ExecStart=<chemin vers liquidsoap> <chemin vers le fichier de config>
-```
-
-Dans `settings.py`, on peut renseigner le nom du service dans la variable `LIQUIDSOAP_SERVICE`.
+Le fichier [DEPLOY.md](docs/DEPLOY.md) expose la démarche à suivre pour déployer Radio Pycolore
+sur un serveur Debian 10 Buster.
 
 ## Feuille de route
 
