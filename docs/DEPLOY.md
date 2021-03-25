@@ -16,7 +16,7 @@ sudo apt install redis
 ### Pyenv
 
 Nous allons utiliser [pyenv](https://github.com/pyenv/pyenv) pour installer
-Python sur le serveur. On utilise l'installateur automatique.
+Python sur le serveur.
 
 ```zsh
 # installation des prérequis
