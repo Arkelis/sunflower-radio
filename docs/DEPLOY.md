@@ -170,6 +170,8 @@ sudo ln -s /etc/nginx/sites-enabled/icecast.pycolore.fr \
 
 # création du certificat
 # sélection le bon domaine quand demandé
+# ne pas prendre la redirection vers HTTPS, c'est déjà géré
+# dans la config juste au dessus
 sudo certbot --nginx
 
 # rechargement de nginx
