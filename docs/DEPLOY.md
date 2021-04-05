@@ -32,14 +32,15 @@ git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshenv
 echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshenv
 
+
 # si nécessaire, ajout de pyenv init dans .zshrc
 echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
 
 # redémarrer le shell pour bénéficier des changements
 exec "$SHELL"
 
-# installation de Python 3.8.8
-pyenv install 3.8.8
+# installation de Python 3.8.9
+pyenv install 3.8.9
 ```
 
 ### Pyenv
@@ -47,8 +48,8 @@ pyenv install 3.8.8
 On peut maintenant installer Poetry.
 
 ```zsh
-# on passe sur Python 3.8.8
-pyenv global 3.8.8
+# on passe sur Python 3.8.9
+pyenv global 3.8.9
 
 # on vérifie la version de Python
 python --version
