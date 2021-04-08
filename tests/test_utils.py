@@ -1,7 +1,9 @@
 import glob
 
 from sunflower.core.custom_types import Song
-from sunflower.utils.music import parse_songs, prevent_consecutive_artists
+from sunflower.utils.music import fetch_cover_and_link_on_deezer
+from sunflower.utils.music import parse_songs
+from sunflower.utils.music import prevent_consecutive_artists
 
 
 def test_parse_songs():
@@ -33,3 +35,17 @@ def test_prevent_consecutive_artists():
     treated_songs = prevent_consecutive_artists(songs)
     for i in range(len(treated_songs)-1):
         assert treated_songs[i].artist != treated_songs[i+1].artist, "Two songs in a row have the same artist."
+
+
+def test_get_cover_from_deezer_with_deezertrack():
+    cover, link = fetch_cover_and_link_on_deezer("backup", "LP", deezertrack=1245069102)
+
+    assert link == "https://www.deezer.com/album/207861892"
+    assert cover == "https://cdns-images.dzcdn.net/images/cover/b2284e22177a46ed3029dc91ea95d4e8/500x500-000000-80-0-0.jpg"
+
+
+def test_get_cover_from_deezer_with_artist():
+    cover, link = fetch_cover_and_link_on_deezer("backup", "LP")
+
+    assert link == "https://www.deezer.com/artist/112259"
+    assert cover == "https://cdns-images.dzcdn.net/images/artist/42a2ef16887e2cd54b07b848fdfd9619/500x500-000000-80-0-0.jpg"

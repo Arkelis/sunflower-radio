@@ -2,6 +2,7 @@
 # API data that will be used in tests
 from datetime import datetime
 
+import pytest
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import SongPayload
@@ -9,6 +10,7 @@ from sunflower.core.custom_types import Step
 from sunflower.stations import FranceInfo
 from sunflower.stations import FranceInter
 from sunflower.stations import FranceInterParis
+from sunflower.utils import music
 
 API_DATA = {
     "data": {
@@ -358,7 +360,21 @@ API_DATA = {
 }
 
 
-def test_basic_radiofrance_diffusion_step():
+@pytest.fixture
+def monkeypatch_apple_podcast(monkeypatch):
+
+    def mock_apple_podcast(podcast_link: str, fallback: str):
+        if podcast_link == "https://podcasts.apple.com/fr/podcast/le-sept-neuf/id206501796":
+            return "https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp"
+        elif podcast_link == "https://podcasts.apple.com/fr/podcast/journal-de-07h00/id541446023":
+            return "https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/fc/74/e8/fc74e883-1a69-3b9d-70f4-43e185f57db6/mza_6895079223603784045.jpg/626x0w.webp"
+        elif podcast_link == "https://podcasts.apple.com/fr/podcast/les-80-de/id1434322790":
+            return "https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/9f/7c/81/9f7c81de-7d7d-6d54-27a2-c0e52509cb43/mza_3524174555840859685.jpg/626x0w.webp"
+
+    monkeypatch.setattr(music, "fetch_apple_podcast_cover", mock_apple_podcast)
+
+
+def test_basic_radiofrance_diffusion_step(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Undetailed step without child precision.
@@ -367,8 +383,8 @@ def test_basic_radiofrance_diffusion_step():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738000),
         child_precision=False,
-        detailed=False
-    )
+        detailed=False)
+
     expected_step = Step(
         start=1602738000,
         end=1602745200,
@@ -376,12 +392,12 @@ def test_basic_radiofrance_diffusion_step():
                             type=BroadcastType.PROGRAMME,
                             station=FranceInter().station_info,
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
-                            show_title="Le 7/9",)
-    )
+                            show_title="Le 7/9",))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_without_child_precision():
+def test_detailed_radiofrance_diffusion_step_without_child_precision(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step without child precision.
@@ -390,8 +406,8 @@ def test_detailed_radiofrance_diffusion_step_without_child_precision():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738000),
         child_precision=False,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602738000,
         end=1602745200,
@@ -402,12 +418,12 @@ def test_detailed_radiofrance_diffusion_step_without_child_precision():
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
-                            show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_beore_first_child():
+def test_detailed_radiofrance_diffusion_step_beore_first_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step with child precision (before first child programme).
@@ -416,8 +432,8 @@ def test_detailed_radiofrance_diffusion_step_beore_first_child():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738000),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602738000,
         end=1602738010,
@@ -428,12 +444,12 @@ def test_detailed_radiofrance_diffusion_step_beore_first_child():
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
-                            show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_first_child():
+def test_detailed_radiofrance_diffusion_step_first_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step with child precision (first child programme).
@@ -442,8 +458,8 @@ def test_detailed_radiofrance_diffusion_step_first_child():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738010),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602738010,
         end=1602738780,
@@ -456,12 +472,12 @@ def test_detailed_radiofrance_diffusion_step_first_child():
                             show_title="Journal de 7h",
                             show_link="https://www.franceinter.fr/emissions/le-journal-de-7h",
                             parent_show_title="Le 7/9",
-                            parent_show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            parent_show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_between_first_and_second_child():
+def test_detailed_radiofrance_diffusion_step_between_first_and_second_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step with child precision (between two first children).
@@ -470,8 +486,8 @@ def test_detailed_radiofrance_diffusion_step_between_first_and_second_child():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738780),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602738780,
         end=1602738880,
@@ -482,12 +498,12 @@ def test_detailed_radiofrance_diffusion_step_between_first_and_second_child():
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
-                            show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_second_child():
+def test_detailed_radiofrance_diffusion_step_second_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step with child precision (second).
@@ -496,8 +512,8 @@ def test_detailed_radiofrance_diffusion_step_second_child():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602738880),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602738880,
         end=1602738960,
@@ -510,12 +526,12 @@ def test_detailed_radiofrance_diffusion_step_second_child():
                             show_title="Les 80\" de...",
                             show_link="https://www.franceinter.fr/emissions/les-80-de-nicolas-demorand",
                             parent_show_title="Le 7/9",
-                            parent_show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            parent_show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
-def test_detailed_radiofrance_diffusion_step_after_last_child():
+def test_detailed_radiofrance_diffusion_step_after_last_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
 
     Detailed step with child precision (after last child).
@@ -524,8 +540,8 @@ def test_detailed_radiofrance_diffusion_step_after_last_child():
         api_data=API_DATA["data"]["grid"][0],
         dt=datetime.fromtimestamp(1602745050),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
+
     expected_step = Step(
         start=1602745050,
         end=1602745200,
@@ -536,8 +552,8 @@ def test_detailed_radiofrance_diffusion_step_after_last_child():
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             link='https://www.franceinter.fr/emissions/le-7-9/le-7-9-15-octobre-2020',
                             show_title="Le 7/9",
-                            show_link="https://www.franceinter.fr/emissions/le-7-9")
-    )
+                            show_link="https://www.franceinter.fr/emissions/le-7-9"))
+
     assert parsed_step == expected_step
 
 
@@ -548,8 +564,7 @@ def test_radiofrance_track_step():
     """
     parsed_step = FranceInterParis()._get_radiofrance_track_step(
         api_data=API_DATA["data"]["grid"][1],
-        dt=datetime.fromtimestamp(1610662504),
-    )
+        dt=datetime.fromtimestamp(1610662504))
 
     expected_step = Step(
         start=1610662504,
@@ -558,11 +573,10 @@ def test_radiofrance_track_step():
             title="Ihsan Al-Munzer • Jamileh",
             type=BroadcastType.MUSIC,
             station=FranceInterParis().station_info,
-            thumbnail_src=FranceInterParis.station_thumbnail,
+            thumbnail_src="https://cdns-images.dzcdn.net/images/artist/a1a23844fed57b71fd1f18a9f633636e/500x500-000000-80-0-0.jpg",
             summary=FranceInterParis.station_slogan,
             metadata=SongPayload(title='Jamileh', artist='Ihsan Al-Munzer', album=''),
-        )
-    )
+            link="https://www.deezer.com/artist/65281352"))
 
     assert parsed_step == expected_step
 
@@ -574,8 +588,7 @@ def test_radiofrance_track_step_without_artist():
     """
     parsed_step = FranceInterParis()._get_radiofrance_track_step(
         api_data=API_DATA["data"]["grid"][2],
-        dt=datetime.fromtimestamp(1610307944),
-    )
+        dt=datetime.fromtimestamp(1610307944))
 
     expected_step = Step(
         start=1610307944,
@@ -584,11 +597,10 @@ def test_radiofrance_track_step_without_artist():
             title="HENRI TEXIER • ENFANT LIVRE",
             type=BroadcastType.MUSIC,
             station=FranceInterParis().station_info,
-            thumbnail_src=FranceInterParis.station_thumbnail,
+            thumbnail_src="https://cdns-images.dzcdn.net/images/artist/345f1b012b55d907be32e0b80864fed2/500x500-000000-80-0-0.jpg",
             summary=FranceInterParis.station_slogan,
             metadata=SongPayload(title='ENFANT LIVRE', artist='HENRI TEXIER', album=''),
-        )
-    )
+            link="https://www.deezer.com/artist/153756"))
 
     assert parsed_step == expected_step
 
@@ -602,8 +614,7 @@ def test_radiofrance_blank_step():
         api_data=API_DATA["data"]["grid"][3],
         dt=datetime.fromtimestamp(1610662290),
         child_precision=True,
-        detailed=True
-    )
+        detailed=True)
 
     expected_step = Step(
         start=1610662290,
@@ -612,9 +623,7 @@ def test_radiofrance_blank_step():
             title="Les nouvelles mesures sanitaires pour les écoles",
             type=BroadcastType.PROGRAMME,
             station=FranceInfo().station_info,
-            thumbnail_src=FranceInfo.station_thumbnail,
-        )
-    )
+            thumbnail_src=FranceInfo.station_thumbnail))
 
     assert parsed_step == expected_step
 

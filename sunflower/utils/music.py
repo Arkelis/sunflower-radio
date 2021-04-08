@@ -1,12 +1,16 @@
 """Utilitary classes used in several parts of sunflower application."""
 
 import glob
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import mutagen
 import requests
 from bs4 import BeautifulSoup
-
 from sunflower.core.custom_types import Song
 
 
@@ -85,8 +89,9 @@ def _get_data_from_deezer_url(*urls: str,
     """
     relevant_data: Optional[Dict] = None
     for url in urls:
-        rep = requests.get(url)
-        json_data = rep.json().get("data")
+        resp = requests.get(url)
+        resp_json = resp.json()
+        json_data = [resp_json] if resp_json.get("data") is None else resp_json["data"]
         if not json_data:
             continue
         if not getmatch:
@@ -103,32 +108,43 @@ def _get_data_from_deezer_url(*urls: str,
     return getcover(relevant_data), getalbumurl(relevant_data)
 
 
-def fetch_cover_and_link_on_deezer(backup_cover: str, artist: str, album=None, track=None) -> Optional[Tuple[str, str]]:
+def fetch_cover_and_link_on_deezer(
+        backup_cover: str,
+        artist: str,
+        album: Optional[str] = None,
+        track: Optional[str] = None,
+        deezertrack: Optional[int] = None) -> Tuple[str, str]:
     """Get cover and link from Deezer API.
 
     Search for a track with given artist , album or track.
     Return the cover of the album and the link to the album on Deezer.
     """
-    if album is not None:
+
+    data = None
+    if deezertrack is not None:
+        data = _get_data_from_deezer_url(
+            f"https://api.deezer.com/track/{deezertrack}",
+            getcover=lambda x: x["album"]["cover_big"],
+            getalbumurl=lambda x: x['album']['link'])
+    if data is None and album is not None:
         data = _get_data_from_deezer_url(
             f"https://api.deezer.com/search/album?q=artist:'{artist}' album:'{album}'",
             f"https://api.deezer.com/search/album?q={artist} {album}",
             getcover=lambda x: x["cover_big"],
             getalbumurl=lambda x: x["link"],
             getmatch=lambda x: x["title"],
-            match=album,
-        )
-    elif track is not None:
+            match=album)
+    if data is None and track is not None:
         data = _get_data_from_deezer_url(
             f"https://api.deezer.com/search/track?q=artist:'{artist}' track:'{track}'",
             f'https://api.deezer.com/search/track?q={artist} {track}',
             getcover=lambda x: x["album"]["cover_big"],
-            getalbumurl=lambda x: f"https://www.deezer.com/album/{x['album']['id']}",
-        )
-    else:
-        data = _get_data_from_deezer_url('https://api.deezer.com/search/artist?q={}'.format(artist),
-                                         getcover=lambda x: x["picture_big"],
-                                         getalbumurl=lambda x: "")
+            getalbumurl=lambda x: x['album']['link'])
+    if data is None:
+        data = _get_data_from_deezer_url(
+            'https://api.deezer.com/search/artist?q={}'.format(artist),
+            getcover=lambda x: x["picture_big"],
+            getalbumurl=lambda x: x["link"])
 
     return data or (backup_cover, "")
 

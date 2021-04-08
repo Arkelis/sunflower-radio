@@ -49,7 +49,7 @@ test_channel = Channel(
 )
 
 
-def test_tournesol_station_parsing():
+def test_planning_parsing():
     # Counter([...]) == Counter([...]) permet de comparer les éléments et leurs occurrences
     # de deux itérables sans se soucier de l'ordre
     assert Counter(test_channel.stations) == Counter(

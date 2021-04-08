@@ -14,7 +14,6 @@ from typing import Tuple
 
 import requests
 from dotenv import load_dotenv
-
 from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
@@ -23,7 +22,6 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.utils import music
-from sunflower.utils.music import fetch_apple_podcast_cover
 
 if TYPE_CHECKING:
     from sunflower.core.bases import Channel
@@ -296,7 +294,7 @@ class RadioFranceStation(URLStation):
             title = diffusion.get("title") or show.get("title", "")
             show_title = show.get("title", "") if title != show.get("title", "") else ""
             podcast_link = (show.get("podcast") or {}).get("itunes")
-            thumbnail_src = fetch_apple_podcast_cover(podcast_link, self.station_thumbnail)
+            thumbnail_src = music.fetch_apple_podcast_cover(podcast_link, self.station_thumbnail)
         metadata.update({
             "title": title,
             "show_title": show_title,
