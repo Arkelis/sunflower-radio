@@ -7,10 +7,13 @@ from telnetlib import Telnet
 from typing import List
 
 from sunflower import settings
-from sunflower.core.custom_types import Broadcast, BroadcastType, Song, Step
-from sunflower.core.mixins import HTMLMixin
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import BroadcastType
+from sunflower.core.custom_types import Song
+from sunflower.core.custom_types import Step
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST
-from sunflower.utils.music import fetch_cover_and_link_on_deezer, parse_songs
+from sunflower.utils.music import fetch_cover_and_link_on_deezer
+from sunflower.utils.music import parse_songs
 
 
 class Handler(abc.ABC):
@@ -19,7 +22,7 @@ class Handler(abc.ABC):
         return NotImplemented
 
 
-class AdsHandler(Handler, HTMLMixin):
+class AdsHandler(Handler):
     def __init__(self, channel):
         self.channel = channel
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN

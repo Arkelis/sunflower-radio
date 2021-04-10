@@ -1,16 +1,27 @@
 # This file is part of sunflower package. radio
 # bases.py contains base classes
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC
+from abc import ABCMeta
+from abc import abstractmethod
 from contextlib import suppress
 from datetime import datetime
 from logging import Logger
 from telnetlib import Telnet
-from typing import Dict, List, Optional, TYPE_CHECKING, Type
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Type
 
-from sunflower.core.custom_types import Broadcast, StationInfo, Step, StreamMetadata, UpdateInfo
+from sunflower.core import _html as html_utils
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import StationInfo
+from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import StreamMetadata
+from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.decorators import classproperty
-from sunflower.core.mixins import HTMLMixin
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST
+from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 if TYPE_CHECKING:
     from sunflower.core.bases.channels import Channel
@@ -35,7 +46,7 @@ class StationMeta(ABCMeta):
         return STATIONS_INSTANCES[cls]
 
 
-class Station(HTMLMixin, metaclass=StationMeta):
+class Station(metaclass=StationMeta):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -76,7 +87,7 @@ class Station(HTMLMixin, metaclass=StationMeta):
 
     @property
     def html_formatted_station_name(self):
-        return self._format_html_anchor_element(self.station_website_url, self.name)
+        return html_utils._format_html_anchor_element(self.station_website_url, self.name)
 
     @abstractmethod
     def get_step(self, logger: Logger, dt: datetime, channel: "Channel") -> UpdateInfo:
