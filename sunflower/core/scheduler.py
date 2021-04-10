@@ -4,9 +4,14 @@
 import traceback
 from datetime import datetime
 from time import sleep
-from typing import Any, Dict, List, Set, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Set
+from typing import Union
 
-from sunflower.core.bases import Channel, Station
+from sunflower.core.bases import Channel
+from sunflower.core.bases import Station
 
 
 class Scheduler:
@@ -15,7 +20,10 @@ class Scheduler:
         self.channels: List[Channel] = channels
         self.logger = logger
         # get stations
-        self.stations: Set[Station] = {station_cls() for channel in channels for station_cls in channel.stations}
+        self.stations: Set[Station] = {
+            station
+            for channel in channels
+            for station in channel.stations}
         # get objects to process at each iteration
         objects_to_process: List[Union[Channel, Station]] = []
         # add stations with process() method to objects to process
@@ -59,17 +67,12 @@ class Scheduler:
 
     def run(self):
         """Keep data for radio client up to date."""
-        try:
-            # loop
-            while True:
-                sleep(4)
-                context = self.context
-                for obj in self.objects_to_process:
-                    try:
-                        obj.process(self.logger, **context)
-                    except Exception as err:
-                        self.logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
-                        self.logger.error(traceback.format_exc())
-        except Exception as err:
-            self.logger.error("Erreur fatale")
-            self.logger.error(traceback.format_exc())
+        while True:
+            sleep(4)
+            context = self.context
+            for obj in self.objects_to_process:
+                try:
+                    obj.process(self.logger, **context)
+                except Exception as err:
+                    self.logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
+                    self.logger.error(traceback.format_exc())

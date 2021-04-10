@@ -29,7 +29,6 @@ from sunflower.utils.music import prevent_consecutive_artists
 class PycolorePlaylistStation(DynamicStation):
     name = "Radio Pycolore"
     station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
-    endpoint = "pycolore"
 
     public_playlist = PersistentAttribute("playlist")
 
@@ -41,8 +40,8 @@ class PycolorePlaylistStation(DynamicStation):
             for song in songs
         ]
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, repository):
+        super().__init__(repository, "pycolore")
         self._songs_to_play: List[Song] = []
         # self._populate_songs_to_play()
         self._current_song: Optional[Song] = None

@@ -41,16 +41,16 @@ class AdsHandler(Handler):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if step.broadcast.type != BroadcastType.ADS:
             return step
-        logger.debug(f"channel={self.channel.endpoint} station={self.channel.current_station.formatted_station_name} Ads detected.")
+        logger.debug(f"channel={self.channel.id} station={self.channel.current_station.formatted_station_name} Ads detected.")
         if not self.backup_songs:
-            logger.debug(f"channel={self.channel.endpoint} Backup songs list must be generated.")
+            logger.debug(f"channel={self.channel.id} Backup songs list must be generated.")
             self.backup_songs = self._parse_songs()
         backup_song = self.backup_songs.pop(0)
 
         # tell liquidsoap to play backup song
         with suppress(ConnectionRefusedError):
             with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_HOST) as session:
-                session.write(f"{self.channel.endpoint}_custom_songs.push {backup_song.path}\n".encode())
+                session.write(f"{self.channel.id}_custom_songs.push {backup_song.path}\n".encode())
 
         broadcast = step.broadcast
         thumbnail, url = fetch_cover_and_link_on_deezer(

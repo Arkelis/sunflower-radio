@@ -10,23 +10,25 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Type
 
 from pydantic import ValidationError
-from sunflower import settings
 from sunflower.core.bases.stations import Station
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import MetadataEncoder
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.custom_types import as_metadata_type
+from sunflower.core.persistence import PersistenceMixin
 from sunflower.core.persistence import PersistentAttribute
+from sunflower.core.persistence import Repository
 from sunflower.handlers import Handler
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST
 from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 
-class Channel:
+class Channel(PersistenceMixin):
     """Channel.
 
     Channel object contains and manages stations. It triggers station metadata updates
@@ -37,16 +39,15 @@ class Channel:
 
     data_type = "channel"
 
-    def __init__(self, endpoint, timetable, handlers=()):
+    def __init__(self, id: str, repository: "Repository", timetable: dict, handlers: Tuple[Handler]=()):
         """Channel constructor.
 
         Parameters:
-        - endpoint: string
+        - id: string
         - timetable: dict
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
-        assert endpoint in settings.CHANNELS, f"{endpoint} not mentioned in settings.CHANNELS"
-        self.endpoint: str = endpoint
+        super().__init__(repository, id)
         self.timetable: dict = timetable
         self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]
         self._liquidsoap_station: str = ""
@@ -54,13 +55,13 @@ class Channel:
         self._last_pull = datetime.today()
         self.long_pull_interval = 10  # seconds between long pulls
         if len(self.stations) == 1:
-            self._current_station_instance: Optional[Station] = self.stations[0]()
-            self._following_station_instance: Optional[Station] = None
+            self._current_station: Optional[Station] = self.stations[0]()
+            self._following_station: Optional[Station] = None
         else:
             self.current_station_start = datetime.now()
             self.current_station_end = datetime.now()
-            self._current_station_instance: Optional[Station] = None
-            self._following_station_instance: Optional[Station] = None
+            self._current_station: Optional[Station] = None
+            self._following_station: Optional[Station] = None
 
     @functools.cached_property
     def stations(self) -> tuple:
@@ -82,7 +83,7 @@ class Channel:
         - start: datetime.time object
         - end: datetime.time object
         - station_cls: Station class
-        - following_station_cls: Station class
+        - following_station: Station class
         """
 
         asked_time = dt.time()
@@ -97,8 +98,8 @@ class Channel:
             raise RuntimeError("Jour de la semaine non supporté.")
 
         getting_following = False
-        asked_station_cls: Optional[Type[Station]] = None
-        following_station_cls: Optional[Type[Station]] = None
+        asked_station: Optional[Type[Station]] = None
+        following_station: Optional[Type[Station]] = None
 
         index_of_last_element = len(self.timetable[key]) - 1
         for (i, t) in enumerate(self.timetable[key]):
@@ -114,7 +115,7 @@ class Channel:
             # on sélectionne la plage courante
             if not getting_following:
                 # dans le cas où on cherche la station courante, on enregistre les infos voulues
-                asked_station_cls = t[2]
+                asked_station = t[2]
                 asked_station_start = datetime.combine(dt.date(), start)
                 asked_station_end = datetime.combine(dt.date(), end)
                 if asked_station_end < asked_station_start:  # cas de minuit
@@ -122,22 +123,22 @@ class Channel:
                 getting_following = True
             else:
                 # si on cherche la suivante, on enregistre uniquement la classe
-                following_station_cls = t[2]
+                following_station = t[2]
                 break
 
         # si après avoir parcouru le bon jour on n'a rien trouvé : on lève une erreur
-        if asked_station_cls is None:
+        if asked_station is None:
             raise RuntimeError("Aucune station programmée à cet horaire.")
 
         # dans le cas où la station courante était le dernier créneau de la journée,
         # on cherche la station suivante dans le premier créneau de la journée suivante.
-        if following_station_cls is None:
+        if following_station is None:
             week_day = (dt + timedelta(hours=24)).weekday()
             for t in self.timetable:
                 if week_day in t:
                     for e in self.timetable[t]:
-                        if (station := e[2]) != asked_station_cls:
-                            following_station_cls = station
+                        if (station := e[2]) != asked_station:
+                            following_station = station
                             break
                     break
             else:
@@ -147,7 +148,7 @@ class Channel:
                     )
                 )
 
-        return asked_station_start, asked_station_end, asked_station_cls, following_station_cls
+        return asked_station_start, asked_station_end, asked_station, following_station
 
     def _update_station_instances(self):
         """Update current-station-related attributes.
@@ -162,24 +163,24 @@ class Channel:
             # If only one station, skip.
             return
 
-        if datetime.now() > self.current_station_end or self._current_station_instance is None:
-            new_start, new_end, CurrentStationClass, FollowingStationClass = self.get_station_info(datetime.now())
+        if datetime.now() > self.current_station_end or self._current_station is None:
+            new_start, new_end, current_station, following_station = self.get_station_info(datetime.now())
             self.current_station_end = new_end
             self.current_station_start = new_start
-            self._current_station_instance = CurrentStationClass()
-            self._following_station_instance = FollowingStationClass()
+            self._current_station = current_station
+            self._following_station = following_station
 
     @property
     def current_station(self) -> Station:
         """Return Station object currently on air."""
         self._update_station_instances()
-        return self._current_station_instance
+        return self._current_station
 
     @property
     def next_station(self) -> Station:
         """Return next Station object to be on air."""
         self._update_station_instances()
-        return self._following_station_instance
+        return self._following_station
 
     def _post_get_hook_step(self, data: dict):
         try:
@@ -253,14 +254,14 @@ class Channel:
         for t, L in self.timetable.items():
             if today.weekday() not in t:
                 continue
-            for start, end, station_cls in L:  # type: str, str, Type[Station]
+            for start, end, station in L:  # type: str, str, Type[Station]
                 start_dt = datetime.combine(today, time.fromisoformat(start))
                 end_dt = datetime.combine(today, time.fromisoformat(end))
                 # cas de minuit
                 if end_dt < start_dt:
                     end_dt = end_dt + timedelta(days=1)
                 # on stocke dans une variable la fin provisoire des programme
-                schedule += station_cls().get_schedule(logger, start_dt, end_dt)
+                schedule += station.get_schedule(logger, start_dt, end_dt)
                 # on met à jour la fin provisoire
         return schedule
 
@@ -268,13 +269,13 @@ class Channel:
         """Send stream metadata to liquidsoap."""
         new_stream_metadata = self.current_station.format_stream_metadata(broadcast)
         if new_stream_metadata is None:
-            logger.debug(f"channel={self.endpoint} StreamMetadata is empty")
+            logger.debug(f"channel={self.id} StreamMetadata is empty")
             return
         with suppress(ConnectionRefusedError):
             with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
                 metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
-                session.write(f"{self.endpoint}.insert {metadata_string}\n".encode())
-        logger.debug(f"channel={self.endpoint} {new_stream_metadata} sent to liquidsoap")
+                session.write(f"{self.id}.insert {metadata_string}\n".encode())
+        logger.debug(f"channel={self.id} {new_stream_metadata} sent to liquidsoap")
 
     def process(self, logger: Logger, now: datetime, **context):
         """If needed, update metadata.
@@ -290,18 +291,18 @@ class Channel:
         """
         # update schedule if needed
         if now.date() != self._schedule_day:
-            logger.info(f"channel={self.endpoint} Updating schedule...")
+            logger.info(f"channel={self.id} Updating schedule...")
             self.schedule = self.get_schedule(logger)
-            logger.info(f"channel={self.endpoint} Schedule updated!")
+            logger.info(f"channel={self.id} Schedule updated!")
             self._schedule_day = now.date()
         # make sure current station is used by liquidsoap
         if (current_station_name := self.current_station.formatted_station_name) != self._liquidsoap_station:
             with suppress(ConnectionRefusedError):
                 with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                    session.write(f"var.set {current_station_name}_on_{self.endpoint} = true\n".encode())
+                    session.write(f"var.set {current_station_name}_on_{self.id} = true\n".encode())
                     if self._liquidsoap_station:
                         session.read_until(b"\n")
-                        session.write(f"var.set {self._liquidsoap_station}_on_{self.endpoint} = false\n".encode())
+                        session.write(f"var.set {self._liquidsoap_station}_on_{self.id} = false\n".encode())
             self._liquidsoap_station = current_station_name
         # first retrieve current step
         current_step = self.current_step
@@ -328,7 +329,7 @@ class Channel:
         # update stream metadata
         self.update_stream_metadata(current_step.broadcast, logger)
         logger.debug(
-            f"channel={self.endpoint} station={self.current_station.formatted_station_name} Metadata was updated."
+            f"channel={self.id} station={self.current_station.formatted_station_name} Metadata was updated."
         )
 
     def get_liquidsoap_config(self):
@@ -336,34 +337,34 @@ class Channel:
 
         # définition des horaires des radios
         if len(self.stations) > 1:
-            source_str = f"# {self.endpoint} channel\n"
+            source_str = f"# {self.id} channel\n"
             for station in self.stations:
                 station_name = station.formatted_station_name
-                source_str += f'{station_name}_on_{self.endpoint} = interactive.bool("{station_name}_on_{self.endpoint}", false)\n'
-            source_str += f"{self.endpoint}_radio = switch(track_sensitive=false, [\n"
+                source_str += f'{station_name}_on_{self.id} = interactive.bool("{station_name}_on_{self.id}", false)\n'
+            source_str += f"{self.id}_radio = switch(track_sensitive=false, [\n"
             for station in self.stations:
                 station_name = station.formatted_station_name
-                source_str += f"    ({station_name}_on_{self.endpoint}, {station_name}),\n"
+                source_str += f"    ({station_name}_on_{self.id}, {station_name}),\n"
             source_str += "])\n"
         else:
             source_str = ""
 
         # output
-        fallback = str(self.endpoint) + "_radio" if source_str else self.stations[0].formatted_station_name
-        source_str += str(self.endpoint) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
+        fallback = str(self.id) + "_radio" if source_str else self.stations[0].formatted_station_name
+        source_str += str(self.id) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
         source_str += (
-            str(self.endpoint)
+            str(self.id)
             + '_radio = fallback(track_sensitive=false, [request.queue(id="'
-            + str(self.endpoint)
+            + str(self.id)
             + '_custom_songs"), '
-            + str(self.endpoint)
+            + str(self.id)
             + "_radio])\n"
         )
-        source_str += (f'{self.endpoint}_radio = server.insert_metadata(id="{self.endpoint}", '
-                       f'drop_metadata({self.endpoint}_radio))\n\n')
+        source_str += (f'{self.id}_radio = server.insert_metadata(id="{self.id}", '
+                       f'drop_metadata({self.id}_radio))\n\n')
 
         output_str = "output.icecast(%vorbis(quality=0.6),\n"
         output_str += '    host="localhost", port=3333, password="Arkelis77",\n'
-        output_str += '    mount="{0}", {0}_radio)\n\n'.format(self.endpoint)
+        output_str += '    mount="{0}", {0}_radio)\n\n'.format(self.id)
 
         return source_str, output_str

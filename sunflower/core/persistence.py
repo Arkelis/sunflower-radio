@@ -9,22 +9,21 @@ from typing import Optional
 from typing import Type
 
 import aredis
-from sunflower import settings
 from sunflower.core.custom_types import NotifyChangeStatus
 from sunflower.core.functions import run_coroutine_synchronously
 
 
 class Repository(ABC):
     @abstractmethod
-    def retrieve(self, *args, **kwargs):
+    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
         ...
 
     @abstractmethod
-    def persist(self, *args, **kwargs):
+    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
         ...
 
     @abstractmethod
-    def publish(self, *args, **kwargs):
+    def publish(self, key: str, channel, data):
         ...
 
 
@@ -34,16 +33,12 @@ class RedisRepository(Repository):
     Define REDIS_KEYS containing keys the application has right
     to access.
     """
-
-    # keep a dict containing name of Redis channels for pubsub
-    REDIS_CHANNELS = {name: "sunflower:channel:" + name for name in settings.CHANNELS}
-
     __slots__ = ("_redis",)
 
     def __init__(self, *args, **kwargs):
         self._redis = aredis.StrictRedis()
 
-    def retrieve(self, key, object_hook=None):
+    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
         """Get value for given key from Redis.
 
         Data got from Redis is loaded from json with given object_hook.
@@ -71,10 +66,34 @@ class RedisRepository(Repository):
 
         channel in redis is prefixed with 'sunflower:'.
         """
-        assert channel in self.REDIS_CHANNELS, "Channel not defined in settings."
         if not isinstance(data, str):
             data = json.dumps(data)
-        run_coroutine_synchronously(self._redis.publish, self.REDIS_CHANNELS[channel], data)
+        run_coroutine_synchronously(self._redis.publish, channel, data)
+
+
+class PersistenceMixin:
+    def __init_subclass__(cls, **kwargs):
+        if not hasattr(cls, "data_type"):
+            raise TypeError("Class using PersistenceMixin must have a"
+                            "'data_type' class attribute.")
+
+    def __init__(self, repository: Repository, id: str, *args, **kwargs):
+        self.repository = repository
+        self.id = id
+        super().__init__(*args, **kwargs)
+
+    def retrieve_from_repository(self, key: str, object_hook: Optional[Callable] = None):
+        return self.repository.retrieve(
+            f"sunflower:{self.data_type}:{self.id}:{key}", object_hook)
+
+    def persist_to_repository(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
+        return self.repository.persist(
+            f"sunflower:{self.data_type}:{self.id}:{key}", value, json_encoder_cls)
+
+    def publish_to_repository(self, channel, data):
+        return self.repository.publish(
+            f"sunflower:{self.data_type}:{self.id}:{channel}", data)
+
 
 
 class PersistentAttribute:
@@ -115,14 +134,15 @@ class PersistentAttribute:
     ```
     """
 
-    def __init__(self, key: str = "", doc: str = "",
-                 json_encoder_cls: Type[JSONEncoder] = None, object_hook: Callable = None,
-                 repository_cls: Type["Repository"] = None, notify_change: bool = False,
-                 pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
-        super().__init__()
-        if repository_cls is None:
-            repository_cls = RedisRepository
-        self.repository = repository_cls()
+    def __init__(
+            self,
+            key: str = "",
+            doc: str = "",
+            json_encoder_cls: Type[JSONEncoder] = None,
+            object_hook: Callable = None,
+            notify_change: bool = False,
+            pre_set_hook: Callable = lambda self, x: x,
+            post_get_hook: Callable = lambda self, x: x):
         self.key = key
         self.__doc__ = doc
         self.json_encoder_cls = json_encoder_cls
@@ -133,18 +153,21 @@ class PersistentAttribute:
         self._cache = None
 
     def __set_name__(self, owner, name):
+        if not issubclass(owner, PersistenceMixin):
+            raise TypeError("A PersistentAttribute must be defined in a class"
+                            "inherting from 'PersitenceMixin'.")
         self.name = name
         if not self.__doc__:
             self.__doc__ = f"{self.name} persistent attribute."
 
-    def __get__(self, obj, owner):
+    def __get__(self, obj: PersistenceMixin, owner):
         """Get data from Redis, and return self.post_get_hook_func(data)."""
         if obj is None:
             return self
-        data = self._cache = self.repository.retrieve(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", self.object_hook)
+        data = self._cache = obj.retrieve_from_repository(self.key, self.object_hook)
         return self.post_get_hook_func(obj, data)
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: PersistenceMixin, value):
         """Pass value to self.pre_set_hook_func() and store the result in Redis database.
 
         data = self.pre_set_hook_func(obj, value) must be serializable.
@@ -154,14 +177,14 @@ class PersistentAttribute:
         data = self.pre_set_hook_func(obj, value) if value is not None else value
         if self._cache == data or data is None:
             if self.notify_change:
-                self.repository.publish(obj.endpoint, NotifyChangeStatus.UNCHANGED.value)
+                obj.publish_to_repository(obj.id, NotifyChangeStatus.UNCHANGED.value)
             return
-        self.repository.persist(f"sunflower:{obj.data_type}:{obj.endpoint}:{self.key}", data, self.json_encoder_cls)
+        obj.persist_to_repository(self.key, data, self.json_encoder_cls)
         self._cache = data
         if self.notify_change:
-            self.repository.publish(obj.endpoint, NotifyChangeStatus.UPDATED.value)
+            obj.publish_to_repository(obj.id, NotifyChangeStatus.UPDATED.value)
 
-    def __delete__(self, obj):
+    def __delete__(self, obj: PersistenceMixin):
         raise AttributeError(f"Can't delete attribute 'f{self.name}'.")
 
     def pre_set_hook(self, pre_set_hook_func):
@@ -179,7 +202,7 @@ class PersistentAttribute:
         ```
         """
         return type(self)(
-            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository),
+            self.key, self.__doc__, self.json_encoder_cls, self.object_hook,
             self.notify_change, pre_set_hook_func, self.post_get_hook_func
         )
 
@@ -198,6 +221,6 @@ class PersistentAttribute:
         ```
         """
         return type(self)(
-            self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository),
+            self.key, self.__doc__, self.json_encoder_cls, self.object_hook,
             self.notify_change, self.pre_set_hook_func, post_get_hook_func
         )

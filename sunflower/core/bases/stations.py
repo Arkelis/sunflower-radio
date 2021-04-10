@@ -1,7 +1,6 @@
 # This file is part of sunflower package. radio
 # bases.py contains base classes
 from abc import ABC
-from abc import ABCMeta
 from abc import abstractmethod
 from contextlib import suppress
 from datetime import datetime
@@ -20,33 +19,17 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.decorators import classproperty
+from sunflower.core.persistence import PersistenceMixin
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST
 from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 if TYPE_CHECKING:
-    from sunflower.core.bases.channels import Channel
+    from sunflower.core.bases.channel import Channel
 
-STATIONS_INSTANCES = {} # type: Dict[StationMeta, Optional[Station]]
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
 
 
-class StationMeta(ABCMeta):
-    """Station metaclass
-
-    Station are singletons. This metaclass override Station classes instantiation mechanism:
-
-    - first time `StationKlass()` is called, an object is created
-    - the following times `StationKlass()` is called, it returns the existing instance
-      (does not call `__new__()` or `__init__()`)
-    """
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in STATIONS_INSTANCES:
-            STATIONS_INSTANCES[cls] = super().__call__(*args, **kwargs)
-        return STATIONS_INSTANCES[cls]
-
-
-class Station(metaclass=StationMeta):
+class Station(ABC):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
@@ -56,11 +39,10 @@ class Station(metaclass=StationMeta):
     Station classes are singletons.
     """
 
-    data_type = "station"
-    name: str = ""
-    station_thumbnail: str = ""
-    station_website_url: str = ""
-    station_slogan: str = ""
+    name: str
+    station_thumbnail: str
+    station_website_url: str
+    station_slogan: str
 
     # By default, station data is retrieved when current broadcast/step is ended. Sometimes, station external API is not
     # very reliable, and long pull is needed (regular retrieval instead of strategic pull). In this case, turn this
@@ -105,6 +87,7 @@ class Station(metaclass=StationMeta):
         - channel: Channel object calling this method, it can contains useful information
         - for_schedule: bool - indicates if returned step is meant to be displayed in schedule or in player
         """
+        ...
 
     @abstractmethod
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
@@ -124,22 +107,21 @@ class Station(metaclass=StationMeta):
         By default, return None (no data is sent)
         Otherwise return a StreamMetadata object.
         """
+        ...
 
     @classmethod
     @abstractmethod
     def get_liquidsoap_config(cls):
         """Return string containing liquidsoap config for this station."""
+        ...
 
 
-class DynamicStation(Station, ABC):
+class DynamicStation(Station, PersistenceMixin, ABC):
     """Base class for internally managed stations.
     
     Must implement process() method.
     """
-    endpoint: str = "" # for api
-
-    def __init_subclass__(cls):
-        REVERSE_STATIONS[cls.endpoint] = cls
+    data_type = "station"
 
     @abstractmethod
     def process(self, logger, channels_using, channels_using_next, now, **kwargs):
