@@ -1,4 +1,4 @@
-class classproperty(property):
+class classproperty:
     """Create a class-accessible property.
     
     If a `Klass` class implements a classproperty named `kprop`,
@@ -11,7 +11,8 @@ class classproperty(property):
     both class an instances. Simply make sure that you use only
     class attributes.
     """
+    def __init__(self, fget):
+        self.fget = fget
+
     def __get__(self, obj, owner):
         return self.fget(owner)
-
-
