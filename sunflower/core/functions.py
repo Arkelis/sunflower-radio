@@ -1,10 +1,9 @@
 # This file is part of sunflower package. radio
 # This module contains core functions.
 import asyncio
-from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 
-from sunflower.core.descriptors import PersistentAttribute
+from sunflower.core.persistence import PersistentAttribute
 
 
 def check_obj_integrity(obj):
@@ -29,6 +28,8 @@ def check_obj_integrity(obj):
 def run_coroutine_synchronously(coroutine_function, *args, **kwargs):
     """Run coroutine syncronously.
 
+    Try to run asyncio.run. If it fails, run the coroutine in a
+    ThreadPoolExecutor.
     """
 
     if not asyncio.iscoroutinefunction(coroutine_function):

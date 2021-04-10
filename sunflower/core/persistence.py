@@ -1,11 +1,80 @@
+import json
+from abc import ABC
+from abc import abstractmethod
 from datetime import datetime
-from json import JSONEncoder
-from typing import Callable, TYPE_CHECKING, Type
+from json.encoder import JSONEncoder
+from typing import Any
+from typing import Callable
+from typing import Optional
+from typing import Type
 
+import aredis
+from sunflower import settings
 from sunflower.core.custom_types import NotifyChangeStatus
+from sunflower.core.functions import run_coroutine_synchronously
 
-if TYPE_CHECKING:
-    from sunflower.core.repositories import Repository
+
+class Repository(ABC):
+    @abstractmethod
+    def retrieve(self, *args, **kwargs):
+        ...
+
+    @abstractmethod
+    def persist(self, *args, **kwargs):
+        ...
+
+    @abstractmethod
+    def publish(self, *args, **kwargs):
+        ...
+
+
+class RedisRepository(Repository):
+    """Provide a method to access data from redis database.
+
+    Define REDIS_KEYS containing keys the application has right
+    to access.
+    """
+
+    # keep a dict containing name of Redis channels for pubsub
+    REDIS_CHANNELS = {name: "sunflower:channel:" + name for name in settings.CHANNELS}
+
+    __slots__ = ("_redis",)
+
+    def __init__(self, *args, **kwargs):
+        self._redis = aredis.StrictRedis()
+
+    def retrieve(self, key, object_hook=None):
+        """Get value for given key from Redis.
+
+        Data got from Redis is loaded from json with given object_hook.
+        If no data is found, return None.
+        """
+        raw_data = run_coroutine_synchronously(self._redis.get, key)
+        if raw_data is None:
+            return None
+        return json.loads(raw_data.decode(), object_hook=object_hook)
+
+    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
+        """Set new value for given key in Redis.
+
+        value is dumped as json with given json_encoder_cls.
+        """
+        json_data = json.dumps(value, cls=json_encoder_cls)
+        return run_coroutine_synchronously(self._redis.set, key, json_data)
+
+    def publish(self, channel, data):
+        """publish a message to a redis channel.
+
+        Parameters:
+        - channel (str): channel name
+        - data (jsonable data or str): data to publish
+
+        channel in redis is prefixed with 'sunflower:'.
+        """
+        assert channel in self.REDIS_CHANNELS, "Channel not defined in settings."
+        if not isinstance(data, str):
+            data = json.dumps(data)
+        run_coroutine_synchronously(self._redis.publish, self.REDIS_CHANNELS[channel], data)
 
 
 class PersistentAttribute:
@@ -38,7 +107,7 @@ class PersistentAttribute:
     def persistent_attribute(self, value):
         # format data to be stored in Redis database
         return data
-    
+
     @persistent_attribute.post_get_hook
     def persistent_attribute(self, data):
         # decode data
@@ -52,7 +121,6 @@ class PersistentAttribute:
                  pre_set_hook: Callable = lambda self, x: x, post_get_hook: Callable = lambda self, x: x):
         super().__init__()
         if repository_cls is None:
-            from sunflower.core.repositories import RedisRepository
             repository_cls = RedisRepository
         self.repository = repository_cls()
         self.key = key
@@ -68,7 +136,7 @@ class PersistentAttribute:
         self.name = name
         if not self.__doc__:
             self.__doc__ = f"{self.name} persistent attribute."
-        
+
     def __get__(self, obj, owner):
         """Get data from Redis, and return self.post_get_hook_func(data)."""
         if obj is None:
@@ -114,7 +182,7 @@ class PersistentAttribute:
             self.key, self.__doc__, self.json_encoder_cls, self.object_hook, type(self.repository),
             self.notify_change, pre_set_hook_func, self.post_get_hook_func
         )
-    
+
     def post_get_hook(self, post_get_hook_func):
         """Method for adding post_get_hook_func() with a decorator.
 

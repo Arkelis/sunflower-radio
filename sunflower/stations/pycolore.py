@@ -18,7 +18,7 @@ from sunflower.core.custom_types import SongPayload
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
-from sunflower.core.descriptors import PersistentAttribute
+from sunflower.core.persistence import PersistentAttribute
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST
 from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 from sunflower.utils.music import fetch_cover_and_link_on_deezer

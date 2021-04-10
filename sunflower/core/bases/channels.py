@@ -1,18 +1,29 @@
 import functools
 from contextlib import suppress
-from datetime import date, datetime, time, timedelta
+from datetime import date
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from logging import Logger
 from telnetlib import Telnet
-from typing import Dict, Iterable, List, Optional, Type
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Type
 
 from pydantic import ValidationError
-
 from sunflower import settings
 from sunflower.core.bases.stations import Station
-from sunflower.core.custom_types import Broadcast, MetadataEncoder, Step, UpdateInfo, as_metadata_type
-from sunflower.core.descriptors import PersistentAttribute
+from sunflower.core.custom_types import Broadcast
+from sunflower.core.custom_types import MetadataEncoder
+from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import UpdateInfo
+from sunflower.core.custom_types import as_metadata_type
+from sunflower.core.persistence import PersistentAttribute
 from sunflower.handlers import Handler
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST
+from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 
 class Channel:
