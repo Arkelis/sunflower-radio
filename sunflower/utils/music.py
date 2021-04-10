@@ -51,7 +51,7 @@ def parse_songs(glob_pattern: str) -> List[Song]:
         try:
             songs.append(Song(
                 path=path,
-                artist=file.get("artist", [""])[0],
+                artist=file.get("artist", file.get("author", [""]))[0],
                 album=file.get("album", [""])[0],
                 title=file.get("title", [""])[0],
                 length=file.info.length,
