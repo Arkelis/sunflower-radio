@@ -14,7 +14,7 @@ from typing import Tuple
 from typing import Type
 
 from pydantic import ValidationError
-from sunflower.core.bases.stations import Station
+from sunflower.core.stations import Station
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import MetadataEncoder
 from sunflower.core.custom_types import Step

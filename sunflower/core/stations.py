@@ -24,7 +24,7 @@ from sunflower.settings import LIQUIDSOAP_TELNET_HOST
 from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 if TYPE_CHECKING:
-    from sunflower.core.bases.channel import Channel
+    from sunflower.core.channel import Channel
 
 REVERSE_STATIONS = {} # type: Dict[str, Type[DynamicStation]]
 
