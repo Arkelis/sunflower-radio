@@ -1,42 +1,19 @@
-import json
 import logging
 from collections import Counter
 from datetime import datetime
-from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Type
 
-from sunflower.core.bases import Channel
-from sunflower.core.persistence import Repository
-from sunflower.stations import FranceCulture
-from sunflower.stations import FranceInfo
-from sunflower.stations import FranceInter
-from sunflower.stations import FranceInterParis
-from sunflower.stations import FranceMusique
-
-
-class FakeRepository(Repository):
-    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
-        pass
-
-    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
-        pass
-
-    def publish(self, key: str, channel, data):
-        pass
-
-
-france_culture = FranceCulture()
-france_inter = FranceInter()
-fip = FranceInterParis()
-france_info = FranceInfo()
-france_musique = FranceMusique()
+from sunflower.core.channel import Channel
+from tests.common import FakeRepository
+from tests.common import fip
+from tests.common import france_culture
+from tests.common import france_info
+from tests.common import france_inter
+from tests.common import france_musique
 
 test_channel = Channel(
     id="tournesol",
     repository=FakeRepository(),
-    timetable={
+    timetable_dict={
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
             ("00:00", "05:00", france_culture),
