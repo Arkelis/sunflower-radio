@@ -14,13 +14,13 @@ from typing import Tuple
 
 import requests
 from dotenv import load_dotenv
-from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import SongPayload
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
+from sunflower.core.stations import URLStation
 from sunflower.utils import music
 
 if TYPE_CHECKING:
@@ -486,7 +486,7 @@ class FranceInterParis(RadioFranceStation):
     station_url = "http://icecast.radiofrance.fr/fip-hifi.aac"
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        if self == channel.current_station:
+        if self == channel.station_at:
             return Step.none()
         return Step(start=int(dt.timestamp()), end=int(dt.timestamp()), broadcast=Broadcast.empty(self))
 

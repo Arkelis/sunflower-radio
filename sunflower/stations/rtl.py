@@ -9,14 +9,13 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 import requests
-
-from sunflower.core.bases import URLStation
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import SongPayload
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
+from sunflower.core.stations import URLStation
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -277,8 +276,8 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         dt = (self.current_show_data.get("show_end")
-              if channel.current_station == self
-              else channel.current_station_end)
+              if channel.station_at == self
+              else channel.station_end_at)
         show_data = self._fetch_show_metadata(dt)
         return self._step_from_show_data(show_data)
 

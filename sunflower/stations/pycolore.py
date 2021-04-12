@@ -9,8 +9,7 @@ from typing import List
 from typing import Optional
 
 from sunflower import settings
-from sunflower.core.bases import Channel
-from sunflower.core.bases import DynamicStation
+from sunflower.core.channel import Channel
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import Song
@@ -19,6 +18,7 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.persistence import PersistentAttribute
+from sunflower.core.stations import DynamicStation
 from sunflower.settings import LIQUIDSOAP_TELNET_HOST
 from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 from sunflower.utils.music import fetch_cover_and_link_on_deezer
@@ -29,6 +29,7 @@ from sunflower.utils.music import prevent_consecutive_artists
 class PycolorePlaylistStation(DynamicStation):
     name = "Radio Pycolore"
     station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
+    station_website_url = ""
 
     public_playlist = PersistentAttribute("playlist")
 
@@ -37,8 +38,7 @@ class PycolorePlaylistStation(DynamicStation):
         """Persist public fields of song objects in current playlist in redis."""
         return [
             {"artist": song.artist, "title": song.title, "album": song.album}
-            for song in songs
-        ]
+            for song in songs]
 
     def __init__(self, repository):
         super().__init__(repository, "pycolore")
@@ -90,7 +90,10 @@ class PycolorePlaylistStation(DynamicStation):
             self._current_song_end = now.timestamp() + max_length
             return
         logger.debug(
-            f"station={self.formatted_station_name} Playing {self._current_song.artist} - {self._current_song.title} ({len(self._songs_to_play)} songs remaining in current list)."
+            f"station={self.formatted_station_name} "
+            f"Playing {self._current_song.artist} "
+            f"- {self._current_song.title} "
+            f"({len(self._songs_to_play)} songs remaining in current list)."
         )
         self._current_song_end = (now + timedelta(seconds=self._current_song.length)).timestamp() + delay
         with suppress(ConnectionRefusedError):
@@ -100,8 +103,8 @@ class PycolorePlaylistStation(DynamicStation):
     def get_step(self, logger: Logger, dt: datetime, channel: Channel) -> UpdateInfo:
         dt_timestamp = int(dt.timestamp())
         if self._current_song is None:
-            next_station_name = channel.next_station.name
-            next_station_start = int(channel.current_station_end.timestamp())
+            next_station_name = channel.station_after(dt).name
+            next_station_start = int(channel.station_end_at(dt).timestamp())
             return UpdateInfo(
                 should_notify_update=True,
                 step=Step.waiting_for_next_station(dt_timestamp, next_station_start, self, next_station_name)
@@ -129,12 +132,10 @@ class PycolorePlaylistStation(DynamicStation):
                          f"{artists_str}."),
                 metadata=SongPayload(title=self._current_song.title,
                                      artist=self._current_song.artist,
-                                     album="La Playlist Pycolore")
-            )
-        ))
+                                     album="La Playlist Pycolore"))))
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        if self == channel.current_station:
+        if self == channel.station_at(dt):
             return Step.none()
         return Step(
             start=int(dt.timestamp()),
@@ -174,7 +175,7 @@ class PycolorePlaylistStation(DynamicStation):
                 return
             # in this case, anticipate and launch a song
             for channel in channels_using_next[self]: # type: Channel
-                delay = max((channel.current_station_end - now).seconds, 0)
+                delay = max((channel.station_end_at(now) - now).seconds, 0)
                 max_length = -1
                 self._play(delay, max_length, logger, now)
                 break
@@ -182,7 +183,7 @@ class PycolorePlaylistStation(DynamicStation):
 
         # compute end of use
         for channel in channels_using_self: # type: Channel
-            end_of_current_station = channel.current_station_end
+            end_of_current_station = channel.station_end_at(now)
             if self._end_of_use < end_of_current_station:
                 self._end_of_use = end_of_current_station
 

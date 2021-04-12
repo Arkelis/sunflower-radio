@@ -17,6 +17,9 @@ from sunflower.utils.music import parse_songs
 
 
 class Handler(abc.ABC):
+    def __init__(self, channel):
+        self.channel = channel
+
     @abc.abstractmethod
     def process(self, step: Step, logger: Logger, dt: datetime):
         return NotImplemented
@@ -24,7 +27,7 @@ class Handler(abc.ABC):
 
 class AdsHandler(Handler):
     def __init__(self, channel):
-        self.channel = channel
+        super().__init__(channel)
         self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
         self.backup_songs = self._parse_songs()
 
@@ -41,7 +44,7 @@ class AdsHandler(Handler):
         """Play backup songs if advertising is detected on currently broadcasted station."""
         if step.broadcast.type != BroadcastType.ADS:
             return step
-        logger.debug(f"channel={self.channel.id} station={self.channel.current_station.formatted_station_name} Ads detected.")
+        logger.debug(f"channel={self.channel.id} station={self.channel.station_at(dt).formatted_station_name} Ads detected.")
         if not self.backup_songs:
             logger.debug(f"channel={self.channel.id} Backup songs list must be generated.")
             self.backup_songs = self._parse_songs()
@@ -54,7 +57,7 @@ class AdsHandler(Handler):
 
         broadcast = step.broadcast
         thumbnail, url = fetch_cover_and_link_on_deezer(
-            self.channel.current_station.station_thumbnail, backup_song.artist, backup_song.album, backup_song.title
+            self.channel.station_at(dt).station_thumbnail, backup_song.artist, backup_song.album, backup_song.title
         )
 
         # and update metadata

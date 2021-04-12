@@ -1,8 +1,7 @@
+import itertools
 from contextlib import suppress
 from datetime import date
 from datetime import datetime
-from datetime import time
-from datetime import timedelta
 from logging import Logger
 from telnetlib import Telnet
 from typing import Dict
@@ -13,9 +12,9 @@ from typing import Tuple
 from typing import Type
 
 from pydantic import ValidationError
-from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import MetadataEncoder
 from sunflower.core.custom_types import Step
+from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.custom_types import as_metadata_type
 from sunflower.core.persistence import PersistenceMixin
@@ -54,14 +53,6 @@ class Channel(PersistenceMixin):
         self._schedule_day: date = date(1970, 1, 1)
         self._last_pull = datetime.today()
         self.long_pull_interval = 10  # seconds between long pulls
-        if len(self.stations) == 1:
-            self._current_station: Optional[Station] = self.stations[0]()
-            self._following_station: Optional[Station] = None
-        else:
-            self.current_station_start = datetime.now()
-            self.current_station_end = datetime.now()
-            self._current_station: Optional[Station] = None
-            self._following_station: Optional[Station] = None
 
     @property
     def stations(self) -> tuple:
@@ -132,50 +123,38 @@ class Channel(PersistenceMixin):
         return self.station_at(now).get_step(logger, now, self)
 
     def get_next_step(self, logger: Logger, start: datetime) -> Step:
+        current_station_end = self.station_end_at(dt=start)
         station = [
             self.station_at(start),  # current station if start > self.current_station_end == False
             self.station_after(start),  # next station if start > self.current_station_end == True
-        ][start >= self.current_station_end]
+        ][start >= current_station_end]
         next_step = station.get_next_step(logger, start, self)
         if next_step.end == next_step.start:
-            next_step.end = int(self.current_station_end.timestamp())
+            next_step.end = int(current_station_end.timestamp())
         if (next_step.is_none()) or (
-            next_step.end > (self.current_station_end.timestamp() + 300)
+            next_step.end > (current_station_end.timestamp() + 300)
             and next_step.broadcast.station == self.station_at(start).station_info
         ):
-            next_step = self.station_after(start).get_next_step(logger, self.current_station_end, self)
-        next_step.start = min(next_step.start, int(self.current_station_end.timestamp()))
+            next_step = self.station_after(start).get_next_step(logger, current_station_end, self)
+        next_step.start = min(next_step.start, int(current_station_end.timestamp()))
         return next_step
 
     def get_schedule(self, logger: Logger) -> List[Step]:
         """Get list of steps which is the schedule of current day"""
-        today = datetime.today()
-        schedule: List[Step] = []
-        for t, L in self.timetable.items():
-            if today.weekday() not in t:
-                continue
-            for start, end, station in L:  # type: str, str, Type[Station]
-                start_dt = datetime.combine(today, time.fromisoformat(start))
-                end_dt = datetime.combine(today, time.fromisoformat(end))
-                # cas de minuit
-                if end_dt < start_dt:
-                    end_dt = end_dt + timedelta(days=1)
-                # on stocke dans une variable la fin provisoire des programme
-                schedule += station.get_schedule(logger, start_dt, end_dt)
-                # on met à jour la fin provisoire
-        return schedule
+        return list(itertools.chain(*(
+            slot.station.get_schedule(logger, slot.start, slot.end)
+            for slot in self.timetable.resolved_timetable_of(datetime.today()))))
 
-    def update_stream_metadata(self, broadcast: Broadcast, logger: Logger):
+    def send_metadata_to_liquidsoap(self, stream_metadata: StreamMetadata, logger: Logger):
         """Send stream metadata to liquidsoap."""
-        new_stream_metadata = self.station_at.format_stream_metadata(broadcast)
-        if new_stream_metadata is None:
+        if stream_metadata is None:
             logger.debug(f"channel={self.id} StreamMetadata is empty")
             return
         with suppress(ConnectionRefusedError):
             with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                metadata_string = f'title="{new_stream_metadata.title}",artist="{new_stream_metadata.artist}"'
+                metadata_string = f'title="{stream_metadata.title}",artist="{stream_metadata.artist}"'
                 session.write(f"{self.id}.insert {metadata_string}\n".encode())
-        logger.debug(f"channel={self.id} {new_stream_metadata} sent to liquidsoap")
+        logger.debug(f"channel={self.id} {stream_metadata} sent to liquidsoap")
 
     def process(self, logger: Logger, now: datetime, **context):
         """If needed, update metadata.
@@ -195,8 +174,11 @@ class Channel(PersistenceMixin):
             self.schedule = self.get_schedule(logger)
             logger.info(f"channel={self.id} Schedule updated!")
             self._schedule_day = now.date()
+
+        current_station = self.station_at(now)
+
         # make sure current station is used by liquidsoap
-        if (current_station_name := self.station_at.formatted_station_name) != self._liquidsoap_station:
+        if (current_station_name := current_station.formatted_station_name) != self._liquidsoap_station:
             with suppress(ConnectionRefusedError):
                 with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
                     session.write(f"var.set {current_station_name}_on_{self.id} = true\n".encode())
@@ -209,10 +191,10 @@ class Channel(PersistenceMixin):
         # check if we must retrieve new metadata
         if (
             current_step is not None
-            and not self.station_at.long_pull
+            and not current_station.long_pull
             and now.timestamp() < current_step.end
-            and current_step.broadcast.station.name == self.station_at.name
-        ) or (self.station_at.long_pull and (now - self._last_pull).seconds < self.long_pull_interval):
+            and current_step.broadcast.station.name == current_station.name
+        ) or (current_station.long_pull and (now - self._last_pull).seconds < self.long_pull_interval):
             self.current_step = None  # notify unchanged
             return
         self._last_pull = now
@@ -227,10 +209,12 @@ class Channel(PersistenceMixin):
         # update metadata and info if needed
         self.current_step = current_step
         # update stream metadata
-        self.update_stream_metadata(current_step.broadcast, logger)
+        new_stream_metadata = current_station.format_stream_metadata(current_step.broadcast)
+        self.send_metadata_to_liquidsoap(new_stream_metadata, logger)
         logger.debug(
-            f"channel={self.id} station={self.station_at.formatted_station_name} Metadata was updated."
-        )
+            f"channel={self.id} "
+            f"station={current_station.formatted_station_name} "
+            f"Metadata was updated.")
 
     def get_liquidsoap_config(self):
         """Renvoie une chaîne de caractères à écrire dans le fichier de configuration liquidsoap."""
@@ -258,8 +242,7 @@ class Channel(PersistenceMixin):
             + str(self.id)
             + '_custom_songs"), '
             + str(self.id)
-            + "_radio])\n"
-        )
+            + "_radio])\n")
         source_str += (f'{self.id}_radio = server.insert_metadata(id="{self.id}", '
                        f'drop_metadata({self.id}_radio))\n\n')
 

@@ -1,3 +1,4 @@
+from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
@@ -14,16 +15,26 @@ if TYPE_CHECKING:
     pass
 
 
-class TimeTimetableSlot(NamedTuple):
+class TimetableSlot(NamedTuple):
     start: time
     end: time
     station: Station
 
 
-class DatetimeTimetableSlot(NamedTuple):
+class ResolvedTimetableSlot(NamedTuple):
     start: datetime
     end: datetime
     station: Station
+
+    @classmethod
+    def fromslot(cls, timetableslot: TimetableSlot, day: date):
+        return cls(
+            start=datetime.combine(day, timetableslot.start),
+            end=(
+                datetime.combine(day, timetableslot.end)
+                if timetableslot.start < timetableslot.end
+                else datetime.combine(day, timetableslot.end) + timedelta(days=1)),
+            station=timetableslot.station)
 
 
 class Timetable:
@@ -36,8 +47,8 @@ class Timetable:
 
     @staticmethod
     def _extract_from_dict(
-            dict_representation: Dict[Tuple[int, ...], Tuple[str, str, Station]]):
-        weekday_timetables: List[Optional[Tuple[TimeTimetableSlot]]] = [None] * 7
+            dict_representation: Dict[Tuple[int, ...], List[Tuple[str, str, Station]]]):
+        weekday_timetables: List[Optional[Tuple[TimetableSlot]]] = [None] * 7
         stations = set()
         for weekday_tuple, slots_list in dict_representation.items():
             day_timetable = []
@@ -46,7 +57,7 @@ class Timetable:
                 end = time.fromisoformat(slot_tuple[1])
                 station = slot_tuple[2]
                 stations.add(station)
-                day_timetable.append(TimeTimetableSlot(start, end, station))
+                day_timetable.append(TimetableSlot(start, end, station))
             for weekday in weekday_tuple:
                 weekday_timetables[weekday] = tuple(day_timetable)
         if None in weekday_timetables:
@@ -57,19 +68,18 @@ class Timetable:
     def stations(self):
         return self._stations
 
-    @property
-    def weekday_timetables(self):
-        return self._timetables
+    def resolved_timetable_of(self, dt: datetime) -> List[ResolvedTimetableSlot]:
+        """Return a list of ResolvedTimetableSlot objects for the provided dt"""
+        return [
+            ResolvedTimetableSlot.fromslot(slot, dt.date())
+            for slot in self._timetables[dt.weekday()]]
 
-    def _slot_at(self, dt: datetime) -> DatetimeTimetableSlot:
+    def _slot_at(self, dt: datetime) -> ResolvedTimetableSlot:
         weekday = dt.weekday()
         for slot in self._timetables[weekday]:
-            start_dt = datetime.combine(dt.date(), slot.start)
-            end_dt = datetime.combine(dt.date(), slot.end)
-            if end_dt < start_dt:
-                end_dt += timedelta(hours=24)
-            if start_dt <= dt < end_dt:
-                return DatetimeTimetableSlot(start_dt, end_dt, slot.station)
+            resolved_slot = ResolvedTimetableSlot.fromslot(slot, dt.date())
+            if resolved_slot.start <= dt < resolved_slot.end:
+                return resolved_slot
         else:
             raise RuntimeError(f"No slot found at {dt}.")
 

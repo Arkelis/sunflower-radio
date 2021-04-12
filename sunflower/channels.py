@@ -2,7 +2,7 @@
 
 """Module containing radio metadata fetching related functions."""
 
-from sunflower.core.bases import Channel
+from sunflower.core.channel import Channel
 from sunflower.core.persistence import RedisRepository
 from sunflower.handlers import AdsHandler
 from sunflower.stations import FranceCulture
@@ -31,12 +31,12 @@ radio_pycolore = PycolorePlaylistStation(redis_repository)
 tournesol = Channel(
     id="tournesol",
     repository=redis_repository,
-    timetable={
+    timetable_dict={
         # (weekday1, weekday2, ...)
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
             ("00:00", "05:00", france_culture), # Les nuits de France Culture
-            ("06:00", "10:00", france_inter), # Matinale, Boomerang, l'instant M
+            ("05:00", "10:00", france_inter), # Matinale, Boomerang, l'instant M
             ("10:00", "12:00", france_culture), # Les chemins de la philosophie, Culture monde
             ("12:00", "12:30", france_info), # Info
             ("12:30", "13:30", france_inter), # Carnets de campagne, Jeu des mille, Journal
@@ -74,7 +74,7 @@ music = Channel(
     "musique",
     redis_repository,
     handlers=(AdsHandler,),
-    timetable={
+    timetable_dict={
         (0, 1, 2, 3,): [
             ("00:00", "06:00", fip),
             ("06:00", "09:00", rtl2),
