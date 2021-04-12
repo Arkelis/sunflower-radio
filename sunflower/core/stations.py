@@ -2,6 +2,7 @@
 # bases.py contains base classes
 from abc import ABC
 from abc import abstractmethod
+from abc import abstractproperty
 from contextlib import suppress
 from datetime import datetime
 from logging import Logger
@@ -41,7 +42,7 @@ class Station(ABC):
 
     name: str
     station_thumbnail: str
-    station_website_url: str
+    station_website_url: str = abstractproperty()
     station_slogan: str
 
     # By default, station data is retrieved when current broadcast/step is ended. Sometimes, station external API is not
