@@ -1,4 +1,5 @@
 # This file is part of sunflower package. Radio app.
+import hy
 
 from sunflower.channels_definitions import channels_definitions
 from sunflower.core.channel import Channel
