@@ -45,6 +45,15 @@ class Timetable:
         self._stations = stations
         self._timetables = timetables
 
+    @classmethod
+    def fromconfig(cls, config, stations_map):
+        new_config = {}
+        for days, slots in config.items():
+            new_config[days] = []
+            for start, end, station_name in slots:
+                new_config[days].append((start, end, stations_map[station_name]))
+        return cls(new_config)
+
     @staticmethod
     def _extract_from_dict(
             dict_representation: Dict[Tuple[int, ...], List[Tuple[str, str, Station]]]):

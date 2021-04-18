@@ -12,14 +12,14 @@ from typing import Tuple
 from typing import Type
 
 from pydantic import ValidationError
-from sunflower.core.custom_types import MetadataEncoder
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
-from sunflower.core.custom_types import as_metadata_type
+from sunflower.core.persistence import MetadataEncoder
 from sunflower.core.persistence import PersistenceMixin
 from sunflower.core.persistence import PersistentAttribute
-from sunflower.core.persistence import Repository
+from sunflower.core.persistence import as_metadata_type
+from sunflower.core.repository import Repository
 from sunflower.core.stations import Station
 from sunflower.core.timetable import Timetable
 from sunflower.handlers import Handler
@@ -38,7 +38,12 @@ class Channel(PersistenceMixin):
 
     data_type = "channel"
 
-    def __init__(self, id: str, repository: "Repository", timetable_dict: dict, handlers: Tuple[Type[Handler]]=()):
+    def __init__(self,
+                 id: str,
+                 name: str,
+                 repository: "Repository",
+                 timetable: Timetable,
+                 handlers: Tuple[Type[Handler]]=()):
         """Channel constructor.
 
         Parameters:
@@ -47,12 +52,26 @@ class Channel(PersistenceMixin):
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
         super().__init__(repository, id)
-        self.timetable = Timetable(timetable_dict)
+        self.name = name
+        self.timetable = timetable
         self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]
         self._liquidsoap_station: str = ""
         self._schedule_day: date = date(1970, 1, 1)
         self._last_pull = datetime.today()
         self.long_pull_interval = 10  # seconds between long pulls
+
+    @classmethod
+    def fromconfig(cls,
+                   repository: "Repository",
+                   config: Dict,
+                   stations_map: Dict[str, Station],
+                   handlers_map: Dict[str, Handler]):
+        channel_name = config["name"]
+        channel_id = config["id"]
+        channel_timetable = Timetable.fromconfig(config["timetable"], stations_map)
+        channel_handlers = tuple(handlers_map[name] for name in config["handlers"])
+        return cls(channel_id, channel_name, repository, channel_timetable, channel_handlers)
+
 
     @property
     def stations(self) -> tuple:
