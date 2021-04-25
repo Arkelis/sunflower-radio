@@ -1,9 +1,7 @@
 # This file is part of sunflower package. radio
 
-import json
 from enum import Enum
 from typing import Any
-from typing import Dict
 from typing import Optional
 from typing import TYPE_CHECKING
 
@@ -138,25 +136,3 @@ class StreamMetadata(BaseModel):
 # alias for StreamMetadata
 class SongPayload(StreamMetadata):
     pass
-
-
-# BroadcastType utils for json (de)serialization
-
-class MetadataEncoder(json.JSONEncoder):
-    """Subclass of json.JSONEncoder supporting BroadcastType serialization."""
-    def default(self, obj):
-        if isinstance(obj, BroadcastType):
-            return obj.value
-        return json.JSONEncoder.default(self, obj)
-
-
-def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
-    """object_hook for supporting BroadcastType at json deserialization."""
-    type_ = mapping.get("type")
-    if type_ is None:
-        return mapping
-    for member in BroadcastType:
-        if type_ == member.value:
-            mapping["type"] = BroadcastType(type_)
-            break
-    return mapping

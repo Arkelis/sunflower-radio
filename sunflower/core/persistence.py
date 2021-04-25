@@ -1,74 +1,32 @@
 import json
-from abc import ABC
-from abc import abstractmethod
 from datetime import datetime
 from json.encoder import JSONEncoder
 from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import Optional
 from typing import Type
 
-import aredis
+from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import NotifyChangeStatus
-from sunflower.core.functions import run_coroutine_synchronously
+from sunflower.core.repository import Repository
 
 
-class Repository(ABC):
-    @abstractmethod
-    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
-        ...
-
-    @abstractmethod
-    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
-        ...
-
-    @abstractmethod
-    def publish(self, key: str, channel, data):
-        ...
+class MetadataEncoder(json.JSONEncoder):
+    """Subclass of json.JSONEncoder supporting BroadcastType serialization."""
+    def default(self, obj):
+        if isinstance(obj, BroadcastType):
+            return obj.value
+        return json.JSONEncoder.default(self, obj)
 
 
-class RedisRepository(Repository):
-    """Provide a method to access data from redis database.
-
-    Define REDIS_KEYS containing keys the application has right
-    to access.
-    """
-    __slots__ = ("_redis",)
-
-    def __init__(self, *args, **kwargs):
-        self._redis = aredis.StrictRedis()
-
-    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
-        """Get value for given key from Redis.
-
-        Data got from Redis is loaded from json with given object_hook.
-        If no data is found, return None.
-        """
-        raw_data = run_coroutine_synchronously(self._redis.get, key)
-        if raw_data is None:
-            return None
-        return json.loads(raw_data.decode(), object_hook=object_hook)
-
-    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
-        """Set new value for given key in Redis.
-
-        value is dumped as json with given json_encoder_cls.
-        """
-        json_data = json.dumps(value, cls=json_encoder_cls)
-        return run_coroutine_synchronously(self._redis.set, key, json_data)
-
-    def publish(self, channel, data):
-        """publish a message to a redis channel.
-
-        Parameters:
-        - channel (str): channel name
-        - data (jsonable data or str): data to publish
-
-        channel in redis is prefixed with 'sunflower:'.
-        """
-        if not isinstance(data, str):
-            data = json.dumps(data)
-        run_coroutine_synchronously(self._redis.publish, channel, data)
+def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
+    """object_hook for supporting BroadcastType at json deserialization."""
+    for k, v in mapping.items():
+        if isinstance(v, BroadcastType):
+            mapping[k] = v.value
+            break
+    return mapping
 
 
 class PersistenceMixin:
@@ -77,9 +35,9 @@ class PersistenceMixin:
             raise TypeError("Class using PersistenceMixin must have a"
                             "'data_type' class attribute.")
 
-    def __init__(self, repository: Repository, id: str, *args, **kwargs):
+    def __init__(self, repository: Repository, __id: str, *args, **kwargs):
         self.repository = repository
-        self.id = id
+        self.id = __id
         super().__init__(*args, **kwargs)
 
     def retrieve_from_repository(self, key: str, object_hook: Optional[Callable] = None):
@@ -138,8 +96,8 @@ class PersistentAttribute:
             self,
             key: str = "",
             doc: str = "",
-            json_encoder_cls: Type[JSONEncoder] = None,
-            object_hook: Callable = None,
+            json_encoder_cls: Type[JSONEncoder] = MetadataEncoder,
+            object_hook: Callable = as_metadata_type,
             notify_change: bool = False,
             pre_set_hook: Callable = lambda self, x: x,
             post_get_hook: Callable = lambda self, x: x):
@@ -203,8 +161,7 @@ class PersistentAttribute:
         """
         return type(self)(
             self.key, self.__doc__, self.json_encoder_cls, self.object_hook,
-            self.notify_change, pre_set_hook_func, self.post_get_hook_func
-        )
+            self.notify_change, pre_set_hook_func, self.post_get_hook_func)
 
     def post_get_hook(self, post_get_hook_func):
         """Method for adding post_get_hook_func() with a decorator.
@@ -222,5 +179,4 @@ class PersistentAttribute:
         """
         return type(self)(
             self.key, self.__doc__, self.json_encoder_cls, self.object_hook,
-            self.notify_change, self.pre_set_hook_func, post_get_hook_func
-        )
+            self.notify_change, self.pre_set_hook_func, post_get_hook_func)
