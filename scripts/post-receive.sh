@@ -10,6 +10,8 @@ echo "[Reload on push] Redeploying the scheduler on commit $ref."
 tmpdir="/tmp/radiopycolore/$ref"
 echo "[Reload on push] Cloning into $tmpdir..."
 git clone . "/tmp/radiopycolore/$ref"
+echo "[Reload on push] Adding environment variables..."
+cp /home/git/.radiopycolore_env $tmpdir
 cd "$tmpdir"
 echo "[Reload on push] Installing dependencies with Poetry..."
 poetry install --no-dev

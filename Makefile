@@ -30,7 +30,7 @@ console-liquidsoap:
 # SCHEDULER
 
 start-scheduler:
-	(poetry run python sunflower/scheduler.py & echo $$! > /tmp/sunflower.scheduler.pid)
+	(poetry run python sunflower/scheduler.py & echo $$! > /tmp/sunflower.scheduler.pid &)
 
 stop-scheduler:
 	pkill --pidfile /tmp/sunflower.scheduler.pid
