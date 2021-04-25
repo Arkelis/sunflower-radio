@@ -34,16 +34,16 @@ class Station(ABC):
     """Base station.
 
     User defined stations should inherit from this class and define following properties:
-    - station_name (str)
+    - name (str)
     - station_thumbnail (str): link to station thumbnail
-
-    Station classes are singletons.
+    - station_website_url (str): link to station website. Default: ""
+    - station_slogan (str): station moto. Default: ""
     """
 
-    name: str
-    station_thumbnail: str
-    station_website_url: str = abstractproperty()
-    station_slogan: str
+    name: str = abstractproperty()
+    station_thumbnail: str = abstractproperty()
+    station_website_url: str = ""
+    station_slogan: str = ""
 
     # By default, station data is retrieved when current broadcast/step is ended. Sometimes, station external API is not
     # very reliable, and long pull is needed (regular retrieval instead of strategic pull). In this case, turn this
@@ -52,10 +52,7 @@ class Station(ABC):
 
     @property
     def station_info(self):
-        info = StationInfo(name=self.name)
-        if self.station_website_url:
-            info.website = self.station_website_url
-        return info
+        return StationInfo(name=self.name, website=self.station_website_url)
 
     @classproperty
     def formatted_station_name(cls) -> str:
@@ -123,6 +120,7 @@ class DynamicStation(Station, PersistenceMixin, ABC):
     Must implement process() method.
     """
     data_type = "station"
+    name = property(fget=lambda self: getattr(self, "_name"))
 
     @abstractmethod
     def process(self, logger, channels_using, channels_using_next, now, **kwargs):

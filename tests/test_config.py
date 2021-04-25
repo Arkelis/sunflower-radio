@@ -1,0 +1,40 @@
+from collections import Counter
+
+from sunflower.utils.hy import read_definitions
+
+
+def test_config():
+    config = read_definitions("tests/fixtures/test_def.hy")
+    assert Counter(config.keys()) == Counter(["channels", "stations"])
+    assert config["channels"] == {
+        'tournesol': {
+            'id': 'tournesol', 'name': 'Tournesol', 'handlers': [], 'timetable': {
+                (0, 1, 2, 3, 4): [('00:00', '05:00', 'France Culture'), ('05:00', '10:00', 'France Inter'),
+                                  ('10:00', '12:00', 'France Culture'), ('12:00', '12:30', 'France Info'),
+                                  ('12:30', '13:30', 'France Inter'), ('13:30', '18:00', 'France Culture'),
+                                  ('18:00', '20:00', 'France Inter'), ('20:00', '00:00', 'France Info')],
+                (5,): [('00:00', '06:00', 'France Culture'), ('06:00', '09:00', 'France Inter'),
+                       ('09:00', '11:00', 'France Info'), ('11:00', '12:00', 'France Culture'),
+                       ('12:00', '14:00', 'France Inter'), ('14:00', '17:00', 'France Culture'),
+                       ('17:00', '18:00', 'France Inter'), ('18:00', '19:00', 'France Culture'),
+                       ('19:00', '21:00', 'France Info'), ('21:00', '00:00', 'France Culture')],
+                (6,): [('00:00', '07:00', 'France Culture'), ('07:00', '09:00', 'France Musique'),
+                       ('09:00', '10:00', 'France Inter'), ('10:00', '11:00', 'France Info'),
+                       ('11:00', '14:00', 'France Inter'), ('14:00', '18:00', 'France Musique'),
+                       ('18:00', '19:00', 'France Info'), ('19:00', '22:00', 'France Inter'),
+                       ('22:00', '00:00', 'FIP')]}}, 'musique': {
+            'id': 'musique', 'name': 'Musique', 'handlers': [], 'timetable': {
+                (0, 1, 2, 3): [('00:00', '06:00', 'FIP'), ('06:00', '09:00', 'RTL 2'),
+                               ('09:00', '12:00', 'Radio Pycolore'), ('12:00', '13:30', 'RTL 2'),
+                               ('13:30', '18:00', 'FIP'), ('18:00', '22:00', 'RTL 2'),
+                               ('22:00', '00:00', 'Radio Pycolore')],
+                (4,): [('00:00', '06:00', 'FIP'), ('06:00', '09:00', 'RTL 2'), ('09:00', '12:00', 'Radio Pycolore'),
+                       ('12:00', '13:30', 'RTL 2'), ('13:30', '18:00', 'FIP'), ('18:00', '22:00', 'RTL 2'),
+                       ('22:00', '01:00', 'Radio Pycolore')],
+                (5,): [('00:00', '01:00', 'Radio Pycolore'), ('01:00', '06:00', 'FIP'), ('06:00', '09:00', 'RTL 2'),
+                       ('09:00', '12:00', 'Radio Pycolore'), ('12:00', '13:30', 'RTL 2'), ('13:30', '18:00', 'FIP'),
+                       ('18:00', '22:00', 'RTL 2'), ('22:00', '01:00', 'Radio Pycolore')],
+                (6,): [('00:00', '01:00', 'Radio Pycolore'), ('01:00', '06:00', 'FIP'), ('06:00', '09:00', 'RTL 2'),
+                       ('09:00', '12:00', 'Radio Pycolore'), ('12:00', '13:30', 'RTL 2'), ('13:30', '22:00', 'FIP'),
+                       ('22:00', '00:00', 'Radio Pycolore')]}}}
+    assert config["stations"] == {'pycolore': {'id': 'pycolore', 'name': 'Radio Pycolore'}}

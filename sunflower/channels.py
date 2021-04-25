@@ -1,7 +1,6 @@
 # This file is part of sunflower package. Radio app.
 import hy
 
-from sunflower.channels_definitions import channels_definitions
 from sunflower.core.channel import Channel
 from sunflower.core.repository import RedisRepository
 from sunflower.stations import FranceCulture
@@ -11,6 +10,13 @@ from sunflower.stations import FranceInterParis
 from sunflower.stations import FranceMusique
 from sunflower.stations import PycolorePlaylistStation
 from sunflower.stations import RTL2
+
+from sunflower.utils.hy import read_definitions
+
+# read definitions
+definitions = read_definitions("sunflower/definitions.lisp")
+channels_definitions = definitions["channels"]
+stations_definitions = definitions["stations"]
 
 # instantiate repository
 redis_repository = RedisRepository()
@@ -23,7 +29,10 @@ stations = {station_cls.name: station_cls()
                                 FranceMusique,
                                 FranceInterParis,
                                 RTL2]}
-stations["Radio Pycolore"] = PycolorePlaylistStation(redis_repository)
+stations["Radio Pycolore"] = PycolorePlaylistStation(
+    redis_repository,
+    stations_definitions["pycolore"]["id"],
+    stations_definitions["pycolore"]["name"])
 
 
 # define channels

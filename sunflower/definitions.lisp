@@ -1,5 +1,3 @@
-(require [sunflower.utils.channeldef [def-channels channel days slot]])
-
 (def-channels
   (channel tournesol "Tournesol" []
     (days [0 1 2 3 4]
@@ -66,3 +64,6 @@
       (slot "12:00" "13:30" "RTL 2")
       (slot "13:30" "22:00" "FIP")
       (slot "22:00" "00:00" "Radio Pycolore"))))
+
+(def-stations
+  (station pycolore "Radio Pycolore"))

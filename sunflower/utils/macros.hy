@@ -13,5 +13,10 @@
     "timetable" (dict ~days)})
 
 (defmacro def-channels [#* channels]
-  `(setv channels-definitions
-    (dfor c ~channels [(get c "id") c])))
+  `(, "channels" (dfor c ~channels [(get c "id") c])))
+
+(defmacro station [id name]
+  `{"id" (str '~id) "name" ~name})
+
+(defmacro def-stations [#* stations]
+  `(, "stations" (dfor s ~stations [(get s "id") s])))

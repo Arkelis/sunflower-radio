@@ -3,6 +3,7 @@ from collections import Counter
 from datetime import datetime
 
 from sunflower.core.channel import Channel
+from sunflower.core.timetable import Timetable
 from tests.common import FakeRepository
 from tests.common import fip
 from tests.common import france_culture
@@ -11,9 +12,10 @@ from tests.common import france_inter
 from tests.common import france_musique
 
 test_channel = Channel(
-    id="tournesol",
+    "tournesol",
+    name="Tournesol",
     repository=FakeRepository(),
-    timetable_dict={
+    timetable=Timetable({
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),
             ("00:00", "05:00", france_culture),
@@ -48,7 +50,7 @@ test_channel = Channel(
             ("19:00", "22:00", france_inter),
             ("22:00", "00:00", fip),
         ]
-    },
+    }),
 )
 
 
