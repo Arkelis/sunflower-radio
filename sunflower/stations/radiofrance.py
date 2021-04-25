@@ -290,7 +290,7 @@ class RadioFranceStation(URLStation):
             show_title = ""
             thumbnail_src = self.station_thumbnail
         else:
-            show = diffusion.get("show", {})
+            show = diffusion.get("show", {}) or {}
             title = diffusion.get("title") or show.get("title", "")
             show_title = show.get("title", "") if title != show.get("title", "") else ""
             podcast_link = (show.get("podcast") or {}).get("itunes")
