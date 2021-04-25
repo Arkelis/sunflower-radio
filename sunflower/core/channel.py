@@ -39,7 +39,7 @@ class Channel(PersistenceMixin):
     data_type = "channel"
 
     def __init__(self,
-                 id: str,
+                 __id: str,
                  name: str,
                  repository: "Repository",
                  timetable: Timetable,
@@ -51,7 +51,7 @@ class Channel(PersistenceMixin):
         - timetable: dict
         - handler: list of classes that can alter metadata and card metadata at channel level after fetching.
         """
-        super().__init__(repository, id)
+        super().__init__(repository, __id)
         self.name = name
         self.timetable = timetable
         self.handlers: Iterable[Handler] = [handler_cls(self) for handler_cls in handlers]

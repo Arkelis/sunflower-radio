@@ -40,7 +40,7 @@ class ResolvedTimetableSlot(NamedTuple):
 class Timetable:
     def __init__(
             self,
-            dict_representation: Dict[Tuple[int, ...], Tuple[str, str, Station]]):
+            dict_representation: Dict[Tuple[int, ...], List[Tuple[str, str, Station]]]):
         stations, timetables = self._extract_from_dict(dict_representation)
         self._stations = stations
         self._timetables = timetables
