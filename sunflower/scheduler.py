@@ -21,7 +21,7 @@ def launch_scheduler():
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
     
     # rotate
-    file_handler = logging.handlers.RotatingFileHandler("/tmp/sunflower-scheduler.log", "a", 1000000, 1)
+    file_handler = logging.handlers.RotatingFileHandler("/tmp/sunflower.scheduler.log", "a", 1000000, 1)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
