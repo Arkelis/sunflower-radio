@@ -178,9 +178,9 @@ class ShapeEnum(str, Enum):
 def get_pycolore_playlist(shape: ShapeEnum = 'flat'):
     """Get information about next broadcast on given channel"""
     if shape == 'flat':
-        return PycoloreProxy(redis_repo).public_playlist
+        return PycoloreProxy(redis_repo).playlist
     if shape == 'groupartist':
-        playlist = PycoloreProxy(redis_repo).public_playlist
+        playlist = PycoloreProxy(redis_repo).playlist
         sorted_playlist = {}
         for song in playlist:
             try:
