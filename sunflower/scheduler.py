@@ -9,7 +9,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from sunflower.core.scheduler import Scheduler
-from sunflower.channels import tournesol, music
+from sunflower.channels import channels
 
 
 def launch_scheduler():
@@ -28,7 +28,7 @@ def launch_scheduler():
 
     logger.info("Starting scheduler.")
     try:
-        scheduler = Scheduler([music, tournesol], logger)
+        scheduler = Scheduler(channels, logger)
         logger.info("Scheduler instantiated.")
         scheduler.run()
     except Exception as err:

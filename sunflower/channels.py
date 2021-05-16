@@ -1,6 +1,7 @@
 # This file is part of sunflower package. Radio app.
-import hy
 
+import edn_format
+from edn_format import Keyword
 from sunflower.core.channel import Channel
 from sunflower.core.repository import RedisRepository
 from sunflower.stations import FranceCulture
@@ -11,39 +12,34 @@ from sunflower.stations import FranceMusique
 from sunflower.stations import PycolorePlaylistStation
 from sunflower.stations import RTL2
 
-from sunflower.utils.hy import read_definitions
-
 # read definitions
-definitions = read_definitions("sunflower/definitions.lisp")
-channels_definitions = definitions["channels"]
-stations_definitions = definitions["stations"]
+with open("sunflower/conf.edn") as f:
+    definitions = edn_format.loads(f.read())
+channels_definitions = definitions[Keyword("channels")]
+stations_definitions = definitions[Keyword("stations")]
 
 # instantiate repository
 redis_repository = RedisRepository()
 
-# instantiate stations
-stations = {station_cls.name: station_cls()
-            for station_cls in [FranceCulture,
-                                FranceInfo,
-                                FranceInter,
-                                FranceMusique,
-                                FranceInterParis,
-                                RTL2]}
-stations["Radio Pycolore"] = PycolorePlaylistStation(
-    redis_repository,
-    stations_definitions["pycolore"]["id"],
-    stations_definitions["pycolore"]["name"])
+# instantiate URL stations
+stations = {
+    station_cls.name: station_cls()
+    for station_cls in [FranceCulture,
+                        FranceInfo,
+                        FranceInter,
+                        FranceMusique,
+                        FranceInterParis,
+                        RTL2]}
+
+# add dynamic stations
+stations["Radio Pycolore"] = PycolorePlaylistStation(redis_repository)
 
 
-# define channels
-tournesol = Channel.fromconfig(
-    redis_repository,
-    channels_definitions["tournesol"],
-    stations,
-    {})
-
-music = Channel.fromconfig(
-    redis_repository,
-    channels_definitions["musique"],
-    stations,
-    {})
+# instantiate channels
+channels = [
+    Channel.fromconfig(
+        redis_repository,
+        channel_definition,
+        stations,
+        {})
+    for channel_definition in channels_definitions]

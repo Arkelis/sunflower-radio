@@ -11,6 +11,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 
+from edn_format import Keyword
 from pydantic import ValidationError
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
@@ -66,10 +67,10 @@ class Channel(PersistenceMixin):
                    config: Dict,
                    stations_map: Dict[str, Station],
                    handlers_map: Dict[str, Handler]):
-        channel_name = config["name"]
-        channel_id = config["id"]
-        channel_timetable = Timetable.fromconfig(config["timetable"], stations_map)
-        channel_handlers = tuple(handlers_map[name] for name in config["handlers"])
+        channel_name = config[Keyword("name")]
+        channel_id = config[Keyword("id")]
+        channel_timetable = Timetable.fromconfig(config[Keyword("timetable")], stations_map)
+        channel_handlers = tuple(handlers_map[name] for name in config[Keyword("handlers")])
         return cls(channel_id, channel_name, repository, channel_timetable, channel_handlers)
 
 

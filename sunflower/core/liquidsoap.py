@@ -1,4 +1,4 @@
-def write_liquidsoap_config(*channels, filename):
+def write_liquidsoap_config(channels, filename):
     """Write complete liquidsoap config file."""
     with open("{}.liq".format(filename), "w") as f:
         # config de base (pas de log, activation server telnet, source par défaut)

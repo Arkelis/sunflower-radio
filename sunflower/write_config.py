@@ -6,8 +6,8 @@ if __name__ == "__main__":
 
 
 from sunflower.core.liquidsoap import write_liquidsoap_config
-from sunflower.channels import tournesol, music
+from sunflower.channels import channels
 
 
 if __name__ == '__main__':
-    write_liquidsoap_config(tournesol, music, filename="sunflower")
+    write_liquidsoap_config(channels, filename="sunflower")
