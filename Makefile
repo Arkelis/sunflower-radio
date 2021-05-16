@@ -17,7 +17,7 @@ restart-server: stop-server start-server
 # LIQUIDSOAP 
 
 start-liquidsoap:
-	(liquidsoap ~/radio/sunflower.liq > /tmp/sunflower.liquidsoap.log & echo $$! > /tmp/sunflower.liquidsoap.pid)
+	(liquidsoap ~/radio/sunflower.liq > /tmp/sunflower.liquidsoap.log & echo $$! > /tmp/sunflower.liquidsoap.pid &)
 
 stop-liquidsoap:
 	pkill --pidfile /tmp/sunflower.liquidsoap.pid
