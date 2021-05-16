@@ -20,6 +20,7 @@ pydantic = "^1.5.1"
 gunicorn = "^20.0.4"
 aredis = "^1.1.8"
 hy = "^1.0.0a1"
+edn-format = "^0.7.5"
 
 [tool.poetry.dev-dependencies]
 rope = "^0.16.0"
