@@ -2,24 +2,30 @@
 
 import functools
 
+import edn_format
+from edn_format import Keyword
 from fastapi import HTTPException
-from sunflower import settings
-from sunflower.core.bases import REVERSE_STATIONS
-from server.proxies import ChannelProxy, Proxy
+from server.proxies import ChannelProxy
+from server.proxies import Proxy
+from sunflower.core.repository import RedisRepository
+from sunflower.core.stations import REVERSE_STATIONS
 # noinspection PyUnresolvedReferences
-from sunflower.stations import * # needed for view objects generation
+from sunflower.stations import *  # needed for view objects generation
+
+redis_repo = RedisRepository()
+
+# read definitions
+with open("sunflower/conf.edn") as f:
+    definitions = edn_format.loads(f.read())
+channels_definitions = definitions[Keyword("channels")]
+stations_definitions = definitions[Keyword("stations")]
+channels_ids = [channel_def[Keyword("id")] for channel_def in channels_definitions]
 
 
-# fastapi/starlette views decorator
-
-def get_channel_or_404(view_function):
-    @functools.wraps(view_function)
-    def wrapper(channel: str, *args, **kwargs):
-        if channel not in settings.CHANNELS:
-            raise HTTPException(404, f"Channel {channel} not found")
-        channel_proxy = ChannelProxy(channel)
-        return view_function(channel_proxy, *args, **kwargs)
-    return wrapper
+def get_channel_or_404(channel: str):
+    if channel not in channels_ids:
+        raise HTTPException(404, f"Channel {channel} does not exist")
+    return ChannelProxy(redis_repo, channel)
 
 
 def get_station_or_404(view_function):
