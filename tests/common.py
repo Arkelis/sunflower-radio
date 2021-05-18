@@ -2,7 +2,6 @@ import json
 from typing import Any
 from typing import Callable
 from typing import Optional
-from typing import Optional
 from typing import Type
 
 from sunflower.core.repository import Repository
@@ -32,4 +31,4 @@ fip = FranceInterParis()
 france_info = FranceInfo()
 france_musique = FranceMusique()
 rtl2 = RTL2()
-radio_pycolore = PycolorePlaylistStation(FakeRepository(), "pycolore", "Radio Pycolore")
+radio_pycolore = PycolorePlaylistStation(FakeRepository())
