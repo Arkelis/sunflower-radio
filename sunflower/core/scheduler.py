@@ -49,13 +49,13 @@ class Scheduler:
         """
         now = datetime.now()
         channels_using: Dict[Station, List[Channel]] = {
-            station: [channel for channel in self.channels if channel.station_at is station]
+            station: [channel for channel in self.channels if channel.station_at(now) is station]
             for station in self.stations
         }
         channels_using_next: Dict[Station, List[Channel]] = {
             station: [channel for channel in self.channels
                       if (channel.station_end_at(now) - now).seconds < 10
-                      if channel.station_after is station]
+                      if channel.station_after(now) is station]
             for station in self.stations
         }
         return {
