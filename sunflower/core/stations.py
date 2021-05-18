@@ -3,10 +3,8 @@
 from abc import ABC
 from abc import abstractmethod
 from abc import abstractproperty
-from contextlib import suppress
 from datetime import datetime
 from logging import Logger
-from telnetlib import Telnet
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -20,9 +18,8 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.decorators import classproperty
+from sunflower.core.liquidsoap import liquidsoap_telnet_session
 from sunflower.core.persistence import PersistenceMixin
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST
-from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 if TYPE_CHECKING:
     from sunflower.core.channel import Channel
@@ -136,11 +133,11 @@ class URLStation(Station, ABC):
     """
     station_url: str = ""
     station_slogan: str = ""
-    _is_on: bool = False
+    _is_onair: bool = False
 
     @property
     def is_onair(self) -> bool:
-        return self._is_on
+        return self._is_onair
 
     def __new__(cls):
         if cls.station_url == "":
@@ -153,21 +150,19 @@ class URLStation(Station, ABC):
                 f'mksafe(input.http(id="{cls.formatted_station_name}", autostart=false, "{cls.station_url}"))\n')
 
     def start_liquidsoap_source(self):
-        with suppress(ConnectionRefusedError):
-            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                session.write(f"{self.formatted_station_name}.start\n".encode())
+        with liquidsoap_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.start\n".encode())
 
     def stop_liquidsoap_source(self):
-        with suppress(ConnectionRefusedError):
-            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                session.write(f"{self.formatted_station_name}.stop\n".encode())
+        with liquidsoap_telnet_session() as session:
+            session.write(f"{self.formatted_station_name}.stop\n".encode())
 
     def process(self, logger, channels_using, channels_using_next, **kwargs):
         if any(channels_using_next[self]) or any(channels_using[self]):
-            if not self._is_on:
+            if not self._is_onair:
                 self.start_liquidsoap_source()
-                self._is_on = True
+                self._is_onair = True
         else:
-            if self._is_on:
+            if self._is_onair:
                 self.stop_liquidsoap_source()
-                self._is_on = False
+                self._is_onair = False

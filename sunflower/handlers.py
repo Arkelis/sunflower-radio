@@ -1,9 +1,7 @@
 import abc
 import random
-from contextlib import suppress
 from datetime import datetime
 from logging import Logger
-from telnetlib import Telnet
 from typing import List
 
 from sunflower import settings
@@ -11,7 +9,7 @@ from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import Song
 from sunflower.core.custom_types import Step
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST
+from sunflower.core.liquidsoap import liquidsoap_telnet_session
 from sunflower.utils.music import fetch_cover_and_link_on_deezer
 from sunflower.utils.music import parse_songs
 
@@ -51,9 +49,8 @@ class AdsHandler(Handler):
         backup_song = self.backup_songs.pop(0)
 
         # tell liquidsoap to play backup song
-        with suppress(ConnectionRefusedError):
-            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_HOST) as session:
-                session.write(f"{self.channel.id}_custom_songs.push {backup_song.path}\n".encode())
+        with liquidsoap_telnet_session() as session:
+            session.write(f"{self.channel.id}_custom_songs.push {backup_song.path}\n".encode())
 
         broadcast = step.broadcast
         thumbnail, url = fetch_cover_and_link_on_deezer(

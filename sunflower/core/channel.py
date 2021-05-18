@@ -1,9 +1,7 @@
 import itertools
-from contextlib import suppress
 from datetime import date
 from datetime import datetime
 from logging import Logger
-from telnetlib import Telnet
 from typing import Dict
 from typing import Iterable
 from typing import List
@@ -16,6 +14,7 @@ from pydantic import ValidationError
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
+from sunflower.core.liquidsoap import liquidsoap_telnet_session
 from sunflower.core.persistence import MetadataEncoder
 from sunflower.core.persistence import PersistenceMixin
 from sunflower.core.persistence import PersistentAttribute
@@ -24,8 +23,6 @@ from sunflower.core.repository import Repository
 from sunflower.core.stations import Station
 from sunflower.core.timetable import Timetable
 from sunflower.handlers import Handler
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST
-from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 
 
 class Channel(PersistenceMixin):
@@ -170,11 +167,11 @@ class Channel(PersistenceMixin):
         if stream_metadata is None:
             logger.debug(f"channel={self.id} StreamMetadata is empty")
             return
-        with suppress(ConnectionRefusedError):
-            with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                metadata_string = f'title="{stream_metadata.title}",artist="{stream_metadata.artist}"'
-                session.write(f"{self.id}.insert {metadata_string}\n".encode())
+        with liquidsoap_telnet_session() as session:
+            metadata_string = f'title="{stream_metadata.title}",artist="{stream_metadata.artist}"'
+            session.write(f"{self.id}.insert {metadata_string}\n".encode())
         logger.debug(f"channel={self.id} {stream_metadata} sent to liquidsoap")
+        return
 
     def process(self, logger: Logger, now: datetime, **context):
         """If needed, update metadata.
@@ -199,22 +196,21 @@ class Channel(PersistenceMixin):
 
         # make sure current station is used by liquidsoap
         if (current_station_name := current_station.formatted_station_name) != self._liquidsoap_station:
-            with suppress(ConnectionRefusedError):
-                with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
-                    session.write(f"var.set {current_station_name}_on_{self.id} = true\n".encode())
-                    if self._liquidsoap_station:
-                        session.read_until(b"\n")
-                        session.write(f"var.set {self._liquidsoap_station}_on_{self.id} = false\n".encode())
+            with liquidsoap_telnet_session() as session:
+                session.write(f"var.set {current_station_name}_on_{self.id} = true\n".encode())
+                if self._liquidsoap_station:
+                    session.read_until(b"\n")
+                    session.write(f"var.set {self._liquidsoap_station}_on_{self.id} = false\n".encode())
             self._liquidsoap_station = current_station_name
         # first retrieve current step
         current_step = self.current_step
         # check if we must retrieve new metadata
-        if (
-            current_step is not None
-            and not current_station.long_pull
-            and now.timestamp() < current_step.end
-            and current_step.broadcast.station.name == current_station.name
-        ) or (current_station.long_pull and (now - self._last_pull).seconds < self.long_pull_interval):
+        if ((current_step is not None
+                 and not current_station.long_pull
+                 and now.timestamp() < current_step.end
+                 and current_step.broadcast.station.name == current_station.name)
+             or (current_station.long_pull
+                 and (now - self._last_pull).seconds < self.long_pull_interval)):
             self.current_step = None  # notify unchanged
             return
         self._last_pull = now

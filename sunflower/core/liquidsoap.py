@@ -1,3 +1,11 @@
+from contextlib import contextmanager
+from contextlib import suppress
+from telnetlib import Telnet
+
+from sunflower.settings import LIQUIDSOAP_TELNET_HOST
+from sunflower.settings import LIQUIDSOAP_TELNET_PORT
+
+
 def write_liquidsoap_config(channels, filename):
     """Write complete liquidsoap config file."""
     with open("{}.liq".format(filename), "w") as f:
@@ -37,4 +45,8 @@ def write_liquidsoap_config(channels, filename):
         f.write("\n" + outputs_string)
 
 
-
+@contextmanager
+def liquidsoap_telnet_session():
+    with suppress(ConnectionError):
+        with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+            yield session
