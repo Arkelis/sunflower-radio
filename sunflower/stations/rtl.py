@@ -182,8 +182,13 @@ class RTL2(URLStation, RTLGroupMixin):
 
     def __init__(self):
         super().__init__()
-        self.current_show_data = {}
+        self._current_show_data = {"show_end": datetime.now().timestamp()}
         self.current_step = Step.none()
+
+    def _get_show_metadata(self, dt: datetime):
+        if self._current_show_data.get("show_end") < dt.timestamp():
+            self._current_show_data = self._fetch_show_metadata(dt)
+        return self._current_show_data
 
     def _fetch_show_metadata(self, dt: Union[datetime, int]):
         if isinstance(dt, int): # convert dt to datetime object if a timestamp is given
@@ -239,17 +244,13 @@ class RTL2(URLStation, RTLGroupMixin):
         - thumbnail_src: url to thumbnail
         """
         start = int(dt.timestamp())
-        # first, update show info if needed
-        if self.current_show_data.get("show_end") is None or self.current_show_data.get("show_end") <= start:
-            self.current_show_data = self._fetch_show_metadata(dt)
-        # next, update song info
         try:
             fetched_data = self._fetch_song_metadata()
         except requests.exceptions.Timeout:
             return self._update_info(Step.empty_until(start, start+90, self))
         end = fetched_data["end"]
         if start > end:
-            if not self.current_show_data:
+            if not self._get_show_metadata(dt):
                 return self._update_info(Step.empty(start, self))
             end = 0
             broadcast_data = {
@@ -266,7 +267,7 @@ class RTL2(URLStation, RTLGroupMixin):
                 "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
                 "metadata": SongPayload(title=title, artist=artist)
             }
-        broadcast_data.update(station=self.station_info, **self.current_show_data)
+        broadcast_data.update(station=self.station_info, **self._get_show_metadata(dt))
         return self._update_info(Step(start=start, end=end, broadcast=Broadcast(**broadcast_data)))
 
     def _update_info(self, step):
@@ -275,10 +276,10 @@ class RTL2(URLStation, RTLGroupMixin):
         return UpdateInfo(should_notify_update=should_notify, step=step)
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
-        dt = (self.current_show_data.get("show_end")
-              if channel.station_at == self
-              else channel.station_end_at)
-        show_data = self._fetch_show_metadata(dt)
+        dt = (datetime.fromtimestamp(self._get_show_metadata(dt).get("show_end"))
+              if channel.station_at(dt) == self
+              else channel.station_end_at(dt))
+        show_data = self._get_show_metadata(dt)
         return self._step_from_show_data(show_data)
 
     def get_schedule(self, logger: Logger, start: datetime, end: datetime) -> List[Step]:
