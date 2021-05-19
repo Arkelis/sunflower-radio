@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import List
@@ -175,16 +176,13 @@ class ShapeEnum(str, Enum):
     summary="Get the playlist of Pycolore station",
     tags=["Endpoints specific to Radio Pycolore"],
     response_description="List of songs of the playlist")
-def get_pycolore_playlist(shape: ShapeEnum = 'flat'):
+def get_pycolore_playlist(shape: ShapeEnum = ShapeEnum.flat.value):
     """Get information about next broadcast on given channel"""
-    if shape == 'flat':
+    if shape == ShapeEnum.flat.value:
         return PycoloreProxy(redis_repo).playlist
-    if shape == 'groupartist':
+    if shape == ShapeEnum.groupartist.value:
         playlist = PycoloreProxy(redis_repo).playlist
-        sorted_playlist = {}
+        sorted_playlist = defaultdict(list)
         for song in playlist:
-            try:
-                sorted_playlist[song["artist"]].append({'title': song["title"], 'album': song["album"]})
-            except KeyError:
-                sorted_playlist[song["artist"]] = [{'title': song["title"], 'album': song["album"]}]
+            sorted_playlist[song["artist"]].append({'title': song["title"], 'album': song["album"]})
         return sorted_playlist
