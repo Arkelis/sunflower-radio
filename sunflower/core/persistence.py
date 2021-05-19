@@ -135,12 +135,12 @@ class PersistentAttribute:
         data = self.pre_set_hook_func(obj, value) if value is not None else value
         if self._cache == data or data is None:
             if self.notify_change:
-                obj.publish_to_repository(obj.id, NotifyChangeStatus.UNCHANGED.value)
+                obj.publish_to_repository("updates", NotifyChangeStatus.UNCHANGED.value)
             return
         obj.persist_to_repository(self.key, data, self.json_encoder_cls)
         self._cache = data
         if self.notify_change:
-            obj.publish_to_repository(obj.id, NotifyChangeStatus.UPDATED.value)
+            obj.publish_to_repository("updates", NotifyChangeStatus.UPDATED.value)
 
     def __delete__(self, obj: PersistenceMixin):
         raise AttributeError(f"Can't delete attribute 'f{self.name}'.")

@@ -102,7 +102,7 @@ def get_channel(channel_id, request: Request):
 async def updates_generator(request, *endpoints):
     pubsub = aredis.StrictRedis().pubsub()
     for endpoint in endpoints:
-        await pubsub.subscribe("sunflower:channel:" + endpoint)
+        await pubsub.subscribe(f"sunflower:channel:{endpoint}:updates")
     while True:
         client_disconnected = await request.is_disconnected()
         if client_disconnected:
@@ -118,7 +118,7 @@ async def updates_generator(request, *endpoints):
         if redis_data != str(NotifyChangeStatus.UPDATED.value).encode():
             continue
         redis_channel = message.get("channel").decode()
-        channel_endpoint = redis_channel.split(":")[-1]
+        channel_endpoint = redis_channel.split(":")[2]
         data_to_send = {"channel": channel_endpoint, "status": "updated"}
         yield f'data: {json.dumps(data_to_send)}\n\n'
 
