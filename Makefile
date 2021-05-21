@@ -6,6 +6,7 @@ start-server:
 		--daemon \
 		--access-logfile /tmp/sunflower.access.log \
 		--error-logfile /tmp/sunflower.error.log \
+		--capture-output \
 		server.server:app
 	@echo "Logs and socket are in /tmp"
 
