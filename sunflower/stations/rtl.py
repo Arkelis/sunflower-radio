@@ -1,7 +1,6 @@
 import json
 import locale
 from datetime import datetime
-from datetime import timedelta
 from logging import Logger
 from typing import List
 from typing import Optional
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 import requests
+from bs4 import BeautifulSoup
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import SongPayload
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from sunflower.core.bases import Channel
 
 class RTLGroupMixin:
-    _main_data_url: str = ""
+    # _main_data_url: str = ""
     _songs_data_url: str = ""
 
     def _fetch_song_metadata(self, retry=0):
@@ -174,10 +174,9 @@ class RTL2(URLStation, RTLGroupMixin):
     station_website_url = "https://www.rtl2.fr"
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
     station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
-    _main_data_url = "https://timeline.rtl.fr/RTL2/items"
+    # _main_data_url = "https://timeline.rtl.fr/RTL2/items"
     _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
-    _show_grid_url = ("https://pc.middleware.6play.fr/6play/v2/platforms/m6group_web/services/m6replay/guidetv?channel="
-                      "rtl2&from={}&to={}&limit=1&offset=0&with=realdiffusiondates")
+    _show_grid_url = "https://www.rtl2.fr/grille/{}"
     long_pull = True
 
     def __init__(self):
@@ -195,22 +194,36 @@ class RTL2(URLStation, RTLGroupMixin):
             dt_timestamp, dt = dt, datetime.fromtimestamp(dt)
         else:
             dt_timestamp = int(dt.timestamp())
-        start_str = (dt + timedelta(seconds=1)).isoformat(sep=" ", timespec="seconds")
-        end_str = (dt + timedelta(seconds=5)).isoformat(sep=" ", timespec="seconds")
-        req = requests.get(self._show_grid_url.format(start_str, end_str))
-        data = json.loads(req.text).get(self.formatted_station_name)
-        if not data:
-            return {}
-        show = data[0]
-        end_of_show = datetime.strptime(show["diffusion_end_date"], "%Y-%m-%d %H:%M:%S")
-        end_of_show_timestamp = int(end_of_show.timestamp())
-        start_of_show = datetime.strptime(show["diffusion_start_date"], "%Y-%m-%d %H:%M:%S")
-        start_of_show_timestamp = int(start_of_show.timestamp())
+        date_str = dt.strftime("%d-%m-%Y")
+        req = requests.get(self._show_grid_url.format(date_str))
+        schedule_html = BeautifulSoup(req.content, features="html.parser")
+        for show_element in schedule_html.find_all("div", class_="card-container"):
+            schedule_element = show_element.find("div", class_="schedule")
+            schedule_text = schedule_element.text.strip().split(" - ")
+            start_time, end_time = map(
+                lambda x: datetime.strptime(x, "%Hh%M").time(),
+                schedule_text)
+            if end_time < dt.time():
+                continue
+            show_title = show_element.find("div", class_="title").text
+            start_timestamp = int(datetime.combine(dt.date(), start_time).timestamp())
+            end_timestamp = int(datetime.combine(dt.date(), end_time).timestamp())
+            href_show_page = show_element.find("a").get("href")
+            show_page_html = BeautifulSoup(
+                requests.get(href_show_page).content,
+                features="html.parser")
+            show_description = show_page_html.find(
+                "div",
+                class_="rtl-fs-lg-20 description read-more-container"
+            ).text
+            break
+        else:
+            raise RuntimeError(f"No show found at {dt}")
         return {
-            "show_title": show["title"],
-            "summary": show["description"],
-            "show_end": end_of_show_timestamp,
-            "show_start": max(start_of_show_timestamp, dt_timestamp),
+            "show_title": show_title,
+            "summary": show_description,
+            "show_end": end_timestamp,
+            "show_start": max(start_timestamp, dt_timestamp),
         }
 
     def _step_from_show_data(self, show_data: dict):
