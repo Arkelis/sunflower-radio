@@ -168,8 +168,14 @@ class Channel(PersistenceMixin):
             logger.debug(f"channel={self.id} StreamMetadata is empty")
             return
         with liquidsoap_telnet_session() as session:
-            metadata_string = f'title="{stream_metadata.title}",artist="{stream_metadata.artist}"'
-            session.write(f"{self.id}.insert {metadata_string}\n".encode())
+            session.write(f'var.set {self.id}_artist = "{stream_metadata.artist}\n'.encode())
+            session.read_until(b"\n")
+            session.write(f'var.set {self.id}_title = "{stream_metadata.title}\n'.encode())
+            session.read_until(b"\n")
+            session.write(f'var.set {self.id}_album = "{stream_metadata.album}\n'.encode())
+            session.read_until(b"\n")
+            session.write(f'var.set {self.id}_cover = "{stream_metadata.base64_cover_art}\n'.encode())
+            session.read_until(b"\n")
         logger.debug(f"channel={self.id} {stream_metadata} sent to liquidsoap")
         return
 
@@ -198,9 +204,10 @@ class Channel(PersistenceMixin):
         if (current_station_name := current_station.formatted_station_name) != self._liquidsoap_station:
             with liquidsoap_telnet_session() as session:
                 session.write(f"var.set {current_station_name}_on_{self.id} = true\n".encode())
+                session.read_until(b"\n")
                 if self._liquidsoap_station:
-                    session.read_until(b"\n")
                     session.write(f"var.set {self._liquidsoap_station}_on_{self.id} = false\n".encode())
+                    session.read_until(b"\n")
             self._liquidsoap_station = current_station_name
         # first retrieve current step
         current_step = self.current_step
@@ -249,6 +256,17 @@ class Channel(PersistenceMixin):
         else:
             source_str = ""
 
+        # metadata
+        source_str += "\n"
+        source_str += f"def apply_{self.id}_metadata(m) = \n"
+        source_str += f'  title = interactive.string("{self.id}_title", "")\n'
+        source_str += f'  artist = interactive.string("{self.id}_artist", "")\n'
+        source_str += f'  album = interactive.string("{self.id}_album", "")\n'
+        source_str += f'  cover = interactive.string("{self.id}_cover", "")\n'
+        source_str += ('  [("title", title()), ("album", album()), '
+                       '("artist", artist()), "metadata_block_picture", cover()]\n')
+        source_str += "end\n\n"
+
         # output
         fallback = str(self.id) + "_radio" if source_str else self.stations[0].formatted_station_name
         source_str += str(self.id) + "_radio = fallback(track_sensitive=false, [" + fallback + ", default])\n"
@@ -259,8 +277,8 @@ class Channel(PersistenceMixin):
             + '_custom_songs"), '
             + str(self.id)
             + "_radio])\n")
-        source_str += (f'{self.id}_radio = server.insert_metadata(id="{self.id}", '
-                       f'drop_metadata({self.id}_radio))\n\n')
+        source_str += (f'{self.id}_radio = map_metadata(id="{self.id}", '
+                       f'apply_{self.id}_metadata, drop_metadata({self.id}_radio))\n\n')
 
         output_str = "output.icecast(%vorbis(quality=0.6),\n"
         output_str += '    host="localhost", port=3333, password="Arkelis77",\n'

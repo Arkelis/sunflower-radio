@@ -21,6 +21,7 @@ from sunflower.core.stations import DynamicStation
 from sunflower.utils.music import fetch_cover_and_link_on_deezer
 from sunflower.utils.music import parse_songs
 from sunflower.utils.music import prevent_consecutive_artists
+from sunflower.utils.music import url_to_base64
 
 
 class PycolorePlaylistStation(DynamicStation):
@@ -127,7 +128,8 @@ class PycolorePlaylistStation(DynamicStation):
                          f"{artists_str}."),
                 metadata=SongPayload(title=self._current_song.title,
                                      artist=self._current_song.artist,
-                                     album="La Playlist Pycolore"))))
+                                     album="La Playlist Pycolore",
+                                     base64_cover_art=url_to_base64(thumbnail_src)))))
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         if self == channel.station_at(dt):
@@ -189,7 +191,11 @@ class PycolorePlaylistStation(DynamicStation):
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         if broadcast.type != BroadcastType.MUSIC:
-            return StreamMetadata(title=broadcast.title, artist=self.name, album="")
+            return StreamMetadata(
+                title=broadcast.title,
+                artist=self.name,
+                album="",
+                base64_cover_art=url_to_base64(broadcast.thumbnail_src))
         return broadcast.metadata
 
     @classmethod

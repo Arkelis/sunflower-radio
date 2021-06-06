@@ -22,6 +22,7 @@ from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.stations import URLStation
 from sunflower.utils import music
+from sunflower.utils.music import url_to_base64
 
 if TYPE_CHECKING:
     from sunflower.core.bases import Channel
@@ -321,9 +322,11 @@ class RadioFranceStation(URLStation):
                 link=deezer_link,
                 summary=self.station_slogan,
                 thumbnail_src=cover_link,
-                metadata=SongPayload(title=track_data["title"], artist=artists, album=track_data.get("album", ""))
-            ),
-        )
+                metadata=SongPayload(
+                    title=track_data["title"],
+                    artist=artists,
+                    album=track_data.get("album", ""),
+                    base64_cover_art=url_to_base64(cover_link))))
 
     def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
         start = int(dt.timestamp())
@@ -384,9 +387,12 @@ class RadioFranceStation(URLStation):
             title, album = (
                 (broadcast.show_title, broadcast.title)
                 if any(broadcast.show_title)
-                else (broadcast.title, "")
-            )
-            return StreamMetadata(title=title, artist=artist, album=album)
+                else (broadcast.title, ""))
+            return StreamMetadata(
+                title=title,
+                artist=artist,
+                album=album,
+                base64_cover_art=url_to_base64(broadcast.thumbnail_src))
         elif broadcast.type == BroadcastType.MUSIC:
             # for RadioFrance, a track step has metadata already filled, see _get_radiofrance_track_step()
             return broadcast.metadata

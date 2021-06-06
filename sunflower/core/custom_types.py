@@ -131,6 +131,7 @@ class StreamMetadata(BaseModel):
     title: str
     artist: str
     album: str = ""
+    base64_cover_art: str = ""
 
 
 # alias for StreamMetadata

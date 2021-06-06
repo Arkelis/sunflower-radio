@@ -16,6 +16,7 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.stations import URLStation
+from sunflower.utils.music import url_to_base64
 
 try:
     locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
@@ -274,10 +275,11 @@ class RTL2(URLStation, RTLGroupMixin):
         else:
             title = fetched_data['title']
             artist = fetched_data['singer']
+            thumbnail = fetched_data.get("cover") or self.station_thumbnail
             broadcast_data = {
                 "title": f"{artist} • {title}",
                 "type": BroadcastType.MUSIC,
-                "thumbnail_src": fetched_data.get("cover") or self.station_thumbnail,
+                "thumbnail_src": thumbnail,
                 "metadata": SongPayload(title=title, artist=artist)
             }
         broadcast_data.update(station=self.station_info, **self._get_show_metadata(dt))
@@ -310,4 +312,8 @@ class RTL2(URLStation, RTLGroupMixin):
             BroadcastType.PROGRAMME: (broadcast.show_title, self.name, ""),
             BroadcastType.ADS: (broadcast.title, self.name, ""),
         }[broadcast.type]
-        return StreamMetadata(title=title, artist=artist, album=album)
+        return StreamMetadata(
+            title=title,
+            artist=artist,
+            album=album,
+            base64_cover_art=url_to_base64(broadcast.thumbnail_src))

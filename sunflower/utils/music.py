@@ -1,6 +1,7 @@
 """Utilitary classes used in several parts of sunflower application."""
-
+import base64
 import glob
+from functools import lru_cache
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -158,3 +159,9 @@ def fetch_apple_podcast_cover(podcast_link: str, fallback: str) -> str:
     sources = bs.find_all("source")
     cover_url: str = sources[0].attrs["srcset"].split(",")[1].replace("2x", "")
     return cover_url.strip()
+
+
+@lru_cache(maxsize=4)
+def url_to_base64(url) -> str:
+    content = requests.get(url).content
+    return base64.b64encode(content).decode()
