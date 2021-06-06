@@ -5,7 +5,9 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import Protocol
 from typing import Type
+from typing import runtime_checkable
 
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import NotifyChangeStatus
@@ -29,28 +31,39 @@ def as_metadata_type(mapping: Dict[str, Any]) -> Dict[str, Any]:
     return mapping
 
 
+@runtime_checkable
+class PersistentAttributesObject(Protocol):
+    __data_type__: str
+    __id__: str
+
+
 class PersistenceMixin:
-    def __init_subclass__(cls, **kwargs):
-        if not hasattr(cls, "data_type"):
-            raise TypeError("Class using PersistenceMixin must have a"
-                            "'data_type' class attribute.")
+    repository: Repository
 
-    def __init__(self, repository: Repository, __id: str, *args, **kwargs):
-        self.repository = repository
-        self.id = __id
-        super().__init__(*args, **kwargs)
+    async def retrieve_from_repository(
+            self,
+            obj: PersistentAttributesObject,
+            key: str,
+            object_hook: Optional[Callable] = None):
+        return await self.repository.retrieve(
+            f"sunflower:{obj.__data_type__}:{obj.__id__}:{key}", object_hook)
 
-    def retrieve_from_repository(self, key: str, object_hook: Optional[Callable] = None):
-        return self.repository.retrieve(
-            f"sunflower:{self.data_type}:{self.id}:{key}", object_hook)
+    async def persist_to_repository(
+            self,
+            obj: PersistentAttributesObject,
+            key: str,
+            value: Any,
+            json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
+        return await self.repository.persist(
+            f"sunflower:{obj.__data_type__}:{obj.__id__}:{key}", value, json_encoder_cls)
 
-    def persist_to_repository(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
-        return self.repository.persist(
-            f"sunflower:{self.data_type}:{self.id}:{key}", value, json_encoder_cls)
-
-    def publish_to_repository(self, channel, data):
-        return self.repository.publish(
-            f"sunflower:{self.data_type}:{self.id}:{channel}", data)
+    async def publish_to_repository(
+            self,
+            obj: PersistentAttributesObject,
+            channel: str,
+            data):
+        return await self.repository.publish(
+            f"sunflower:{obj.__data_type__}:{obj.__id__}:{channel}", data)
 
 
 
@@ -111,9 +124,6 @@ class PersistentAttribute:
         self._cache = None
 
     def __set_name__(self, owner, name):
-        if not issubclass(owner, PersistenceMixin):
-            raise TypeError("A PersistentAttribute must be defined in a class"
-                            "inherting from 'PersitenceMixin'.")
         self.name = name
         if not self.__doc__:
             self.__doc__ = f"{self.name} persistent attribute."
