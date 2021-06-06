@@ -20,7 +20,7 @@ stations_definitions = definitions[K("stations")]
 # instantiate repository
 redis_repository = RedisRepository()
 
-# instantiate URL stations
+# instantiate stations
 stations = {
     station_cls.name: station_cls()
     for station_cls in [FranceCulture,
@@ -28,16 +28,14 @@ stations = {
                         FranceInter,
                         FranceMusique,
                         FranceInterParis,
-                        RTL2]}
+                        RTL2,
+                        PycolorePlaylistStation]}
 
-# add dynamic stations
-stations["Radio Pycolore"] = PycolorePlaylistStation(redis_repository)
 
 
 # instantiate channels
 channels = [
     Channel.fromconfig(
-        redis_repository,
         channel_definition,
         stations,
         {})

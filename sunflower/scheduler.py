@@ -1,4 +1,5 @@
 
+import asyncio
 import logging
 import logging.handlers
 import os
@@ -30,7 +31,7 @@ def launch_scheduler():
     try:
         scheduler = Scheduler(channels, logger)
         logger.info("Scheduler instantiated.")
-        scheduler.run()
+        asyncio.run(scheduler.run())
     except Exception as err:
         std_handler = logging.StreamHandler(sys.stdout)
         std_handler.setLevel(logging.ERROR)
