@@ -2,7 +2,6 @@ import random
 from datetime import datetime
 from datetime import timedelta
 from logging import Logger
-from typing import Dict
 from typing import List
 from typing import Optional
 
@@ -17,7 +16,6 @@ from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.liquidsoap import liquidsoap_telnet_session
-from sunflower.core.persistence import PersistentAttribute
 from sunflower.core.stations import DynamicStation
 from sunflower.utils.music import fetch_cover_and_link_on_deezer
 from sunflower.utils.music import parse_songs
@@ -27,27 +25,21 @@ from sunflower.utils.music import prevent_consecutive_artists
 class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
     name = "Radio Pycolore"
-    id = "pycolore"
-    public_playlist = PersistentAttribute("playlist")
+    __id__ = "pycolore"
+    keys = ("playlist",)
 
-    @public_playlist.pre_set_hook
-    def public_playlist(self, songs: List[Song]):
-        """Persist public fields of song objects in current playlist in redis."""
-        return [
-            {"artist": song.artist, "title": song.title, "album": song.album}
-            for song in songs]
-
-    def __init__(self, repository):
-        super().__init__(repository, self.id)
+    def __init__(self):
         self._songs_to_play: List[Song] = []
-        # self._populate_songs_to_play()
+        self.public_playlist: List[dict] = []
         self._current_song: Optional[Song] = None
         self._current_song_end: float = 0
         self._end_of_use: datetime = datetime.now()
 
     def _populate_songs_to_play(self):
         new_songs = parse_songs(get_config()[K("backup-songs-glob-pattern")])
-        self.public_playlist = new_songs
+        self.public_playlist = [
+            {"artist": song.artist, "title": song.title, "album": song.album}
+            for song in new_songs]
         self._songs_to_play += random.sample(new_songs, len(new_songs))
         self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)
 
@@ -154,7 +146,7 @@ class PycolorePlaylistStation(DynamicStation):
                 thumbnail_src=self.station_thumbnail)
         )]
 
-    def process(self, logger: Logger, channels_using: Dict, channels_using_next: Dict, now: datetime, **kwargs):
+    def process(self, logger: Logger, channels, stations, now: datetime, **rest_of_context):
         """Play new song if needed.
         
         Compute end of use time of this station.
@@ -164,18 +156,19 @@ class PycolorePlaylistStation(DynamicStation):
         """
 
         # if station is not used, check if a channel will soon use it
-        channels_using_self = channels_using[self]
-        if not channels_using_self:
-            # in case we already anticipated, return
-            if self._current_song is not None:
-                return
-            # in this case, anticipate and launch a song
-            for channel in channels_using_next[self]: # type: Channel
-                delay = max((channel.station_end_at(now) - now).seconds, 0)
-                max_length = -1
-                self._play(delay, max_length, logger, now)
+        for channel_metadata in channels.values():
+            if Step(**channel_metadata["current"]).broadcast.station == self.station_info:
                 break
-            return
+        else:
+            if self._current_song is not None:
+                return self.__id__, stations[self.__id__]
+            for channel_metadata in channels.values():
+                next_step = Step(**channel_metadata["next"])
+                if next_step.broadcast.station == self.station_info:
+                    delay = max(next_step.end - now.timestamp(), 0)
+                    max_length = -1
+                    self._play(delay, max_length, logger, now)
+                    return self.__id__, {"playlist": self.public_playlist}
 
         # compute end of use
         for channel in channels_using_self: # type: Channel
@@ -187,6 +180,8 @@ class PycolorePlaylistStation(DynamicStation):
             delay = max(self._current_song_end - now.timestamp(), 0)
             max_length = (self._end_of_use - now).seconds - delay
             self._play(delay, max_length, logger, now)
+
+        return self.__id__, {"playlist": self.public_playlist}
 
     def format_stream_metadata(self, broadcast: Broadcast) -> Optional[StreamMetadata]:
         if broadcast.type != BroadcastType.MUSIC:
