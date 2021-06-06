@@ -15,13 +15,13 @@ from sunflower.stations import RTL2
 
 
 class FakeRepository(Repository):
-    def retrieve(self, key: str, object_hook: Optional[Callable] = None):
+    async def retrieve(self, key: str, object_hook: Optional[Callable] = None):
         pass
 
-    def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
+    async def persist(self, key: str, value: Any, json_encoder_cls: Optional[Type[json.JSONEncoder]] = None):
         pass
 
-    def publish(self, key: str, channel, data):
+    async def publish(self, key: str, channel, data):
         pass
 
 
@@ -31,4 +31,4 @@ fip = FranceInterParis()
 france_info = FranceInfo()
 france_musique = FranceMusique()
 rtl2 = RTL2()
-radio_pycolore = PycolorePlaylistStation(FakeRepository())
+radio_pycolore = PycolorePlaylistStation()

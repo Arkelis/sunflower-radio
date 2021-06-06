@@ -18,14 +18,13 @@ def test_channel_instantiation_with_config():
     fip = FranceInterParis()
 
     channel = Channel.fromconfig(
-        FakeRepository(),
         get_config("tests/fixtures/conf.edn")[K("channels")][0],
         {"France Culture": france_culture,
          "FIP": fip},
         {})
 
     assert channel.name == "Tournesol test"
-    assert channel.id == "tournesol-test"
+    assert channel.__id__ == "tournesol-test"
     assert channel.timetable.stations == {france_culture, fip}
     assert channel.timetable.station_at(datetime(2021, 1, 1, 0, 0, 0)) == france_culture
     assert channel.timetable.station_after(datetime(2021, 1, 1, 0, 0, 0)) == fip

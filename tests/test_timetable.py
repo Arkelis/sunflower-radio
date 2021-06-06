@@ -74,7 +74,7 @@ invalid_dict = {
 
 @pytest.fixture
 def channel() -> Channel:
-    return Channel("test", "Test", repository=FakeRepository(), timetable=Timetable(valid_dict))
+    return Channel("test", "Test", timetable=Timetable(valid_dict))
 
 
 def test_timetable_without_seven_weekdays():
