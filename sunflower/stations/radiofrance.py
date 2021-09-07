@@ -325,8 +325,7 @@ class RadioFranceStation(URLStation):
                 metadata=SongPayload(
                     title=track_data["title"],
                     artist=artists,
-                    album=track_data.get("album", ""),
-                    base64_cover_art=url_to_base64(cover_link))))
+                    album=track_data.get("album", ""))))
 
     def get_step(self, logger: Logger, dt: datetime, channel) -> UpdateInfo:
         start = int(dt.timestamp())
@@ -391,8 +390,7 @@ class RadioFranceStation(URLStation):
             return StreamMetadata(
                 title=title,
                 artist=artist,
-                album=album,
-                base64_cover_art=url_to_base64(broadcast.thumbnail_src))
+                album=album)
         elif broadcast.type == BroadcastType.MUSIC:
             # for RadioFrance, a track step has metadata already filled, see _get_radiofrance_track_step()
             return broadcast.metadata

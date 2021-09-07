@@ -315,5 +315,4 @@ class RTL2(URLStation, RTLGroupMixin):
         return StreamMetadata(
             title=title,
             artist=artist,
-            album=album,
-            base64_cover_art=url_to_base64(broadcast.thumbnail_src))
+            album=album)

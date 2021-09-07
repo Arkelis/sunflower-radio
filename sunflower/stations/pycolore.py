@@ -128,8 +128,7 @@ class PycolorePlaylistStation(DynamicStation):
                          f"{artists_str}."),
                 metadata=SongPayload(title=self._current_song.title,
                                      artist=self._current_song.artist,
-                                     album="La Playlist Pycolore",
-                                     base64_cover_art=url_to_base64(thumbnail_src)))))
+                                     album="La Playlist Pycolore"))))
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
         if self == channel.station_at(dt):
@@ -194,8 +193,7 @@ class PycolorePlaylistStation(DynamicStation):
             return StreamMetadata(
                 title=broadcast.title,
                 artist=self.name,
-                album="",
-                base64_cover_art=url_to_base64(broadcast.thumbnail_src))
+                album="")
         return broadcast.metadata
 
     @classmethod

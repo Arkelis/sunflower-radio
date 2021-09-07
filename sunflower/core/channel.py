@@ -174,8 +174,6 @@ class Channel(PersistenceMixin):
             session.read_until(b"\n")
             session.write(f'var.set {self.id}_album = "{stream_metadata.album}\n'.encode())
             session.read_until(b"\n")
-            session.write(f'var.set {self.id}_cover = "{stream_metadata.base64_cover_art}\n'.encode())
-            session.read_until(b"\n")
         logger.debug(f"channel={self.id} {stream_metadata} sent to liquidsoap")
         return
 
@@ -194,7 +192,7 @@ class Channel(PersistenceMixin):
         # update schedule if needed
         if now.date() != self._schedule_day:
             logger.info(f"channel={self.id} Updating schedule...")
-            self.schedule = self.get_schedule(logger)
+            # self.schedule = self.get_schedule(logger)
             logger.info(f"channel={self.id} Schedule updated!")
             self._schedule_day = now.date()
 
@@ -258,11 +256,11 @@ class Channel(PersistenceMixin):
 
         # metadata
         source_str += "\n"
+        source_str += f'{self.id}_title = interactive.string("{self.id}_title", "")\n'
+        source_str += f'{self.id}_artist = interactive.string("{self.id}_artist", "")\n'
+        source_str += f'{self.id}_album = interactive.string("{self.id}_album", "")\n'
+        source_str += f'{self.id}_cover = interactive.string("{self.id}_cover", "")\n\n'
         source_str += f"def apply_{self.id}_metadata(m) = \n"
-        source_str += f'  title = interactive.string("{self.id}_title", "")\n'
-        source_str += f'  artist = interactive.string("{self.id}_artist", "")\n'
-        source_str += f'  album = interactive.string("{self.id}_album", "")\n'
-        source_str += f'  cover = interactive.string("{self.id}_cover", "")\n'
         source_str += ('  [("title", title()), ("album", album()), '
                        '("artist", artist()), "metadata_block_picture", cover()]\n')
         source_str += "end\n\n"

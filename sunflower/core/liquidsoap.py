@@ -45,8 +45,18 @@ def write_liquidsoap_config(channels, filename):
         f.write("\n" + outputs_string)
 
 
+class FakeSession:
+    def write(self, *ars, **kwargs):
+        pass
+
+    def read_until(self, *args, **kwargs):
+        pass
+
+
 @contextmanager
 def liquidsoap_telnet_session():
-    with suppress(ConnectionError):
+    try:
         with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
             yield session
+    except ConnectionError:
+        yield FakeSession()
