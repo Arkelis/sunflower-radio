@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type
+import traceback
 
 from edn_format import Keyword
 from pydantic import ValidationError
@@ -137,24 +138,35 @@ class Channel(PersistenceMixin):
         of currently broadcasted station. Station can use current metadata for example
         to do partial updates.
         """
-        return self.station_at(now).get_step(logger, now, self)
+        try:
+            return self.station_at(now).get_step(logger, now, self)
+        except Exception as err:
+            logger.error("Erreur lors de la récupération du step")
+            logger.error(traceback.fromat_exc())
+            return Step.empty(now, self.station_at(now))
 
     def get_next_step(self, logger: Logger, start: datetime) -> Step:
-        current_station_end = self.station_end_at(dt=start)
-        station = [
-            self.station_at(start),  # current station if start > self.current_station_end == False
-            self.station_after(start),  # next station if start > self.current_station_end == True
-        ][start >= current_station_end]
-        next_step = station.get_next_step(logger, start, self)
-        if next_step.end == next_step.start:
-            next_step.end = int(current_station_end.timestamp())
-        if (next_step.is_none()) or (
-            next_step.end > (current_station_end.timestamp() + 300)
-            and next_step.broadcast.station == self.station_at(start).station_info
-        ):
-            next_step = self.station_after(start).get_next_step(logger, current_station_end, self)
-        next_step.start = min(next_step.start, int(current_station_end.timestamp()))
-        return next_step
+        try:
+            current_station_end = self.station_end_at(dt=start)
+            station = [
+                self.station_at(start),  # current station if start > self.current_station_end == False
+                self.station_after(start),  # next station if start > self.current_station_end == True
+            ][start >= current_station_end]
+            next_step = station.get_next_step(logger, start, self)
+            if next_step.end == next_step.start:
+                next_step.end = int(current_station_end.timestamp())
+            if (next_step.is_none()) or (
+                next_step.end > (current_station_end.timestamp() + 300)
+                and next_step.broadcast.station == self.station_at(start).station_info
+            ):
+                next_step = self.station_after(start).get_next_step(logger, current_station_end, self)
+            next_step.start = min(next_step.start, int(current_station_end.timestamp()))
+            return next_step
+        except Exception as err:
+            logger.error("Erreur lors de la récupération du step")
+            logger.error(traceback.fromat_exc())
+            return Step.empty(now, self.station_at(now))
+
 
     def get_schedule(self, logger: Logger) -> List[Step]:
         """Get list of steps which is the schedule of current day"""
@@ -168,11 +180,11 @@ class Channel(PersistenceMixin):
             logger.debug(f"channel={self.id} StreamMetadata is empty")
             return
         with liquidsoap_telnet_session() as session:
-            session.write(f'var.set {self.id}_artist = "{stream_metadata.artist}\n'.encode())
+            session.write(f'var.set {self.id}_artist = "{stream_metadata.artist}"\n'.encode())
             session.read_until(b"\n")
-            session.write(f'var.set {self.id}_title = "{stream_metadata.title}\n'.encode())
+            session.write(f'var.set {self.id}_title = "{stream_metadata.title}"\n'.encode())
             session.read_until(b"\n")
-            session.write(f'var.set {self.id}_album = "{stream_metadata.album}\n'.encode())
+            session.write(f'var.set {self.id}_album = "{stream_metadata.album}"\n'.encode())
             session.read_until(b"\n")
         logger.debug(f"channel={self.id} {stream_metadata} sent to liquidsoap")
         return
@@ -190,11 +202,16 @@ class Channel(PersistenceMixin):
         Else return False.
         """
         # update schedule if needed
-        if now.date() != self._schedule_day:
-            logger.info(f"channel={self.id} Updating schedule...")
-            # self.schedule = self.get_schedule(logger)
-            logger.info(f"channel={self.id} Schedule updated!")
-            self._schedule_day = now.date()
+        # temporary fix waiting for new RTL2 Fix
+        # try:
+        #     if now.date() != self._schedule_day:
+        #         logger.info(f"channel={self.id} Updating schedule...")
+        #         self.schedule = self.get_schedule(logger)
+        #         logger.info(f"channel={self.id} Schedule updated!")
+        #         self._schedule_day = now.date()
+        # except:
+        #     logger.warn("Error when fetching schedule. Passing.")
+        #     pass
 
         current_station = self.station_at(now)
 
