@@ -68,7 +68,7 @@ def channels_list(request: Request):
 
 
 @app.get(
-    "/channels/{channel_id}/",
+    "/channels/{channel_id}",
     summary="Channel information",
     response_description="Channel information and related links",
     tags=["Channel-related endpoints"])
@@ -126,7 +126,7 @@ async def update_broadcast_info_stream(request: Request, channel: List[str] = Qu
 
 
 @app.get(
-    "/channels/{channel_id}/schedule/",
+    "/channels/{channel_id}/schedule",
     summary="Get schedule of given channel",
     tags=["Channel-related endpoints"],
     response_model=List[Step],
@@ -144,7 +144,7 @@ class ShapeEnum(str, Enum):
 
 
 @app.get(
-    "/stations/pycolore/playlist/",
+    "/stations/pycolore/playlist",
     summary="Get the playlist of Pycolore station",
     tags=["Endpoints specific to Radio Pycolore"],
     response_description="List of songs of the playlist")
