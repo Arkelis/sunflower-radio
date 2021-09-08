@@ -126,13 +126,13 @@ def fetch_cover_and_link_on_deezer(
         data = _get_data_from_deezer_url(
             f"https://api.deezer.com/track/{deezertrack}",
             getcover=lambda x: x["album"]["cover_big"],
-            getalbumurl=lambda x: x['album']['link'])
+            getalbumurl=lambda x: f"https://deezer.com/album/{x['album']['id']}")
     if data is None and album is not None:
         data = _get_data_from_deezer_url(
             f"https://api.deezer.com/search/album?q=artist:'{artist}' album:'{album}'",
             f"https://api.deezer.com/search/album?q={artist} {album}",
             getcover=lambda x: x["cover_big"],
-            getalbumurl=lambda x: x["link"],
+            getalbumurl=lambda x: f"https://deezer.com/album/{x['id']}",
             getmatch=lambda x: x["title"],
             match=album)
     if data is None and track is not None:
@@ -140,12 +140,12 @@ def fetch_cover_and_link_on_deezer(
             f"https://api.deezer.com/search/track?q=artist:'{artist}' track:'{track}'",
             f'https://api.deezer.com/search/track?q={artist} {track}',
             getcover=lambda x: x["album"]["cover_big"],
-            getalbumurl=lambda x: x['album']['link'])
+            getalbumurl=lambda x: f"https://deezer.com/album/{x['album']['id']}")
     if data is None:
         data = _get_data_from_deezer_url(
             'https://api.deezer.com/search/artist?q={}'.format(artist),
             getcover=lambda x: x["picture_big"],
-            getalbumurl=lambda x: x["link"])
+            getalbumurl=lambda x: f"https://deezer.com/artist/{x['id']}")
 
     return data or (backup_cover, "")
 
