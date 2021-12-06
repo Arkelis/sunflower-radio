@@ -9,6 +9,8 @@
 
 ## Principe
 
+![image](https://user-images.githubusercontent.com/35486980/144896881-876b34fe-ec96-42a9-a80c-072f0acb3d76.png)
+
 Une webradio est composé de divers éléments :
 
 - un encodeur de flux audio, par exemple [liquidsoap](http://liquidsoap.info)
