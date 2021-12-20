@@ -228,12 +228,11 @@ class Channel(PersistenceMixin):
         current_step = self.current_step
         # check if we must retrieve new metadata
         if ((current_step is not None
-                 and not current_station.long_pull
-                 and now.timestamp() < current_step.end
-                 and current_step.broadcast.station.name == current_station.name)
-             or (current_station.long_pull
-                 and (now - self._last_pull).seconds < self.long_pull_interval)):
-            self.current_step = None  # notify unchanged
+                and not current_station.long_pull
+                and now.timestamp() < current_step.end
+                and current_step.broadcast.station.name == current_station.name)
+            or (current_station.long_pull
+                and (now - self._last_pull).seconds < self.long_pull_interval)):
             return
         self._last_pull = now
         # get current info and new metadata and info

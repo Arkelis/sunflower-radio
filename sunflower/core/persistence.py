@@ -133,9 +133,7 @@ class PersistentAttribute:
         """
         now = datetime.now().timestamp()
         data = self.pre_set_hook_func(obj, value) if value is not None else value
-        if self._cache == data or data is None:
-            if self.notify_change:
-                obj.publish_to_repository("updates", NotifyChangeStatus.UNCHANGED.value)
+        if self._cache == data:
             return
         obj.persist_to_repository(self.key, data, self.json_encoder_cls)
         self._cache = data

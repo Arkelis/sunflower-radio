@@ -1,3 +1,4 @@
+import asyncio
 import json
 from collections import defaultdict
 from datetime import datetime
@@ -103,13 +104,13 @@ async def updates_generator(request, *endpoints):
         if client_disconnected:
             print(datetime.now(), "Disconnected")
             break
-        message = await pubsub.get_message()
+        try:
+            message = await asyncio.wait_for(pubsub.get_message(), timeout=4)
+        except asyncio.TimeoutError:
+            yield ":\n\n"
         if message is None:
             continue
         redis_data = message.get("data")
-        if redis_data == str(NotifyChangeStatus.UNCHANGED.value).encode():
-            yield ":\n\n"
-            continue
         if redis_data != str(NotifyChangeStatus.UPDATED.value).encode():
             continue
         redis_channel = message.get("channel").decode()
