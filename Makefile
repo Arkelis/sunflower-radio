@@ -4,6 +4,7 @@ start-server:
 	poetry run gunicorn -w 2 -k sunflower.core.worker.SunflowerWorker \
 		--bind unix:/tmp/sunflower.gunicorn.sock \
 		--daemon \
+		--pid /tmp/sunflower.server.pid
 		--access-logfile /tmp/sunflower.access.log \
 		--error-logfile /tmp/sunflower.error.log \
 		--forwarded-allow-ips='*' \
@@ -19,7 +20,7 @@ restart-server: stop-server start-server
 # LIQUIDSOAP 
 
 start-liquidsoap:
-	(liquidsoap ~/radio/sunflower.liq > /tmp/sunflower.liquidsoap.log & echo $$! > /tmp/sunflower.liquidsoap.pid &)
+	liquidsoap ~/radio/sunflower.liq > /tmp/sunflower.liquidsoap.log & echo $$! > /tmp/sunflower.liquidsoap.pid & disown
 
 stop-liquidsoap:
 	pkill --pidfile /tmp/sunflower.liquidsoap.pid
@@ -32,7 +33,7 @@ console-liquidsoap:
 # SCHEDULER
 
 start-scheduler:
-	(poetry run python sunflower/scheduler.py & echo $$! > /tmp/sunflower.scheduler.pid &)
+	poetry run python sunflower/scheduler.py & echo $$! > /tmp/sunflower.scheduler.pid & disown
 
 stop-scheduler:
 	pkill --pidfile /tmp/sunflower.scheduler.pid
