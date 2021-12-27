@@ -57,10 +57,10 @@ subprocess.run(["poetry", "run",
     "--capture-output",
     "server.server:app"])
 with open("/tmp/sunflower.liquidsoap.pid", "w") as f:
-    pid = subprocess.Popen(["liquidsoap", f"{os.environ['HOME']}/radio/sunflower.liq"]).pid
+    pid = subprocess.Popen(["liquidsoap", f"{os.environ['HOME']}/radio/sunflower.liq"], start_new_session=True).pid
     f.write(f"{pid}\n")
 with open("/tmp/sunflower.scheduler.pid", "w") as f:
-    pid = subprocess.Popen(["poetry", "run", "python", "sunflower/scheduler.py"]).pid
+    pid = subprocess.Popen(["poetry", "run", "python", "sunflower/scheduler.py"], start_new_session=True).pid
     f.write(f"{pid}\n")
 
 print("[Reload on push] Finished. See /tmp/sunflower.scheduler.log.")

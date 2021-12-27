@@ -4,7 +4,7 @@ start-server:
 	poetry run gunicorn -w 2 -k sunflower.core.worker.SunflowerWorker \
 		--bind unix:/tmp/sunflower.gunicorn.sock \
 		--daemon \
-		--pid /tmp/sunflower.server.pid
+		--pid /tmp/sunflower.server.pid \
 		--access-logfile /tmp/sunflower.access.log \
 		--error-logfile /tmp/sunflower.error.log \
 		--forwarded-allow-ips='*' \
@@ -13,14 +13,14 @@ start-server:
 	@echo "Logs and socket are in /tmp"
 
 stop-server:
-	pkill gunicorn
+	pkill --pidfile /tmp/sunflower.server.pid
 
 restart-server: stop-server start-server
 
 # LIQUIDSOAP 
 
 start-liquidsoap:
-	liquidsoap ~/radio/sunflower.liq > /tmp/sunflower.liquidsoap.log & echo $$! > /tmp/sunflower.liquidsoap.pid & disown
+	liquidsoap ~/radio/sunflower.liq & echo $$! > /tmp/sunflower.liquidsoap.pid & disown
 
 stop-liquidsoap:
 	pkill --pidfile /tmp/sunflower.liquidsoap.pid
