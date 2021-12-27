@@ -14,7 +14,7 @@ def write_liquidsoap_config(channels, filename):
 
         f.write("# log file\n")
         f.write('settings.log.file.set(true)\n')
-        f.write('settings.log.file.path.set('/tmp/sunflower.liquidsoap.log')\n')
+        f.write('settings.log.file.path.set("/tmp/sunflower.liquidsoap.log")\n')
         f.write('settings.log.file.append.set(true)\n')
         f.write('settings.log.stdout.set(false)\n\n')
 
