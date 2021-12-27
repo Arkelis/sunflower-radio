@@ -274,11 +274,10 @@ class Channel(PersistenceMixin):
         source_str += "\n"
         source_str += f'{self.id}_title = interactive.string("{self.id}_title", "")\n'
         source_str += f'{self.id}_artist = interactive.string("{self.id}_artist", "")\n'
-        source_str += f'{self.id}_album = interactive.string("{self.id}_album", "")\n'
-        source_str += f'{self.id}_cover = interactive.string("{self.id}_cover", "")\n\n'
+        source_str += f'{self.id}_album = interactive.string("{self.id}_album", "")\n\n'
         source_str += f"def apply_{self.id}_metadata(m) = \n"
         source_str += ('  [("title", title()), ("album", album()), '
-                       '("artist", artist()), "metadata_block_picture", cover()]\n')
+                       '("artist", artist())]\n')
         source_str += "end\n\n"
 
         # output

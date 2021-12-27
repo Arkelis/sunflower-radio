@@ -9,14 +9,20 @@ from sunflower.settings import LIQUIDSOAP_TELNET_PORT
 def write_liquidsoap_config(channels, filename):
     """Write complete liquidsoap config file."""
     with open("{}.liq".format(filename), "w") as f:
-        # config de base (pas de log, activation server telnet, source par défaut)
+        # config de base (log, activation server telnet, source par défaut)
         f.write("#! /usr/bin/env liquidsoap\n\n")
+
         f.write("# log file\n")
-        f.write('set("log.file", false)\n\n')
+        f.write('settings.log.file.set(true)\n')
+        f.write('settings.log.file.path.set('/tmp/sunflower.liquidsoap.log')\n')
+        f.write('settings.log.file.append.set(true)\n')
+        f.write('settings.log.stdout.set(false)\n\n')
+
         f.write("# activate telnet server\n")
-        f.write('set("server.telnet", true)\n\n')
+        f.write('settings.server.telnet.set(true)\n\n')
         f.write("# default source\n")
         f.write('default = single("~/radio/franceinfo-long.ogg")\n\n')
+        
         f.write("# streams\n")
 
         # configuration des chaînes
