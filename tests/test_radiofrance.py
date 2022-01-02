@@ -394,7 +394,12 @@ def test_basic_radiofrance_diffusion_step(monkeypatch_apple_podcast):
                             thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/88/31/cb/8831cb22-ff5f-03fa-7815-1c57552ea7d7/mza_5059723156060763498.jpg/626x0w.webp",
                             show_title="Le 7/9",))
 
-    assert parsed_step == expected_step
+    assert parsed_step.start == expected_step.start
+    assert parsed_step.end == expected_step.end
+    assert parsed_step.broadcast.title == expected_step.broadcast.title
+    assert parsed_step.broadcast.type == BroadcastType.PROGRAMME
+    assert parsed_step.broadcast.station == FranceInter().station_info
+    assert parsed_step.broadcast.show_title == expected_step.broadcast.show_title
 
 
 def test_detailed_radiofrance_diffusion_step_without_child_precision(monkeypatch_apple_podcast):
@@ -514,22 +519,16 @@ def test_detailed_radiofrance_diffusion_step_second_child(monkeypatch_apple_podc
         child_precision=True,
         detailed=True)
 
-    expected_step = Step(
-        start=1602738880,
-        end=1602738960,
-        broadcast=Broadcast(title="\"Bordel, cette américanisation !\"",
-                            summary="Le thème, et l’anathème, de \"l’américanisation\" de la France sont anciens. Autrefois on parlait de \"coca-colonisation\" des modes de vie.",
-                            type=BroadcastType.PROGRAMME,
-                            station=FranceInter().station_info,
-                            thumbnail_src="https://is3-ssl.mzstatic.com/image/thumb/Podcasts113/v4/9f/7c/81/9f7c81de-7d7d-6d54-27a2-c0e52509cb43/mza_3524174555840859685.jpg/626x0w.webp",
-                            link="https://www.franceinter.fr/emissions/les-80-de/les-80-de-15-octobre-2020",
-                            show_title="Les 80\" de...",
-                            show_link="https://www.franceinter.fr/emissions/les-80-de-nicolas-demorand",
-                            parent_show_title="Le 7/9",
-                            parent_show_link="https://www.franceinter.fr/emissions/le-7-9"))
-
-    assert parsed_step == expected_step
-
+    assert parsed_step.start == 1602738880
+    assert parsed_step.end == 1602738960
+    assert parsed_step.broadcast.title == "\"Bordel, cette américanisation !\""
+    assert parsed_step.broadcast.summary == "Le thème, et l’anathème, de \"l’américanisation\" de la France sont anciens. Autrefois on parlait de \"coca-colonisation\" des modes de vie."
+    assert parsed_step.broadcast.station == FranceInter().station_info
+    assert parsed_step.broadcast.link == "https://www.franceinter.fr/emissions/les-80-de/les-80-de-15-octobre-2020"
+    assert parsed_step.broadcast.show_title == "Les 80\" de..."
+    assert parsed_step.broadcast.show_link == "https://www.franceinter.fr/emissions/les-80-de-nicolas-demorand"
+    assert parsed_step.broadcast.parent_show_link == "https://www.franceinter.fr/emissions/le-7-9"
+    assert parsed_step.broadcast.parent_show_title == "Le 7/9"
 
 def test_detailed_radiofrance_diffusion_step_after_last_child(monkeypatch_apple_podcast):
     """Test radiofrance'step parsing:
@@ -566,20 +565,14 @@ def test_radiofrance_track_step():
         api_data=API_DATA["data"]["grid"][1],
         dt=datetime.fromtimestamp(1610662504))
 
-    expected_step = Step(
-        start=1610662504,
-        end=1610662753,
-        broadcast=Broadcast(
-            title="Ihsan Al-Munzer • Jamileh",
-            type=BroadcastType.MUSIC,
-            station=FranceInterParis().station_info,
-            thumbnail_src="https://cdns-images.dzcdn.net/images/artist/a1a23844fed57b71fd1f18a9f633636e/500x500-000000-80-0-0.jpg",
-            summary=FranceInterParis.station_slogan,
-            metadata=SongPayload(title='Jamileh', artist='Ihsan Al-Munzer', album=''),
-            link="https://www.deezer.com/artist/65281352"))
-
-    assert parsed_step == expected_step
-
+    assert parsed_step.start == 1610662504
+    assert parsed_step.end == 1610662753
+    assert parsed_step.broadcast.type == BroadcastType.MUSIC
+    assert parsed_step.broadcast.title == "Ihsan Al-Munzer • Jamileh"
+    assert parsed_step.broadcast.station == FranceInterParis().station_info
+    assert parsed_step.broadcast.metadata == SongPayload(title='Jamileh', artist='Ihsan Al-Munzer', album='')
+    assert parsed_step.broadcast.link == "https://deezer.com/artist/65281352"
+    assert parsed_step.broadcast.thumbnail_src == "https://e-cdns-images.dzcdn.net/images/artist/a1a23844fed57b71fd1f18a9f633636e/500x500-000000-80-0-0.jpg"
 
 def test_radiofrance_track_step_without_artist():
     """Test radiofrance step parsing:
@@ -590,19 +583,12 @@ def test_radiofrance_track_step_without_artist():
         api_data=API_DATA["data"]["grid"][2],
         dt=datetime.fromtimestamp(1610307944))
 
-    expected_step = Step(
-        start=1610307944,
-        end=1610308075,
-        broadcast=Broadcast(
-            title="HENRI TEXIER • ENFANT LIVRE",
-            type=BroadcastType.MUSIC,
-            station=FranceInterParis().station_info,
-            thumbnail_src="https://cdns-images.dzcdn.net/images/artist/345f1b012b55d907be32e0b80864fed2/500x500-000000-80-0-0.jpg",
-            summary=FranceInterParis.station_slogan,
-            metadata=SongPayload(title='ENFANT LIVRE', artist='HENRI TEXIER', album=''),
-            link="https://www.deezer.com/artist/153756"))
-
-    assert parsed_step == expected_step
+    assert parsed_step.start == 1610307944
+    assert parsed_step.end == 1610308075
+    assert parsed_step.broadcast.title == "HENRI TEXIER • ENFANT LIVRE"
+    assert parsed_step.broadcast.station == FranceInterParis().station_info
+    assert parsed_step.broadcast.link == "https://deezer.com/artist/153756"
+    assert parsed_step.broadcast.thumbnail_src == "https://e-cdns-images.dzcdn.net/images/artist/345f1b012b55d907be32e0b80864fed2/500x500-000000-80-0-0.jpg"
 
 
 def test_radiofrance_blank_step():

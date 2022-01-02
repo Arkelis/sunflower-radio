@@ -6,7 +6,7 @@ authors = ["Arkelis <guillaume.fayard@pycolore.fr>"]
 license = "AGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 requests = "^2.22"
 python-dotenv = "^0.10.3"
 beautifulsoup4 = "^4.8"
