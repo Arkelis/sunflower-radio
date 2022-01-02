@@ -6,6 +6,8 @@ import os
 import sys
 import traceback
 
+from sunflower.core.repository import RedisRepository
+
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -22,14 +24,17 @@ def launch_scheduler():
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s :: %(message)s")
     
     # rotate
-    file_handler = logging.handlers.RotatingFileHandler("/tmp/sunflower.scheduler.log", "a", 1000000, 1)
+    file_handler = logging.handlers.RotatingFileHandler("/tmp/sunflower.scheduler.log", "a", 1_000_000, 1)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
+    # instantiate repository
+    repository = RedisRepository()
+
     logger.info("Starting scheduler.")
     try:
-        scheduler = Scheduler(channels, logger)
+        scheduler = Scheduler(channels, repository, logger)
         logger.info("Scheduler instantiated.")
         asyncio.run(scheduler.run())
     except Exception as err:
