@@ -62,10 +62,6 @@ class Station(ABC):
         """
         return cls.name.lower().replace(" ", "")
 
-    @property
-    def html_formatted_station_name(self):
-        return html_utils._format_html_anchor_element(self.station_website_url, self.name)
-
     @abstractmethod
     def get_step(self, logger: Logger, dt: datetime, channel: "Channel") -> UpdateInfo:
         """Return UpdateInfo object for broadcast starting at dt.
