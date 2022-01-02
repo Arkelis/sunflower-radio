@@ -1,24 +1,16 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Tests
 
 on:
   push:
   pull_request:
-    branches: [ master ]
+    branches: [ devel ]
+  workflow_dispatch:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Redis
-      uses: zhulik/redis-action@1.1.0
-      with:
-        number of databases: 1
     - name: Set up Python 3.9
       uses: actions/setup-python@v1
       with:
