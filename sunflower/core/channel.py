@@ -1,4 +1,5 @@
 import itertools
+import traceback
 from datetime import date
 from datetime import datetime
 from logging import Logger
@@ -8,10 +9,10 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type
-import traceback
 
-from edn_format import Keyword
 from pydantic import ValidationError
+
+from sunflower.core.config import K
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
@@ -42,7 +43,7 @@ class Channel(PersistenceMixin):
                  name: str,
                  repository: "Repository",
                  timetable: Timetable,
-                 handlers: Tuple[Type[Handler]]=()):
+                 handlers: Tuple[Type[Handler]] = ()):
         """Channel constructor.
 
         Parameters:
@@ -64,13 +65,12 @@ class Channel(PersistenceMixin):
                    repository: "Repository",
                    config: Dict,
                    stations_map: Dict[str, Station],
-                   handlers_map: Dict[str, Handler]):
-        channel_name = config[Keyword("name")]
-        channel_id = config[Keyword("id")]
-        channel_timetable = Timetable.fromconfig(config[Keyword("timetable")], stations_map)
-        channel_handlers = tuple(handlers_map[name] for name in config[Keyword("handlers")])
+                   handlers_map: Dict[str, Type[Handler]]):
+        channel_name = config[K("name")]
+        channel_id = config[K("id")]
+        channel_timetable = Timetable.fromconfig(config[K("timetable")], stations_map)
+        channel_handlers = tuple(handlers_map[name] for name in config[K("handlers")])
         return cls(channel_id, channel_name, repository, channel_timetable, channel_handlers)
-
 
     @property
     def stations(self) -> tuple:

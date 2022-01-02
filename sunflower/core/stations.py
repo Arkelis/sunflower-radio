@@ -11,7 +11,6 @@ from typing import Optional
 from typing import TYPE_CHECKING
 from typing import Type
 
-from sunflower.core import _html as html_utils
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import StationInfo
 from sunflower.core.custom_types import Step

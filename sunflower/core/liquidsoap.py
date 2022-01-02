@@ -1,12 +1,10 @@
 import typing
-from typing import Type
 from contextlib import contextmanager
-from contextlib import suppress
 from telnetlib import Telnet
+from typing import Type
 
-from sunflower.settings import LIQUIDSOAP_TELNET_HOST
-from sunflower.settings import LIQUIDSOAP_TELNET_PORT
-
+from sunflower.core.config import K
+from sunflower.core.config import get_config
 
 if typing.TYPE_CHECKING:
     from sunflower.core.channel import Channel
@@ -119,7 +117,9 @@ class FakeSession:
 @contextmanager
 def liquidsoap_telnet_session():
     try:
-        with Telnet(LIQUIDSOAP_TELNET_HOST, LIQUIDSOAP_TELNET_PORT) as session:
+        liquidsoap_host = get_config()[K("liquidsoap-telnet-host")]
+        liquidsoap_port = get_config()[K("liquidsoap-telnet-port")]
+        with Telnet(liquidsoap_host, liquidsoap_port) as session:
             yield session
     except ConnectionError:
         yield FakeSession()

@@ -11,19 +11,20 @@ from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import AnyHttpUrl
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+from starlette.requests import Request
+from starlette.responses import StreamingResponse
+
 from server.proxies import PycoloreProxy
 from server.utils import channels_ids
 from server.utils import get_channel_or_404
 from server.utils import redis_repo
-from starlette.requests import Request
-from starlette.responses import StreamingResponse
-from sunflower import settings
+from sunflower.core.config import K
+from sunflower.core.config import get_config
 from sunflower.core.custom_types import NotifyChangeStatus
 from sunflower.core.custom_types import Step
-from sunflower.settings import RADIO_NAME
 
 app = FastAPI(
-    title=RADIO_NAME,
+    title=get_config()[K("radio-name")],
     docs_url="/",
     redoc_url=None,
     version="1.0.0-beta1")
@@ -63,7 +64,7 @@ def channels_list(request: Request):
             "schedule_url": request.url_for("get_schedule_of", channel_id=channel_id),
             "current_step": get_channel_or_404(channel_id).current,
             "next_step": get_channel_or_404(channel_id).next,
-            "audio_stream": settings.ICECAST_SERVER_URL + channel_id,
+            "audio_stream": get_config()[K("icecast-server-url")] + channel_id,
         }
         for channel_id in channels_ids]
 
@@ -88,7 +89,7 @@ def get_channel(channel_id, request: Request):
     return {
         "endpoint": channel.id,
         "name": channel.id.capitalize(),
-        "audio_stream": settings.ICECAST_SERVER_URL + channel.id,
+        "audio_stream": get_config()[K("icecast-server-url")] + channel.id,
         "current_step": channel.current,
         "next_step": channel.next,
         "schedule": request.url_for("get_schedule_of", channel_id=channel.id),
@@ -108,6 +109,7 @@ async def updates_generator(request, *endpoints):
             message = await asyncio.wait_for(pubsub.get_message(), timeout=4)
         except asyncio.TimeoutError:
             yield ":\n\n"
+            continue
         if message is None:
             continue
         redis_data = message.get("data")

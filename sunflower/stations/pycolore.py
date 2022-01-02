@@ -6,8 +6,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from sunflower import settings
 from sunflower.core.channel import Channel
+from sunflower.core.config import K
+from sunflower.core.config import get_config
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import Song
@@ -21,7 +22,6 @@ from sunflower.core.stations import DynamicStation
 from sunflower.utils.music import fetch_cover_and_link_on_deezer
 from sunflower.utils.music import parse_songs
 from sunflower.utils.music import prevent_consecutive_artists
-from sunflower.utils.music import url_to_base64
 
 
 class PycolorePlaylistStation(DynamicStation):
@@ -46,7 +46,7 @@ class PycolorePlaylistStation(DynamicStation):
         self._end_of_use: datetime = datetime.now()
 
     def _populate_songs_to_play(self):
-        new_songs = parse_songs(settings.BACKUP_SONGS_GLOB_PATTERN)
+        new_songs = parse_songs(get_config()[K("backup-songs-glob-pattern")])
         self.public_playlist = new_songs
         self._songs_to_play += random.sample(new_songs, len(new_songs))
         self._songs_to_play = prevent_consecutive_artists(self._songs_to_play)

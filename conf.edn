@@ -1,4 +1,9 @@
-{:channels
+{:radio-name "Radio Pycolore"
+ :backup-songs-glob-pattern "/home/guillaume/radio/songs/*.opus"
+ :icecast-server-url "https://icecast.pycolore.fr/"
+ :liquidsoap-telnet-port 1234
+ :liquidsoap-telnet-host "localhost"
+ :channels
   [{:id "tournesol"
     :name "Tournesol"
     :handlers ()

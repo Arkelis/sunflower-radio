@@ -4,7 +4,8 @@ from datetime import datetime
 from logging import Logger
 from typing import List
 
-from sunflower import settings
+from sunflower.core.config import K
+from sunflower.core.config import get_config
 from sunflower.core.custom_types import Broadcast
 from sunflower.core.custom_types import BroadcastType
 from sunflower.core.custom_types import Song
@@ -26,7 +27,7 @@ class Handler(abc.ABC):
 class AdsHandler(Handler):
     def __init__(self, channel):
         super().__init__(channel)
-        self.glob_pattern = settings.BACKUP_SONGS_GLOB_PATTERN
+        self.glob_pattern = get_config()[K("backup-songs-glob-pattern")]
         self.backup_songs = self._parse_songs()
 
     def _parse_songs(self) -> List[Song]:

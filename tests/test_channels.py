@@ -58,8 +58,7 @@ def test_planning_parsing():
     # Counter([...]) == Counter([...]) permet de comparer les éléments et leurs occurrences
     # de deux itérables sans se soucier de l'ordre
     assert Counter(test_channel.stations) == Counter(
-        (fip, france_culture, france_info, france_inter, france_musique)
-    )
+        (fip, france_culture, france_info, france_inter, france_musique))
 
 
 def _test_schedule():

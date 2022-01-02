@@ -1,8 +1,8 @@
 # This file is part of sunflower package. Radio app.
 
-import edn_format
-from edn_format import Keyword
 from sunflower.core.channel import Channel
+from sunflower.core.config import get_config
+from sunflower.core.config import K
 from sunflower.core.repository import RedisRepository
 from sunflower.stations import FranceCulture
 from sunflower.stations import FranceInfo
@@ -13,10 +13,9 @@ from sunflower.stations import PycolorePlaylistStation
 from sunflower.stations import RTL2
 
 # read definitions
-with open("sunflower/conf.edn") as f:
-    definitions = edn_format.loads(f.read())
-channels_definitions = definitions[Keyword("channels")]
-stations_definitions = definitions[Keyword("stations")]
+definitions = get_config()
+channels_definitions = definitions[K("channels")]
+stations_definitions = definitions[K("stations")]
 
 # instantiate repository
 redis_repository = RedisRepository()

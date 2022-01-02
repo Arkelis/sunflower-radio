@@ -1,0 +1,11 @@
+{:radio-name "Radio Test Pycolore"
+ :icecast-server-url "https://icecast.pycolore.fr/"
+ :backup-songs-glob-pattern "/home/guillaume/radio/songs/*.opus"
+ :channels
+  [{:id "tournesol-test"
+    :name "Tournesol test"
+    :handlers ()
+    :timetable
+      {(0 1 2 3 4 5 6)
+        [("00:00" "05:00" "France Culture")
+         ("05:00" "00:00" "FIP")]}}]}
