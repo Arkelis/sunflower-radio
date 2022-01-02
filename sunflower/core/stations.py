@@ -106,8 +106,8 @@ class DynamicStation(Station, ABC):
     """
     __data_type__ = "station"
     __id__: str = abstractproperty()
+    __keys__: set[str] = abstractproperty()
     name = property(fget=lambda self: getattr(self, "_name"))
-    keys = ()
 
     @abstractmethod
     def process(self, logger, channels_using, channels_using_next, now, **kwargs):

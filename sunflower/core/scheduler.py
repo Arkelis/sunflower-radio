@@ -58,13 +58,14 @@ class Scheduler(PersistenceMixin):
         channels_data = {}
         for channel in self.channels:
             channel_data = {}
-            for key in channel.keys:
+            for key in channel.__keys__:
                 channel_data[key] = await self.retrieve_from_repository(channel, key)
             channels_data[channel.__id__] = channel_data
 
         stations_data = {}
         for station in self.managed_stations:
-            for key in station.keys:
+            station_data = {}
+            for key in station.__keys__:
                 station_data[key] = await self.retrieve_from_repository(station, key)
             stations_data[station.__id__] = station_data
 

@@ -26,7 +26,7 @@ class PycolorePlaylistStation(DynamicStation):
     station_thumbnail = "https://www.pycolore.fr/assets/img/sunflower-dark-min.jpg"
     name = "Radio Pycolore"
     __id__ = "pycolore"
-    keys = ("playlist",)
+    __keys__ = {"playlist"}
 
     def __init__(self):
         self._songs_to_play: List[Song] = []

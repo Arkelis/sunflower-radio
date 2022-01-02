@@ -19,7 +19,7 @@ class Repository(ABC):
         ...
 
     @abstractmethod
-    async def publish(self, key: str, channel, data):
+    async def publish(self, channel: str, data: str):
         ...
 
 
@@ -53,15 +53,13 @@ class RedisRepository(Repository):
         json_data = json.dumps(value, cls=json_encoder_cls)
         return await self._redis.set(key, json_data)
 
-    async def publish(self, channel, data):
+    async def publish(self, channel: str, data: str):
         """publish a message to a redis channel.
 
         Parameters:
-        - channel (str): channel name
-        - data (jsonable data or str): data to publish
+        - channel (str): pubsub channel name
+        - data (str): data to publish
 
         channel in redis is prefixed with 'sunflower:'.
         """
-        if not isinstance(data, str):
-            data = json.dumps(data)
         await self._redis.publish(channel, data)

@@ -31,7 +31,7 @@ class Channel:
     """
 
     __data_type__ = "channel"
-    keys = ("current", "next", "schedule")
+    __keys__ = {"current", "next", "schedule"}
 
     def __init__(self,
                  __id: str,
