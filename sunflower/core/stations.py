@@ -104,12 +104,6 @@ class Station(ABC):
         """
         ...
 
-    @classmethod
-    @abstractmethod
-    def get_liquidsoap_config(cls):
-        """Return string containing liquidsoap config for this station."""
-        ...
-
 
 class DynamicStation(Station, PersistenceMixin, ABC):
     """Base class for internally managed stations.
@@ -143,11 +137,6 @@ class URLStation(Station, ABC):
         if cls.station_url == "":
             raise ValueError("URL not specified for URLStation object.")
         return super().__new__(cls)
-
-    @classmethod
-    def get_liquidsoap_config(cls):
-        return (f'{cls.formatted_station_name} = '
-                f'mksafe(input.http(id="{cls.formatted_station_name}", start=false, "{cls.station_url}"))\n')
 
     def start_liquidsoap_source(self):
         with liquidsoap_telnet_session() as session:
