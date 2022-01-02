@@ -79,8 +79,8 @@ def generate_liquidsoap_config_for_channel(channel: "Channel"):
         f'{channel.id}_title = interactive.string("{channel.id}_title", "")\n'
         f'{channel.id}_artist = interactive.string("{channel.id}_artist", "")\n'
         f'{channel.id}_album = interactive.string("{channel.id}_album", "")\n\n'
-        f"def apply_{channel.id}_metadata(m) = \n"
-        f'  [("title", title()), ("album", album()), ("artist", artist())]\n'
+        f"def apply_{channel.id}_metadata(_) = \n"
+        f'  [("title", {channel.id}_title()), ("album", {channel.id}_album()), ("artist", {channel.id}_artist())]\n'
         f"end\n\n")
 
     # output
