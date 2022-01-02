@@ -9,8 +9,6 @@ from typing import List
 from typing import Tuple
 from typing import Type
 
-from pydantic import ValidationError
-
 from sunflower.core.config import K
 from sunflower.core.custom_types import Step
 from sunflower.core.custom_types import StreamMetadata
@@ -96,7 +94,7 @@ class Channel:
             return self.station_at(now).get_step(logger, now, self)
         except Exception as err:
             logger.error("Erreur lors de la récupération du step")
-            logger.error(traceback.fromat_exc())
+            logger.error(traceback.format_exc())
             return Step.empty(now, self.station_at(now))
 
     async def get_next_step(self, logger: Logger, start: datetime) -> Step:
@@ -186,13 +184,14 @@ class Channel:
                  and current_step.broadcast.station.name == current_station.name)
              or (current_station.long_pull
                  and (now - self._last_pull).seconds < self.long_pull_interval)):
-            return (self.__id__, {
-                "current": current_step.dict(),
-                "next": next_step.dict(),
-                "schedule": [step.dict() for step in schedule]})
+            return None
 
         self._last_pull = now
-        should_notify, current_step = await self.get_current_step(logger, now)
+        should_update, current_step = await self.get_current_step(logger, now)
+
+        if not should_update:
+            return None
+
         next_step = await self.get_next_step(logger, datetime.fromtimestamp(current_step.end))
         # apply handlers if needed
         for handler in self.handlers:

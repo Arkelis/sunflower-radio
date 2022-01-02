@@ -9,9 +9,14 @@ from typing import List
 from typing import Set
 
 from sunflower.core.channel import Channel
+from sunflower.core.custom_types import NotifyChangeStatus
 from sunflower.core.persistence import PersistenceMixin
-from sunflower.core.stations import DynamicStation
+from sunflower.core.persistence import PersistentAttributesObject
 from sunflower.core.stations import Station
+
+
+def is_not_none(x):
+    return x is not None
 
 
 class Scheduler(PersistenceMixin):
@@ -27,8 +32,7 @@ class Scheduler(PersistenceMixin):
         self.managed_stations = {
             station
             for station in self.stations
-            if isinstance(station, DynamicStation)
-                and station.keys}
+            if isinstance(station, PersistentAttributesObject)}
 
     async def _retrieve_context(self) -> Dict[str, Any]:
         """Return context dict containing data needed for channels and station to process.
@@ -69,17 +73,16 @@ class Scheduler(PersistenceMixin):
                 station_data[key] = await self.retrieve_from_repository(station, key)
             stations_data[station.__id__] = station_data
 
-        return {"channels": channels_data,
-                "stations": stations_data,
-                "now": now}
+        return {
+            "channels": channels_data,
+            "stations": stations_data,
+            "now": now}
 
     async def _persist_context(self, context):
-        for processed_obj in (*self.channels, *self.managed_stations):
-            for key in processed_obj.keys:
-                await self.persist_to_repository(
-                    processed_obj,
-                    key,
-                    context[f"{processed_obj.__data_type__}s"][processed_obj.__id__][key])
+        for processed_obj in (*context["stations"].values(), *context["channels"].values()):
+            for key, val in processed_obj.items():
+                await self.persist_to_repository(processed_obj, key, val)
+            await self.publish_to_repository(processed_obj, "updates", NotifyChangeStatus.UPDATED.value)
 
     async def run(self):
         """Keep metadata up to date and persist them.
@@ -95,25 +98,20 @@ class Scheduler(PersistenceMixin):
 
             # first process stations and update context
             # will be used by channels
-            stations_updates = dict(await asyncio.gather(
-                *(obj.process(self.logger, **context)
-                  for obj in self.managed_stations)))
-            for station in self.stations:
-                context[station.__id__] = stations_updates[station.__id__]
+            stations_updates = dict(filter(is_not_none,
+                await asyncio.gather(
+                    *(obj.process(self.logger, **context)
+                      for obj in self.managed_stations))))
+            for station_id in stations_updates.keys():
+                context["stations"][station_id] = stations_updates[station_id]
 
             # next process channels and update context
-            channels_updates = dict(await asyncio.gather(
-                *(obj.process(self.logger, **context)
-                  for obj in self.channels)))
-            for channel in self.channels:
-                context[channel.__id__] = channels_updates[channel.__id__]
+            channels_updates = dict(filter(is_not_none,
+                await asyncio.gather(
+                    *(obj.process(self.logger, **context)
+                      for obj in self.channels))))
+            for channel_id in channels_updates.keys():
+                context["channels"][channel_id] = channels_updates[channel_id]
 
             # then persist context
             await self._persist_context(context)
-
-    # async def _process_and_catch(self, context, obj):
-    #     try:
-    #         return await obj.process(self.logger, **context)
-    #     except Exception as err:
-    #         self.logger.error("Une erreur est survenue pendant la mise à jour des données: {}.".format(err))
-    #         self.logger.error(traceback.format_exc())
