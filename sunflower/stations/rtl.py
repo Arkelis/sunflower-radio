@@ -176,7 +176,7 @@ class RTL2(URLStation, RTLGroupMixin):
     station_thumbnail = "https://upload.wikimedia.org/wikipedia/fr/f/fa/RTL2_logo_2015.svg"
     station_url = "http://streaming.radio.rtl2.fr/rtl2-1-44-128"
     # _main_data_url = "https://timeline.rtl.fr/RTL2/items"
-    _songs_data_url = "https://timeline.rtl.fr/RTL2/songs"
+    _songs_data_url = "http://timeline.rtl.fr/RTL2/songs"
     _show_grid_url = "https://www.rtl2.fr/grille/{}"
     long_pull = True
 
