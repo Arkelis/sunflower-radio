@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from sunflower.core.bases import Station
+    from sunflower.core.stations import Station
 
 
 # Enums
