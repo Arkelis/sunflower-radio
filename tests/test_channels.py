@@ -14,7 +14,6 @@ from tests.common import france_musique
 test_channel = Channel(
     "tournesol",
     name="Tournesol",
-    repository=FakeRepository(),
     timetable=Timetable({
         (0, 1, 2, 3, 4): [
             # (start, end, station_name),

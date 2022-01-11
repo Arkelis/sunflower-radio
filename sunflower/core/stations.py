@@ -18,7 +18,6 @@ from sunflower.core.custom_types import StreamMetadata
 from sunflower.core.custom_types import UpdateInfo
 from sunflower.core.decorators import classproperty
 from sunflower.core.liquidsoap import liquidsoap_telnet_session
-from sunflower.core.persistence import PersistenceMixin
 
 if TYPE_CHECKING:
     from sunflower.core.channel import Channel
@@ -100,12 +99,14 @@ class Station(ABC):
         ...
 
 
-class DynamicStation(Station, PersistenceMixin, ABC):
+class DynamicStation(Station, ABC):
     """Base class for internally managed stations.
     
     Must implement process() method.
     """
-    data_type = "station"
+    __data_type__ = "station"
+    __id__: str = abstractproperty()
+    __keys__: set[str] = abstractproperty()
     name = property(fget=lambda self: getattr(self, "_name"))
 
     @abstractmethod
