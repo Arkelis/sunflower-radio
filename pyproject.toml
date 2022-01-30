@@ -22,7 +22,6 @@ edn-format = "^0.7.5"
 ipython = "*"
 mypy = "*"
 pytest = "*"
-autopep8 = "*"
 
 [build-system]
 requires = ["poetry>=0.12"]
