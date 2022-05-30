@@ -157,7 +157,7 @@ def fetch_apple_podcast_cover(podcast_link: str, fallback: str) -> str:
     req = requests.get(podcast_link)
     bs = BeautifulSoup(req.content.decode(), "html.parser")
     sources = bs.find_all("source")
-    cover_url: str = sources[0].attrs["srcset"].split(",")[-1].split(" ")[0]
+    cover_url: str = sources[0].attrs["srcset"].split(", ")[-1].split(" ")[0]
     return cover_url.strip()
 
 
