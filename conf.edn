@@ -15,8 +15,8 @@
          ("12:00" "12:30" "France Info")
          ("12:30" "13:30" "France Inter")
          ("13:30" "18:00" "France Culture")
-         ("18:00" "20:00" "France Inter")
-         ("20:00" "00:00" "France Info")]
+         ("18:00" "21:00" "France Inter")
+         ("21:00" "00:00" "France Info")]
        (5)
         [("00:00" "06:00" "France Culture")
          ("06:00" "09:00" "France Inter")
