@@ -401,7 +401,7 @@ class FranceInter(RadioFranceStation):
     station_website_url = "https://www.franceinter.fr"
     station_slogan = "Inter-Venez"
     _station_api_name = "FRANCEINTER"
-    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinter/france-inter.svg"
+    station_thumbnail = "https://charte.radiofrance.fr/images/franceinter/france-inter.svg"
     station_url = "http://icecast.radiofrance.fr/franceinter-hifi.aac"
 
 
@@ -410,7 +410,7 @@ class FranceInfo(RadioFranceStation):
     station_website_url = "https://www.francetvinfo.fr"
     station_slogan = "Et tout est plus clair"
     _station_api_name = "FRANCEINFO"
-    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceinfo/franceinfo_avatar.svg"
+    station_thumbnail = "https://charte.radiofrance.fr/images/franceinfo/franceinfo_avatar.svg"
     station_url = "http://icecast.radiofrance.fr/franceinfo-hifi.aac"
 
     WEEKEND_TIME_SLOTS = [
@@ -468,7 +468,7 @@ class FranceMusique(RadioFranceStation):
     station_website_url = "https://www.francemusique.fr"
     station_slogan = "Vous allez LA DO RÉ !"
     _station_api_name = "FRANCEMUSIQUE"
-    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/francemusique/france-musique.svg"
+    station_thumbnail = "https://charte.radiofrance.fr/images/francemusique/france-musique.svg"
     station_url = "http://icecast.radiofrance.fr/francemusique-hifi.aac"
 
 
@@ -477,7 +477,7 @@ class FranceCulture(RadioFranceStation):
     station_website_url = "https://www.franceculture.fr"
     station_slogan = "L'esprit d'ouverture"
     _station_api_name = "FRANCECULTURE"
-    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/franceculture/france-culture.svg"
+    station_thumbnail = "https://charte.radiofrance.fr/images/franceculture/france-culture.svg"
     station_url = "http://icecast.radiofrance.fr/franceculture-hifi.aac"
 
 
@@ -486,7 +486,7 @@ class FranceInterParis(RadioFranceStation):
     station_website_url = "https://fip.fr"
     station_slogan = "La radio musicale la plus éclectique"
     _station_api_name = "FIP"
-    station_thumbnail = "https://charte.dnm.radiofrance.fr/images/fip/fip.svg"
+    station_thumbnail = "https://charte.radiofrance.fr/images/fip/fip.svg"
     station_url = "http://icecast.radiofrance.fr/fip-hifi.aac"
 
     def get_next_step(self, logger: Logger, dt: datetime, channel: "Channel") -> Step:
